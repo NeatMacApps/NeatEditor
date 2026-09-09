@@ -1,5 +1,9 @@
 # NeatEditor
 
+<p align="center">
+  <img src="./docs/images/app-icon.png" width="128" height="128" alt="NeatEditor アプリアイコン">
+</p>
+
 [![Platform](https://img.shields.io/badge/platform-macOS%2015%2B-1f6feb)](https://developer.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-6-orange)](https://www.swift.org/)
 [![UI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20AppKit-0a7ea4)](https://developer.apple.com/xcode/swiftui/)
