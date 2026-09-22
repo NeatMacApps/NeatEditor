@@ -54,6 +54,21 @@ targets:
       - package: Sparkle
         product: Sparkle
 
+  NeatEditorTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - Tests/NeatEditorTests
+    dependencies:
+      - target: NeatEditor
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.x0c.NeatEditorTests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 6.0
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+
 schemes:
   NeatEditor:
     build:
@@ -63,6 +78,8 @@ schemes:
       config: Debug
     test:
       config: Debug
+      targets:
+        - NeatEditorTests
     profile:
       config: Release
     analyze:

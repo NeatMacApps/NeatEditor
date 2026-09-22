@@ -41,7 +41,7 @@ macOS 纯文本编辑器（SwiftUI + AppKit）。
 - `Sources/NeatEditor/Features/Editor/AppKitBridge`：编辑器桥接、行号 gutter、查找与缩放。
 - `Sources/NeatEditor/Services`：自动保存与文档持久化服务。
 - `Sources/NeatEditor/SharedUI`：共享 UI 样式与标题栏辅助视图。
-- 当前仓库还没有 `Tests/` 目录，也没有测试 target。
+- 当前仓库已有 `Tests/` 目录与 `NeatEditorTests` target。
 
 ## 动手前
 - 先读相关文件，不要凭猜测做大改。
@@ -94,25 +94,19 @@ done
 - 如果 `open` 失败，必须继续重试 2 次；只有连续 3 次都失败时，才可以向用户报告无法启动。
 
 ### 测试
-当前状态：
 ```bash
 xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration Debug -destination 'platform=macOS' test
 ```
-- 该命令当前会失败，错误为：`Scheme NeatEditor is not currently configured for the test action.`
-- 原因不是命令写错，而是仓库目前没有测试 target，也没有配置 test action。
+- `NeatEditorTests` 覆盖文本同步契约、文档持久化与字号偏好，共 18 个用例。
+- 手动编辑场景（剪切/撤销/输入法/切 tab/懒加载竞态/缩放手势）见 `docs/editing-text-sync-test-cases.md`。
 
-当未来增加测试 target 后，推荐命令如下。
-全量测试：
-```bash
-xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration Debug -destination 'platform=macOS' test
-```
 单个测试类：
 ```bash
-xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration Debug -destination 'platform=macOS' -only-testing:NeatEditorTests/DocumentManagerTests test
+xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration Debug -destination 'platform=macOS' -only-testing:NeatEditorTests/EditorTextSyncStateTests test
 ```
 单个测试方法：
 ```bash
-xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration Debug -destination 'platform=macOS' -only-testing:NeatEditorTests/DocumentManagerTests/testAutoSaveDebounce test
+xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration Debug -destination 'platform=macOS' -only-testing:NeatEditorTests/EditorTextSyncStateTests/staleSnapshotKeepsTextView test
 ```
 
 - 如果你新增了测试，请同时更新 `project.yml`，确保 scheme 的 test action 生效。
@@ -213,7 +207,7 @@ xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration D
 - 尽量小步提交，避免把“修功能”和“重排格式”混在一起。
 - 完成修改后至少执行一次构建；如果变更影响运行流程，先用新构建产物替换 `/Applications/NeatEditor.app`，再启动该版本验证。
 - 重启 App 时，必须从 `/Applications/NeatEditor.app` 启动；如果 `open` 启动失败，必须再重试 2 次；只有连续 3 次都失败时，才可结束并明确说明启动失败。
-- 若测试仍未配置，不要谎称已跑测试；应明确说明“已构建/已 analyze，但 test action 尚不存在”。
+- 测试已配置（`NeatEditorTests`）：改完跑一次 `test`；不要谎称已跑测试。
 - 若你新增了测试设施，请同步更新本文件中的命令示例。
 
 ## 文档导航

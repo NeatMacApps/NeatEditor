@@ -19,19 +19,17 @@ final class EditorTextContainerView: NSView {
 
     var onIncreaseFontSize: () -> Void {
         didSet {
-            scrollView.onIncreaseFontSize = onIncreaseFontSize
             textView.onIncreaseFontSize = onIncreaseFontSize
         }
     }
 
     var onDecreaseFontSize: () -> Void {
         didSet {
-            scrollView.onDecreaseFontSize = onDecreaseFontSize
             textView.onDecreaseFontSize = onDecreaseFontSize
         }
     }
 
-    private let scrollView: ZoomableScrollView
+    private let scrollView: EditorScrollView
     private let lineNumberView: LineNumberGutterView
     private let separatorView = NSView()
     private var gutterWidthConstraint: NSLayoutConstraint?
@@ -73,7 +71,7 @@ final class EditorTextContainerView: NSView {
         layoutManager.addTextContainer(textContainer)
 
         let textView = ZoomableTextView(frame: .zero, textContainer: textContainer)
-        let scrollView = ZoomableScrollView(frame: .zero)
+        let scrollView = EditorScrollView(frame: .zero)
         let contentView = NSClipView()
 
         contentView.drawsBackground = false
@@ -91,8 +89,6 @@ final class EditorTextContainerView: NSView {
         configureTextView()
         configureScrollView()
         configureLayout()
-        self.scrollView.onIncreaseFontSize = onIncreaseFontSize
-        self.scrollView.onDecreaseFontSize = onDecreaseFontSize
         self.textView.onIncreaseFontSize = onIncreaseFontSize
         self.textView.onDecreaseFontSize = onDecreaseFontSize
         refreshLineNumbers()
@@ -264,6 +260,27 @@ final class EditorTextContainerView: NSView {
 
         let glyphRange = layoutManager.glyphRange(for: textContainer)
         layoutManager.removeTemporaryAttribute(.backgroundColor, forCharacterRange: glyphRange)
+    }
+
+    /// Re-apply the current search highlights after the buffer changed
+    /// (typing, composition commit, external push) without moving the
+    /// selection. Edits shift match ranges, so stale temporary attributes
+    /// would otherwise highlight the wrong text.
+    func reapplySearchHighlightsIfNeeded(
+        query: String,
+        usesRegularExpression: Bool,
+        isPresented: Bool
+    ) {
+        guard isPresented,
+              !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return
+        }
+
+        performSearch(
+            for: query,
+            usesRegularExpression: usesRegularExpression,
+            navigate: false
+        )
     }
 
     private func configureTextView() {

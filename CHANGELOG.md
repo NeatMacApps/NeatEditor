@@ -6,6 +6,19 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## Unreleased
 
+### Fixed
+
+- Editor no longer loses unrelated lines after cut/paste or rapid typing: the AppKit–SwiftUI text bridge only pushes external or tab-switch changes, lazy file loads cannot overwrite edits in flight, and switching tabs flushes IME composition plus clears the shared undo stack.
+- Search highlights now follow text edits and re-apply (without jumping) after tab switches and file loads.
+
+### Removed
+
+- Command+scroll / trackpad gesture font zoom. Font size is adjusted only via `Command + =` / `Command + -` (and the View menu).
+
+### Added
+
+- `NeatEditorTests` unit test target covering the text-sync contract, document persistence, and font-size preferences.
+
 ## 1.0.0 - 2026-04-03
 
 ### Added

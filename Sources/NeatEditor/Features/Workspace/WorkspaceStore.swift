@@ -58,6 +58,12 @@ final class WorkspaceStore {
     @ObservationIgnored
     var pendingSaveStateTask: Task<Void, Never>?
 
+    /// Tabs with an in-flight lazy content load. `isContentLoaded` flips to
+    /// `true` only when the load *completes*, so this set also dedupes
+    /// overlapping load requests for the same tab.
+    @ObservationIgnored
+    var loadingTabIDs: Set<UUID> = []
+
     var closedTabs: [ClosedTabSnapshot] = []
 
     init(

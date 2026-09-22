@@ -40,8 +40,10 @@ struct WorkspaceView: View {
                     SettingsView()
                 } else {
                     EditorTextView(
+                        tabID: tab.id,
                         text: $bindableWorkspace.tabs[index].content,
                         fontSize: workspaceStore.preferences.editorFontSize,
+                        isEditable: tab.isContentLoaded,
                         tabBehavior: workspaceStore.preferences.tabBehavior,
                         textSoftness: workspaceStore.preferences.editorTextSoftness,
                         searchState: workspaceStore.searchState,

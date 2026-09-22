@@ -1,9 +1,12 @@
 import AppKit
+import Foundation
 import SwiftUI
 
 struct EditorTextView: NSViewRepresentable {
+    let tabID: UUID
     @Binding var text: String
     let fontSize: CGFloat
+    let isEditable: Bool
     let tabBehavior: TabBehavior
     let textSoftness: WorkspacePreferences.EditorTextSoftnessConfiguration
     let searchState: WorkspaceSearchState
@@ -27,6 +30,8 @@ struct EditorTextView: NSViewRepresentable {
 
         textView.delegate = context.coordinator
         textView.string = text
+        textView.isEditable = isEditable
+        context.coordinator.sync.notePushedText(text, for: tabID)
         containerView.synchronizeLineNumbersToCurrentText()
         textView.onOpenFiles = onOpenFiles
         textView.tabBehavior = tabBehavior
@@ -46,19 +51,52 @@ struct EditorTextView: NSViewRepresentable {
     }
 
     func updateNSView(_ containerView: EditorTextContainerView, context: Context) {
-        context.coordinator.parent = self
+        let coordinator = context.coordinator
+        let textView = containerView.textView
+
+        // A tab switch reuses this view for a different binding. Flush any
+        // in-flight IME composition to the OLD tab first (the coordinator
+        // still points at it here); otherwise the composition lands in the
+        // newly selected tab. Also drop the previous tab's undo history: the
+        // text view carries a single shared undo stack, and replaying another
+        // tab's edits into this buffer deletes seemingly unrelated lines.
+        if coordinator.sync.boundTabID != tabID {
+            if textView.hasMarkedText() {
+                textView.unmarkText()
+            }
+            textView.breakUndoCoalescing()
+            textView.undoManager?.removeAllActions()
+            containerView.clearSearchHighlights()
+        }
+
+        coordinator.parent = self
         containerView.onIncreaseFontSize = onIncreaseFontSize
         containerView.onDecreaseFontSize = onDecreaseFontSize
         containerView.textView.onOpenFiles = onOpenFiles
         containerView.textView.tabBehavior = tabBehavior
         containerView.textSoftness = textSoftness
+        containerView.textView.isEditable = isEditable
 
-        if !containerView.textView.hasMarkedText() && containerView.textView.string != text {
-            context.coordinator.isSyncingFromSwiftUI = true
-            containerView.textView.string = text
-            context.coordinator.isSyncingFromSwiftUI = false
+        switch coordinator.sync.update(
+            for: tabID,
+            text: text,
+            hasMarkedText: textView.hasMarkedText()
+        ) {
+        case .keepTextView:
+            break
+        case .pushToTextView(let newText):
+            coordinator.isSyncingFromSwiftUI = true
+            textView.string = newText
+            coordinator.isSyncingFromSwiftUI = false
+            textView.breakUndoCoalescing()
             containerView.synchronizeLineNumbersToCurrentText()
             containerView.applyEditorTextAttributes()
+            coordinator.syncSearchTrackingAfterPush(searchState)
+            containerView.reapplySearchHighlightsIfNeeded(
+                query: searchState.trimmedQuery,
+                usesRegularExpression: searchState.isRegexEnabled,
+                isPresented: searchState.isPresented
+            )
         }
 
         containerView.applyFontSize(fontSize)
@@ -69,7 +107,6 @@ struct EditorTextView: NSViewRepresentable {
         let query = searchState.trimmedQuery
         let isRegex = searchState.isRegexEnabled
         let isPresented = searchState.isPresented
-        let coordinator = context.coordinator
 
         if coordinator.lastSearchWasPresented && !isPresented {
             containerView.clearSearchHighlights()
@@ -98,6 +135,7 @@ struct EditorTextView: NSViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: EditorTextView
+        var sync = EditorTextSyncState()
         var isSyncingFromSwiftUI = false
         var lastSearchRequestID = 0
         var lastAppliedSearchQuery = ""
@@ -130,7 +168,14 @@ struct EditorTextView: NSViewRepresentable {
 
             let isComposing = textView.hasMarkedText()
             if !isComposing {
-                parent.text = textView.string
+                reportAppKitText(textView.string)
+                // Edits shift match ranges, so refresh the visible highlights
+                // without moving the selection.
+                containerView.reapplySearchHighlightsIfNeeded(
+                    query: lastAppliedSearchQuery,
+                    usesRegularExpression: lastAppliedIsRegex,
+                    isPresented: lastSearchWasPresented
+                )
             }
 
             parent.onTextChange(isComposing)
@@ -142,9 +187,32 @@ struct EditorTextView: NSViewRepresentable {
                 return
             }
 
-            parent.text = textView.string
+            reportAppKitText(textView.string)
+            containerView.reapplySearchHighlightsIfNeeded(
+                query: lastAppliedSearchQuery,
+                usesRegularExpression: lastAppliedIsRegex,
+                isPresented: lastSearchWasPresented
+            )
             containerView.applyEditorTextAttributes()
             parent.onCompositionEnd()
+        }
+
+        /// Forward a string that originated in the text view to the SwiftUI
+        /// binding and record the agreement, so the next `updateNSView` echo
+        /// does not push it back and clobber newer keystrokes.
+        func reportAppKitText(_ string: String) {
+            parent.text = string
+            sync.noteTextViewContent(string, for: sync.boundTabID ?? parent.tabID)
+        }
+
+        /// After a programmatic push, align the search tracking with the
+        /// current request so the block in `updateNSView` does not navigate
+        /// again; highlights are re-applied without moving the selection.
+        func syncSearchTrackingAfterPush(_ searchState: WorkspaceSearchState) {
+            lastSearchWasPresented = searchState.isPresented
+            lastAppliedSearchQuery = searchState.trimmedQuery
+            lastAppliedIsRegex = searchState.isRegexEnabled
+            lastSearchRequestID = searchState.requestID
         }
     }
 }

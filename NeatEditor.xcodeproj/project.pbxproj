@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0A0C6C11839EF1CD4EA83AC3 /* EditorScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72DD6097751EF581EA256A3 /* EditorScrollView.swift */; };
 		16EC1F059C67919FE7417ECA /* WorkspaceCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C1E4F1C5E0852265B8A3A4 /* WorkspaceCommands.swift */; };
+		1C0E2A1A871E5DD7BF4F3DA6 /* DocumentPersistenceServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D088F960E365954BD66BC6A8 /* DocumentPersistenceServiceTests.swift */; };
 		21B6368381D44AB472B6E272 /* ZoomableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CA0DD15623CA315741B803E /* ZoomableTextView.swift */; };
 		247B4DD44E7B8560AA53E2D1 /* WorkspacePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1674FE73DFD3A99700320E6 /* WorkspacePreferences.swift */; };
 		260FB1D768B914BEC7E705CE /* LineNumberGutterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CF0D55E27675FFDA411D699 /* LineNumberGutterView.swift */; };
@@ -15,12 +17,13 @@
 		29DDA9044DD7A7AA65F009B5 /* WorkspaceStore+Tabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8E8818FBAFDC00F396FB2C0 /* WorkspaceStore+Tabs.swift */; };
 		2F0D92985DE89AFB1227039E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CC4981C6B05519CD1877B4D5 /* Assets.xcassets */; };
 		30257E6B79239E28AD1DFF2A /* EditorTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEE07E7303361F05267B1085 /* EditorTab.swift */; };
-		3143A92017C91179B2A2A7ED /* ZoomableScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 997F47F5D36FCDF06285DFAB /* ZoomableScrollView.swift */; };
 		348B695F38A92793385342D0 /* WorkspaceStore+Preferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034DD46D84F8B203A8D6476F /* WorkspaceStore+Preferences.swift */; };
 		39BD2850BB05C043F8377344 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = EEC6A22F39D1E5EC9B13E1CB /* Localizable.strings */; };
 		40E4B08329E49913ADF40EFC /* EditorTextContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B3C22F933FC00FD61B5DAF0 /* EditorTextContainerView.swift */; };
 		44208CD4C131FC71C34946E1 /* EditorTabStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60AEF291D6C5985830C89ABF /* EditorTabStripView.swift */; };
 		47254445FBCCB7AD560ED455 /* WorkspaceStore+Search.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08FFD0C3BD5FFC0B4C04B01 /* WorkspaceStore+Search.swift */; };
+		49CA09DC3AAEE99AB71E569E /* EditorTextSyncStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3812B102B3FA8E24D10FEE /* EditorTextSyncStateTests.swift */; };
+		4A4FBB40A7F299F9AA9C2597 /* EditorTextSyncState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF92C7134BE1D41EE8E04730 /* EditorTextSyncState.swift */; };
 		4A7455D8ED46B4FC817A58B3 /* EditorChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A82D78D7CE0B95C71D0971 /* EditorChrome.swift */; };
 		4C28ACC82CF6ADE661F5C511 /* WorkspaceSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8918469298602DC5C5D7047 /* WorkspaceSearchState.swift */; };
 		4C6DD29CD0452D9311044BE8 /* EditorTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FC9CB3A37D479100CB1B9D6 /* EditorTextView.swift */; };
@@ -29,6 +32,7 @@
 		83AA4C1985409273788FD141 /* EditorTabItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98813FD87C11733B55049246 /* EditorTabItemView.swift */; };
 		85E7BB7174B4D000CEFDE8A6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4EDF9A6AA28B3E0BB1ED45 /* SettingsView.swift */; };
 		93921D6CEFE951DE0C2E142A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 35B5BE7CD19E6AD7BA68BF31 /* Sparkle */; };
+		97DF5482D6F249403D615719 /* WorkspacePreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */; };
 		A344426D812AD628E5414D35 /* TitleBarTrafficLightAlignmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DB9D86BBC9C10E24C2579C1 /* TitleBarTrafficLightAlignmentView.swift */; };
 		A5CD4E4CA843E095AEF9E4F4 /* WorkspaceStore+Documents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE02D7D1B8648861CEB95405 /* WorkspaceStore+Documents.swift */; };
 		AB52501F00EC0F86E18D6C3C /* AutoSaveScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14452BE9113FCDDB6CE97192 /* AutoSaveScheduler.swift */; };
@@ -39,6 +43,16 @@
 		F294F12E2A20AE8FFE734E66 /* TabBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57BC26D5C7240FEF483712F5 /* TabBehavior.swift */; };
 		F9F0759B221E03E66297E6D5 /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF4FFD7351F34190C76B4C7D /* WorkspaceView.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		6F03DEFD66DBCBCBC817CDE8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 226D05864F7573A4A75D26FC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9A5D10A800E9420AFAB52D49;
+			remoteInfo = NeatEditor;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		034DD46D84F8B203A8D6476F /* WorkspaceStore+Preferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Preferences.swift"; sourceTree = "<group>"; };
@@ -52,13 +66,14 @@
 		41100292C0909F81989C8A6B /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		56530C158F57A8758BF0D6FF /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
 		57BC26D5C7240FEF483712F5 /* TabBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBehavior.swift; sourceTree = "<group>"; };
+		5A3812B102B3FA8E24D10FEE /* EditorTextSyncStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextSyncStateTests.swift; sourceTree = "<group>"; };
 		60AEF291D6C5985830C89ABF /* EditorTabStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTabStripView.swift; sourceTree = "<group>"; };
 		63FEBB9D3DE2E196F6FABC88 /* WorkspaceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceStore.swift; sourceTree = "<group>"; };
 		64C1E4F1C5E0852265B8A3A4 /* WorkspaceCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceCommands.swift; sourceTree = "<group>"; };
 		7AE177253A6D16097E143352 /* NeatEditorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeatEditorApp.swift; sourceTree = "<group>"; };
 		7FC9CB3A37D479100CB1B9D6 /* EditorTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextView.swift; sourceTree = "<group>"; };
+		86A7D19FDA6561AA648AA9B9 /* NeatEditorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeatEditorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		98813FD87C11733B55049246 /* EditorTabItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTabItemView.swift; sourceTree = "<group>"; };
-		997F47F5D36FCDF06285DFAB /* ZoomableScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomableScrollView.swift; sourceTree = "<group>"; };
 		9B3C22F933FC00FD61B5DAF0 /* EditorTextContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextContainerView.swift; sourceTree = "<group>"; };
 		9E4EDF9A6AA28B3E0BB1ED45 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A08FFD0C3BD5FFC0B4C04B01 /* WorkspaceStore+Search.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Search.swift"; sourceTree = "<group>"; };
@@ -70,9 +85,13 @@
 		CC4981C6B05519CD1877B4D5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CE02D7D1B8648861CEB95405 /* WorkspaceStore+Documents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Documents.swift"; sourceTree = "<group>"; };
 		CEE07E7303361F05267B1085 /* EditorTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTab.swift; sourceTree = "<group>"; };
+		CF92C7134BE1D41EE8E04730 /* EditorTextSyncState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextSyncState.swift; sourceTree = "<group>"; };
+		D088F960E365954BD66BC6A8 /* DocumentPersistenceServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPersistenceServiceTests.swift; sourceTree = "<group>"; };
 		D1A82D78D7CE0B95C71D0971 /* EditorChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorChrome.swift; sourceTree = "<group>"; };
+		D72DD6097751EF581EA256A3 /* EditorScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorScrollView.swift; sourceTree = "<group>"; };
 		E1674FE73DFD3A99700320E6 /* WorkspacePreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacePreferences.swift; sourceTree = "<group>"; };
 		E32406E8C86E9797FA92149D /* WorkspaceStore+StateRestoration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+StateRestoration.swift"; sourceTree = "<group>"; };
+		F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacePreferencesTests.swift; sourceTree = "<group>"; };
 		FF4DB92AF9B1A147AEED3F20 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -124,6 +143,7 @@
 			isa = PBXGroup;
 			children = (
 				C59982890BA0049E8CC31E4F /* NeatEditor.app */,
+				86A7D19FDA6561AA648AA9B9 /* NeatEditorTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -132,6 +152,7 @@
 			isa = PBXGroup;
 			children = (
 				837DFB8EA1A376B7477126C7 /* Sources */,
+				B5C60F4A364B4E2CFA0E97BA /* Tests */,
 				1C1110D4DCA8BA0A6292698C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -151,6 +172,16 @@
 				D1A82D78D7CE0B95C71D0971 /* EditorChrome.swift */,
 			);
 			path = SharedUI;
+			sourceTree = "<group>";
+		};
+		65E9A4E7DC74B3FFC4182F01 /* NeatEditorTests */ = {
+			isa = PBXGroup;
+			children = (
+				D088F960E365954BD66BC6A8 /* DocumentPersistenceServiceTests.swift */,
+				5A3812B102B3FA8E24D10FEE /* EditorTextSyncStateTests.swift */,
+				F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */,
+			);
+			path = NeatEditorTests;
 			sourceTree = "<group>";
 		};
 		6C4008B94B5B9575C7D4C05B /* NeatEditor */ = {
@@ -193,13 +224,22 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
+		B5C60F4A364B4E2CFA0E97BA /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				65E9A4E7DC74B3FFC4182F01 /* NeatEditorTests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
 		B8324446F9926CC8ECAB9287 /* AppKitBridge */ = {
 			isa = PBXGroup;
 			children = (
+				D72DD6097751EF581EA256A3 /* EditorScrollView.swift */,
 				9B3C22F933FC00FD61B5DAF0 /* EditorTextContainerView.swift */,
+				CF92C7134BE1D41EE8E04730 /* EditorTextSyncState.swift */,
 				7FC9CB3A37D479100CB1B9D6 /* EditorTextView.swift */,
 				0CF0D55E27675FFDA411D699 /* LineNumberGutterView.swift */,
-				997F47F5D36FCDF06285DFAB /* ZoomableScrollView.swift */,
 				0CA0DD15623CA315741B803E /* ZoomableTextView.swift */,
 			);
 			path = AppKitBridge;
@@ -241,6 +281,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		1C9BAE22627CC45A5C456670 /* NeatEditorTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 23B487B4E550EF98FE74B203 /* Build configuration list for PBXNativeTarget "NeatEditorTests" */;
+			buildPhases = (
+				2DC589E0FA008777B078ED78 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7425F4090FD84F15E79A7081 /* PBXTargetDependency */,
+			);
+			name = NeatEditorTests;
+			packageProductDependencies = (
+			);
+			productName = NeatEditorTests;
+			productReference = 86A7D19FDA6561AA648AA9B9 /* NeatEditorTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		9A5D10A800E9420AFAB52D49 /* NeatEditor */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CEE60399EC8CECC780CE663A /* Build configuration list for PBXNativeTarget "NeatEditor" */;
@@ -270,6 +328,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
+					1C9BAE22627CC45A5C456670 = {
+						DevelopmentTeam = SHZQ3MWP3B;
+						ProvisioningStyle = Manual;
+					};
 					9A5D10A800E9420AFAB52D49 = {
 						DevelopmentTeam = SHZQ3MWP3B;
 						ProvisioningStyle = Manual;
@@ -295,6 +357,7 @@
 			projectRoot = "";
 			targets = (
 				9A5D10A800E9420AFAB52D49 /* NeatEditor */,
+				1C9BAE22627CC45A5C456670 /* NeatEditorTests */,
 			);
 		};
 /* End PBXProject section */
@@ -312,6 +375,16 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		2DC589E0FA008777B078ED78 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1C0E2A1A871E5DD7BF4F3DA6 /* DocumentPersistenceServiceTests.swift in Sources */,
+				49CA09DC3AAEE99AB71E569E /* EditorTextSyncStateTests.swift in Sources */,
+				97DF5482D6F249403D615719 /* WorkspacePreferencesTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		515456D2EC8FC46A1392DA93 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -320,11 +393,13 @@
 				AB52501F00EC0F86E18D6C3C /* AutoSaveScheduler.swift in Sources */,
 				6C4A4EF55D4E956B1CB30509 /* DocumentPersistenceService.swift in Sources */,
 				4A7455D8ED46B4FC817A58B3 /* EditorChrome.swift in Sources */,
+				0A0C6C11839EF1CD4EA83AC3 /* EditorScrollView.swift in Sources */,
 				30257E6B79239E28AD1DFF2A /* EditorTab.swift in Sources */,
 				83AA4C1985409273788FD141 /* EditorTabItemView.swift in Sources */,
 				CC0213689BC7EBC733DEE876 /* EditorTabPreferenceKeys.swift in Sources */,
 				44208CD4C131FC71C34946E1 /* EditorTabStripView.swift in Sources */,
 				40E4B08329E49913ADF40EFC /* EditorTextContainerView.swift in Sources */,
+				4A4FBB40A7F299F9AA9C2597 /* EditorTextSyncState.swift in Sources */,
 				4C6DD29CD0452D9311044BE8 /* EditorTextView.swift in Sources */,
 				B94CDB60C07A6AB1960668D4 /* ExternalFileOpenCoordinator.swift in Sources */,
 				260FB1D768B914BEC7E705CE /* LineNumberGutterView.swift in Sources */,
@@ -342,12 +417,19 @@
 				29DDA9044DD7A7AA65F009B5 /* WorkspaceStore+Tabs.swift in Sources */,
 				DCDC8B0D5BE86A4D3B12A9E1 /* WorkspaceStore.swift in Sources */,
 				F9F0759B221E03E66297E6D5 /* WorkspaceView.swift in Sources */,
-				3143A92017C91179B2A2A7ED /* ZoomableScrollView.swift in Sources */,
 				21B6368381D44AB472B6E272 /* ZoomableTextView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7425F4090FD84F15E79A7081 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9A5D10A800E9420AFAB52D49 /* NeatEditor */;
+			targetProxy = 6F03DEFD66DBCBCBC817CDE8 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		EEC6A22F39D1E5EC9B13E1CB /* Localizable.strings */ = {
@@ -362,6 +444,25 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		05191880915D42E939BE2C58 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.x0c.NeatEditorTests;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NeatEditor.app/Contents/MacOS/NeatEditor";
+			};
+			name = Release;
+		};
 		62553C548B8453246E5B2417 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -444,6 +545,25 @@
 				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
+		};
+		ADCEDFC901F5B4AA6A6CE1F8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.x0c.NeatEditorTests;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NeatEditor.app/Contents/MacOS/NeatEditor";
+			};
+			name = Debug;
 		};
 		E5A7DA062109A89A1043B352 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -537,6 +657,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		23B487B4E550EF98FE74B203 /* Build configuration list for PBXNativeTarget "NeatEditorTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ADCEDFC901F5B4AA6A6CE1F8 /* Debug */,
+				05191880915D42E939BE2C58 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		7998514BDB9579393D62FF65 /* Build configuration list for PBXProject "NeatEditor" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

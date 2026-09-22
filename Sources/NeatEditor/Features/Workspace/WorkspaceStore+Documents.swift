@@ -133,12 +133,15 @@ extension WorkspaceStore {
     func loadTabContentIfNeeded(id: UUID) {
         guard let index = tabs.firstIndex(where: { $0.id == id }),
               !tabs[index].isContentLoaded,
+              !loadingTabIDs.contains(id),
               let fileURL = tabs[index].fileURL else {
             return
         }
 
-        // Mark as loaded immediately so we don't trigger multiple loads
-        tabs[index].isContentLoaded = true
+        // `isContentLoaded` flips to `true` only when the load below
+        // completes (see the `Task`), so the editor stays non-editable until
+        // then and `saveDocument` skips the placeholder.
+        loadingTabIDs.insert(id)
 
         let normalizedURL = persistenceService.normalizedFileURL(for: fileURL)
 
@@ -152,16 +155,29 @@ extension WorkspaceStore {
                     return text
                 }.value
 
+                loadingTabIDs.remove(id)
                 guard let currentIndex = self.tabs.firstIndex(where: { $0.id == id }) else { return }
-                self.tabs[currentIndex].content = content
+                // The editor is non-editable while loading, so non-empty
+                // content here means something else already provided it —
+                // never silently discard it with the stale load result.
+                if self.tabs[currentIndex].content.isEmpty {
+                    self.tabs[currentIndex].content = content
+                } else if self.tabs[currentIndex].content != content {
+                    Self.logger.error("Discarding stale lazy load for \(normalizedURL.lastPathComponent, privacy: .public): buffer changed while loading.")
+                }
+                self.tabs[currentIndex].isContentLoaded = true
             } catch {
+                loadingTabIDs.remove(id)
                 Self.logger.error("Failed to load document content lazily at \(fileURL.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
                 guard let currentIndex = self.tabs.firstIndex(where: { $0.id == id }) else { return }
-                let messageFormat = String(localized: "Failed to load document: %@")
-                self.tabs[currentIndex].content = String(
-                    format: messageFormat,
-                    error.localizedDescription
-                )
+                if self.tabs[currentIndex].content.isEmpty {
+                    let messageFormat = String(localized: "Failed to load document: %@")
+                    self.tabs[currentIndex].content = String(
+                        format: messageFormat,
+                        error.localizedDescription
+                    )
+                }
+                self.tabs[currentIndex].isContentLoaded = true
             }
         }
     }
