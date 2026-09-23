@@ -10,8 +10,11 @@ When you push a tag like `v1.0.0`, GitHub Actions will:
 - generate the Xcode project with XcodeGen
 - build a Release configuration macOS app
 - package `NeatEditor.app` as a universal zip
-- generate `SHA256SUMS.txt`
-- create or update the matching GitHub Release
+- build a drag-install dmg holding `NeatEditor.app` plus an `Applications` symlink
+- generate `SHA256SUMS.txt` covering both the zip and the dmg
+- create or update the matching GitHub Release (zip first, dmg uploaded
+  separately, then the asset list is read back to confirm all three files
+  are present)
 
 ## Release Asset Names
 
@@ -19,7 +22,11 @@ The generated asset name follows this pattern:
 
 ```text
 NeatEditor-v1.0.0-macOS-universal.zip
+NeatEditor-v1.0.0-macOS-universal.dmg
 ```
+
+The dmg is the first-install package: open it and drag `NeatEditor.app` onto
+`Applications`. The zip remains for scripted installs and updates.
 
 ## Publish A Release
 
@@ -32,6 +39,7 @@ After the workflow finishes, open the repository's Releases page to verify:
 
 - the release exists for the tag
 - the zip asset was uploaded
+- the dmg asset was uploaded
 - the checksum file was uploaded
 
 ## Important Notes

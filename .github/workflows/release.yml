@@ -48,6 +48,7 @@ jobs:
             echo "ASSET_BASENAME=${ASSET_BASENAME}"
             echo "APP_PATH=${DERIVED_DATA_PATH}/Build/Products/Release/${APP_NAME}.app"
             echo "ZIP_PATH=${EXPORT_DIR}/${ASSET_BASENAME}.zip"
+            echo "DMG_PATH=${EXPORT_DIR}/${ASSET_BASENAME}.dmg"
             echo "CHECKSUM_PATH=${EXPORT_DIR}/SHA256SUMS.txt"
           } >> "$GITHUB_ENV"
 
@@ -86,7 +87,22 @@ jobs:
 
           mkdir -p "${EXPORT_DIR}"
           ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${ZIP_PATH}"
-          shasum -a 256 "${ZIP_PATH}" > "${CHECKSUM_PATH}"
+
+          STAGE="${EXPORT_DIR}/dmg-stage"
+          rm -rf "${STAGE}"
+          mkdir -p "${STAGE}"
+          ditto "${APP_PATH}" "${STAGE}/${APP_NAME}.app"
+          ln -s /Applications "${STAGE}/Applications"
+          # The release runner is macos-15, which has no `diskutil image`
+          # subcommand (macOS 26+ only), so hdiutil stays until the runner
+          # moves to macOS 26 or later.
+          hdiutil create \
+            -volname "${APP_NAME} ${VERSION}" \
+            -srcfolder "${STAGE}" \
+            -ov -format UDZO \
+            "${DMG_PATH}"
+
+          shasum -a 256 "${ZIP_PATH}" "${DMG_PATH}" > "${CHECKSUM_PATH}"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -96,4 +112,26 @@ jobs:
             ${{ env.CHECKSUM_PATH }}
           generate_release_notes: true
           fail_on_unmatched_files: true
+
+      # Upload the DMG separately: multi-file uploads have been observed to
+      # report success while leaving only one of the files on the release.
+      - name: Publish DMG Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ env.DMG_PATH }}
+          fail_on_unmatched_files: true
+
+      - name: Verify Release Assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          ASSETS="$(gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name')"
+          echo "${ASSETS}"
+          grep -q '\.zip$' <<<"${ASSETS}"
+          grep -q '\.dmg$' <<<"${ASSETS}"
+          grep -q 'SHA256SUMS' <<<"${ASSETS}"
 
