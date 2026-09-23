@@ -104,23 +104,57 @@ jobs:
 
           shasum -a 256 "${ZIP_PATH}" "${DMG_PATH}" > "${CHECKSUM_PATH}"
 
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            ${{ env.ZIP_PATH }}
-            ${{ env.CHECKSUM_PATH }}
-          generate_release_notes: true
-          fail_on_unmatched_files: true
+      # NOTE: do not attach files while creating the release (the GitHub
+      # upload API has returned HTTP 404 for create-with-files, leaving an
+      # empty shell), and do not upload several files in one command (a
+      # multi-file upload has been observed to report success while leaving
+      # only one file behind). Create the empty page first, then upload one
+      # file per step and read the asset list back after each upload.
+      - name: Create Empty Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
 
-      # Upload the DMG separately: multi-file uploads have been observed to
-      # report success while leaving only one of the files on the release.
-      - name: Publish DMG Asset
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            ${{ env.DMG_PATH }}
-          fail_on_unmatched_files: true
+          if ! gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release create "${GITHUB_REF_NAME}" \
+              --title "${GITHUB_REF_NAME}" \
+              --generate-notes
+          fi
+
+      - name: Upload Zip Asset
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          test -f "${ZIP_PATH}"
+          gh release upload "${GITHUB_REF_NAME}" "${ZIP_PATH}" --clobber
+          gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name'
+
+      - name: Upload Checksum Asset
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          test -f "${CHECKSUM_PATH}"
+          gh release upload "${GITHUB_REF_NAME}" "${CHECKSUM_PATH}" --clobber
+          gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name'
+
+      - name: Upload DMG Asset
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          test -f "${DMG_PATH}"
+          gh release upload "${GITHUB_REF_NAME}" "${DMG_PATH}" --clobber
+          gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name'
 
       - name: Verify Release Assets
         shell: bash
