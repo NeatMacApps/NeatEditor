@@ -44,9 +44,19 @@ After the workflow finishes, open the repository's Releases page to verify:
 
 ## Important Notes
 
-- The current workflow produces an unsigned build artifact.
-- Users may still need to bypass Gatekeeper manually when opening the app.
-- If you want frictionless public downloads, the next step is to add Apple code signing and notarization secrets to the workflow.
+- CI builds an **unsigned** app and uploads unsigned placeholders. Public
+  assets must be replaced with Developer ID-signed + notarized builds:
+  on the maintainer Mac (which holds the Developer ID certificate and the
+  App Store Connect API key) build Release, re-sign nested Sparkle helpers
+  inside-out (`Downloader.xpc`, `Installer.xpc`, `Updater.app`,
+  `Autoupdate`, framework, then the app — `xcodebuild build` does not
+  re-sign SPM-provided nested binaries and notarization will reject them),
+  notarize the app-zip and the dmg separately, staple both, verify with
+  `spctl -a -t install` (expect `Notarized Developer ID`), then replace the
+  release assets one file at a time and re-verify with anonymous downloads.
+- Until CI gains signing secrets, every tag release needs this local
+  sign-and-replace pass; an unsigned `Latest` will be blocked by Gatekeeper
+  (“Apple could not verify … is free of malware”).
 
 ## Versioning
 
