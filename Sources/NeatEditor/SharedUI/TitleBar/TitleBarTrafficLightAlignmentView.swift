@@ -28,8 +28,11 @@ final class TrafficLightAlignmentHostingView: NSView {
     var isWindowPinned: Bool {
         didSet {
             applyWindowPinningIfNeeded()
+            updateHoverFocusMonitoring()
         }
     }
+    private var hoverGlobalMonitor: Any?
+    private var hoverLocalMonitor: Any?
 
     init(titleBarHeight: CGFloat, isWindowPinned: Bool) {
         self.titleBarHeight = titleBarHeight
@@ -47,6 +50,7 @@ final class TrafficLightAlignmentHostingView: NSView {
         configureWindowObserver()
         centerTrafficLightsIfNeeded()
         applyWindowPinningIfNeeded()
+        updateHoverFocusMonitoring()
     }
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
@@ -59,6 +63,9 @@ final class TrafficLightAlignmentHostingView: NSView {
             if window != newWindow {
                 window.level = .normal
             }
+        }
+        if newWindow == nil {
+            stopHoverFocusMonitoring()
         }
 
         super.viewWillMove(toWindow: newWindow)
@@ -124,9 +131,73 @@ final class TrafficLightAlignmentHostingView: NSView {
 
         let targetLevel: NSWindow.Level = isWindowPinned ? .floating : .normal
         guard window.level != targetLevel else {
+            updateHoverFocusMonitoring()
             return
         }
 
         window.level = targetLevel
+        updateHoverFocusMonitoring()
+    }
+
+    /// 置顶后鼠标进入窗口即抢回 key 焦点，便于并排多应用快速切换输入。
+    /// 跟随图钉默认开，无独立开关、无悬停延迟。
+    private func updateHoverFocusMonitoring() {
+        guard isWindowPinned, window != nil else {
+            stopHoverFocusMonitoring()
+            return
+        }
+
+        startHoverFocusMonitoring()
+    }
+
+    private func startHoverFocusMonitoring() {
+        guard hoverGlobalMonitor == nil, hoverLocalMonitor == nil else {
+            return
+        }
+
+        hoverGlobalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved]) { [weak self] _ in
+            Task { @MainActor in
+                self?.handleHoverFocusTick()
+            }
+        }
+        hoverLocalMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) { [weak self] event in
+            Task { @MainActor in
+                self?.handleHoverFocusTick()
+            }
+            return event
+        }
+    }
+
+    private func stopHoverFocusMonitoring() {
+        if let hoverGlobalMonitor {
+            NSEvent.removeMonitor(hoverGlobalMonitor)
+        }
+        if let hoverLocalMonitor {
+            NSEvent.removeMonitor(hoverLocalMonitor)
+        }
+        hoverGlobalMonitor = nil
+        hoverLocalMonitor = nil
+    }
+
+    @MainActor
+    private func handleHoverFocusTick() {
+        guard isWindowPinned,
+            let window,
+            window.isVisible,
+            !window.isMiniaturized,
+            !window.isKeyWindow,
+            window.attachedSheet == nil,
+            NSApp.modalWindow == nil,
+            NSEvent.pressedMouseButtons == 0
+        else {
+            return
+        }
+
+        guard window.frame.contains(NSEvent.mouseLocation) else {
+            return
+        }
+
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
     }
 }
