@@ -18,6 +18,8 @@ against the running app where automation cannot reach AppKit.
 - A first save publishes a complete file only after writing succeeds; failed or interrupted writes must not leave a partial document at the final name. App-owned document directories and files are private to the account.
 - Startup and new-tab construction must avoid scanning user directories synchronously for file names; first-save collision handling protects files regardless of naming.
 
+Default-name acceptance (2026-10-01): all 42 tests passed, including local-time year rollover, same-second unsaved/saved tab collisions, and existing-file preservation. The committed 1.0.5 (4) build was installed under `/Applications` and verified through the native File > New / New Tab menus, typing, Save, and the two-second autosave path; screenshots confirmed the creation name, `.txt` suffix, and same-second `-2` suffix.
+
 ## Workspace failure and editing requirements
 
 - A failed read must never become document content or mark a placeholder as successfully loaded. The failed tab stays unsaveable, reports the error through the existing native alert, and can retry through Open or reselection.
