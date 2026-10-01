@@ -16,11 +16,13 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ### Changed
 
+- New documents use compact local date-time names (`yyyyMMdd-HHmmss`) instead of Untitled; same-second tabs receive a numeric suffix.
 - New app-created documents use `~/.config/neateditor/documents/` (or `XDG_CONFIG_HOME`). Existing document locations remain unchanged; empty documents still leave files untouched.
 - New-tab naming no longer scans disk synchronously. Release tooling builds committed universal source, keeps packages in a draft until verification, and excludes unsigned CI packages from public releases.
 
 ### 简体中文
 
+- 新建文件默认使用简短的本地日期时间命名（`yyyyMMdd-HHmmss`），同一秒新建多个标签时自动添加序号。
 - 读取失败不会再把错误提示写入文档或覆盖原文件；保存失败时保留标签与内容，并阻止退出。
 - 新文档重名时保留已有文件，完整内容只写入一次，再选择可用名称。
 - 修正延迟文本更新、输入法提交和自动保存取消的竞态，避免内容丢失或写错标签。

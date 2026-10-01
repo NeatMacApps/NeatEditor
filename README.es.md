@@ -108,7 +108,7 @@ Este repositorio publica mediante releases locales firmadas, no mediante CI.
 
 - El mantenedor compila el DMG + ZIP de Sparkle en local con `scripts/publish-release.sh` (firmado con Developer ID, notarizado; se publica desde el borrador solo tras subir y releer).
 - Cada release pública firmada contiene el DMG firmado (primera instalación), el ZIP firmado de Sparkle (actualizaciones en la app) y `SHA256SUMS.txt`, con notas bilingües del `CHANGELOG.md` de la versión.
-- El flujo de GitHub Actions basado en tags solo compila para validar y conserva paquetes sin firmar como artefactos privados; no los instales como release.
+- El flujo de GitHub Actions basado en tags solo compila para validar y conserva paquetes sin firmar como artefactos de workflow que requieren inicio de sesión (cualquier persona autenticada con acceso puede descargarlos); no los instales como release.
 
 Instalación: en Releases elige una versión cuyas notas indiquen firma Developer ID + notarización — instala solo archivos firmados (los `*-macOS-universal.*` antiguos, p. ej. en v1.0.3, son marcadores sin firmar). Arrástralo a `Applications` y luego `open -a NeatEditor`. Solo macOS 15.0+ es compatible.
 

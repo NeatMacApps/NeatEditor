@@ -13,6 +13,52 @@ struct DocumentPersistenceServiceTests {
         return (DocumentPersistenceService(defaultDirectory: directory), directory)
     }
 
+    @Test("default document names follow local creation time across year boundaries")
+    func defaultNameUsesLocalTime() throws {
+        let (service, directory) = try makeService()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let date = try #require(ISO8601DateFormatter().date(from: "2025-12-31T16:05:09Z"))
+        let timeZone = try #require(TimeZone(secondsFromGMT: 8 * 60 * 60))
+
+        let name = service.defaultDocumentName(existingTabs: [], date: date, timeZone: timeZone)
+
+        #expect(name == "20260101-000509")
+    }
+
+    @Test("same-second new documents avoid unsaved and saved tab names")
+    func sameSecondNamesRemainUnique() throws {
+        let (service, directory) = try makeService()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let date = try #require(ISO8601DateFormatter().date(from: "2026-10-01T14:25:30Z"))
+        let timeZone = try #require(TimeZone(secondsFromGMT: 0))
+        let base = service.defaultDocumentName(existingTabs: [], date: date, timeZone: timeZone)
+        var tabs = [EditorTab(title: base)]
+        let second = service.defaultDocumentName(existingTabs: tabs, date: date, timeZone: timeZone)
+        tabs.append(try service.save(tab: EditorTab(title: second, content: "second")))
+
+        let third = service.defaultDocumentName(existingTabs: tabs, date: date, timeZone: timeZone)
+
+        #expect(base == "20261001-142530")
+        #expect(second == "20261001-142530-2")
+        #expect(third == "20261001-142530-3")
+    }
+
+    @Test("saving a dated document keeps its creation name and preserves disk collisions")
+    func saveDatedNamePreservesExistingFile() throws {
+        let (service, directory) = try makeService()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let date = try #require(ISO8601DateFormatter().date(from: "2026-10-01T14:25:30Z"))
+        let timeZone = try #require(TimeZone(secondsFromGMT: 0))
+        let name = service.defaultDocumentName(existingTabs: [], date: date, timeZone: timeZone)
+        let first = try service.save(tab: EditorTab(title: name, content: "original"))
+        let second = try service.save(tab: EditorTab(title: name, content: "new"))
+
+        #expect(first.title == "20261001-142530.txt")
+        #expect(second.fileURL != first.fileURL)
+        #expect(try String(contentsOf: #require(first.fileURL), encoding: .utf8) == "original")
+        #expect(try String(contentsOf: #require(second.fileURL), encoding: .utf8) == "new")
+    }
+
     @Test("saving a new tab creates a file and adopts its name")
     func saveNewTabCreatesFile() throws {
         let (service, directory) = try makeService()

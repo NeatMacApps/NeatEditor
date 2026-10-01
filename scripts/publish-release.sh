@@ -170,6 +170,62 @@ create_dmg() {
   fi
 }
 
+# 草稿纪律 helpers（见 RELEASING.md R4；fixture 演练直接取用此处定义）。
+# 已公开的发行页绝不改动；“精确一致”指三件基名的整集字符串比对，
+# 近似名与多余文件一律失败；字节比对通过前绝不公开。
+
+release_page_state() {
+  # 输出 absent / draft / published 之一；查询失败视为 absent（创建会再报错）。
+  local is_draft
+  is_draft="$(gh release view "v${version}" --repo "${REPOSITORY}" --json isDraft --jq '.isDraft' 2>/dev/null)" || {
+    printf 'absent\n'
+    return 0
+  }
+  if [[ "${is_draft}" == "true" ]]; then
+    printf 'draft\n'
+  else
+    printf 'published\n'
+  fi
+}
+
+expected_release_assets() {
+  # 期望三件基名，排序后逐行输出。
+  printf '%s\n' "$(basename "${dmg_path}")" "$(basename "${update_zip_path}")" "SHA256SUMS.txt" | sort
+}
+
+actual_release_assets() {
+  gh release view "v${version}" --repo "${REPOSITORY}" --json assets --jq '.assets[].name' | sort
+}
+
+assert_exact_release_assets() {
+  # 整集精确比对：固定字符串、逐行、数量一致；缺件、多余、近似名都失败。
+  # 失败时调用方保持草稿，绝不公开。
+  local expected actual
+  expected="$(expected_release_assets)"
+  actual="$(actual_release_assets)" || die "无法读取发行页附件列表（失败页保持草稿）"
+  [[ "${actual}" == "${expected}" ]] \
+    || die "发行页附件集合与期望三件不一致（失败页保持草稿）"
+}
+
+verify_release_download_bytes() {
+  # 把发行页三件下载到 disposable 目录，逐件做字节比对（cmp）+ SHA256 比对。
+  # 名字一致不代表数据一致；比对通过前绝不公开。
+  local verify_dir="$1" name local_file local_hash remote_hash
+  mkdir -p "${verify_dir}"
+  gh release download "v${version}" --repo "${REPOSITORY}" --dir "${verify_dir}" \
+    --pattern "$(basename "${dmg_path}")" \
+    --pattern "$(basename "${update_zip_path}")" \
+    --pattern "SHA256SUMS.txt" || die "发行页附件下载失败（失败页保持草稿）"
+  while IFS= read -r name; do
+    local_file="${BUILD_DIR}/${name}"
+    [[ -f "${verify_dir}/${name}" ]] || die "下载缺失：${name}（失败页保持草稿）"
+    cmp -s "${local_file}" "${verify_dir}/${name}" || die "字节不一致：${name}（失败页保持草稿）"
+    local_hash="$(shasum -a 256 "${local_file}" | cut -d' ' -f1)"
+    remote_hash="$(shasum -a 256 "${verify_dir}/${name}" | cut -d' ' -f1)"
+    [[ "${local_hash}" == "${remote_hash}" ]] || die "校验不一致：${name}（失败页保持草稿）"
+  done <<<"$(expected_release_assets)"
+}
+
 cd "${ROOT_DIR}"
 log_step "检查发布前置条件"
 # 凭据只校验存在性与连通性；绝不打印密钥值或密钥文件内容。
@@ -357,16 +413,22 @@ if ! git push origin "v${version}"; then
   git push origin "v${version}" || die "标签推送失败（两次尝试）"
 fi
 
-# 标签 CI 已改为纯校验（只读权限、私有产物），不再发布任何公开附件，
-# 因此本脚本不等待 CI，也不再删除占位产物。发行页一律先建草稿：上传失败
-# 只留草稿，绝不产生空的或未签名的 Latest。同源重试安全：标签不可移动，
-# 已存在的草稿直接复用。
-# 发行说明中英双语、英文在前，用真实换行。英文正文取自 CHANGELOG 当版条目。
-notes_file="${work_dir}/release-notes.md"
-{
-  printf 'NeatEditor %s\n\n' "${version}"
-  printf '%s\n' "${changelog_notes}"
-  cat <<'EOF'
+# 草稿纪律（RELEASING.md R4）：先查询发行页状态再决定动作，查询先于一切上传。
+# 已公开页绝不改动——只有整集精确一致且下载字节一致时才走只读复用，
+# 否则停下。缺页则建草稿；草稿页复用后上传。任何失败都死在公开之前，
+# 失败页保持草稿。
+page_state="$(release_page_state)"
+if [[ "${page_state}" == "published" ]]; then
+  assert_exact_release_assets
+  verify_release_download_bytes "${work_dir}/verify-published"
+  printf '发行页 v%s 已公开且三件字节一致，不做任何改动，直接进入更新清单。\n' "${version}"
+else
+  # 发行说明中英双语、英文在前，用真实换行。正文取自 CHANGELOG 当版条目。
+  notes_file="${work_dir}/release-notes.md"
+  {
+    printf 'NeatEditor %s\n\n' "${version}"
+    printf '%s\n' "${changelog_notes}"
+    cat <<'EOF'
 
 ---
 
@@ -376,31 +438,29 @@ NeatEditor（简体中文）
 下载下方 DMG，把 NeatEditor.app 拖入 Applications，再执行 open -a NeatEditor 启动。
 应用内 Sparkle 更新带 EdDSA 签名，安装前验签。以上英文为当版完整变更记录。
 EOF
-} > "${notes_file}"
-if gh release view "v${version}" --repo "${REPOSITORY}" >/dev/null 2>&1; then
-  printf '复用已存在的 v%s 发行页（同源重试）。\n' "${version}"
-else
-  gh release create "v${version}" --repo "${REPOSITORY}" --title "v${version}" --draft --notes-file "${notes_file}" \
-    || die "草稿发行页创建失败（未产生公开 Latest）"
+  } > "${notes_file}"
+  if [[ "${page_state}" == "absent" ]]; then
+    gh release create "v${version}" --repo "${REPOSITORY}" --title "v${version}" --draft --notes-file "${notes_file}" \
+      || die "草稿发行页创建失败（未产生公开 Latest）"
+  else
+    printf '复用已存在的草稿 v%s。\n' "${version}"
+  fi
+  # 逐个上传签名文件并回读。单条命令只传一个文件：多文件同传曾回报成功却只留下一个。
+  gh release upload "v${version}" "${dmg_path}" --repo "${REPOSITORY}" --clobber \
+    || die "签名 dmg 上传失败（失败页保持草稿）"
+  gh release view "v${version}" --repo "${REPOSITORY}" --json assets --jq '.assets[].name'
+  gh release upload "v${version}" "${update_zip_path}" --repo "${REPOSITORY}" --clobber \
+    || die "签名更新包上传失败（失败页保持草稿）"
+  gh release view "v${version}" --repo "${REPOSITORY}" --json assets --jq '.assets[].name'
+  gh release upload "v${version}" "${checksum_path}" --repo "${REPOSITORY}" --clobber \
+    || die "校验文件上传失败（失败页保持草稿）"
+  assert_exact_release_assets
+  verify_release_download_bytes "${work_dir}/verify-draft"
+  # 下载字节一致后才公开；之前任何失败都已退出，失败页保持草稿，失败路径永不公开。
+  gh release edit "v${version}" --repo "${REPOSITORY}" --draft=false || die "草稿转公开失败"
+  gh release view "v${version}" --repo "${REPOSITORY}" --json isDraft --jq '.isDraft' | grep -q false \
+    || die "发行页仍是草稿"
 fi
-# 逐个上传签名文件并回读。单条命令只传一个文件：多文件同传曾回报成功却只留下一个。
-gh release upload "v${version}" "${dmg_path}" --repo "${REPOSITORY}" --clobber
-gh release view "v${version}" --repo "${REPOSITORY}" --json assets --jq '.assets[].name'
-gh release upload "v${version}" "${update_zip_path}" --repo "${REPOSITORY}" --clobber
-gh release view "v${version}" --repo "${REPOSITORY}" --json assets --jq '.assets[].name'
-gh release upload "v${version}" "${checksum_path}" --repo "${REPOSITORY}" --clobber
-final_assets="$(gh release view "v${version}" --repo "${REPOSITORY}" --json assets --jq '.assets[].name')"
-printf '%s\n' "${final_assets}"
-grep -q "$(basename "${dmg_path}")" <<<"${final_assets}" || die "发行页缺少签名 dmg（仍是草稿，未公开）"
-grep -q "$(basename "${update_zip_path}")" <<<"${final_assets}" || die "发行页缺少签名更新包（仍是草稿，未公开）"
-grep -q "SHA256SUMS.txt" <<<"${final_assets}" || die "发行页缺少校验文件（仍是草稿，未公开）"
-if grep -q "macOS-universal" <<<"${final_assets}"; then
-  die "发行页残留未签名 CI 占位产物，保持草稿并人工清理后再发布"
-fi
-# 三件齐且核对无误后才公开。
-gh release edit "v${version}" --repo "${REPOSITORY}" --draft=false || die "草稿转公开失败"
-gh release view "v${version}" --repo "${REPOSITORY}" --json isDraft --jq '.isDraft' | grep -q false \
-  || die "发行页仍是草稿"
 ditto "${appcast_dir}/appcast.xml" "${APPCAST_PATH}"
 git add "${APPCAST_PATH}"
 if ! git diff --cached --quiet; then

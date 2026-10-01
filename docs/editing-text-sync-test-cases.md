@@ -8,6 +8,7 @@ against the running app where automation cannot reach AppKit.
 
 ## Persistence and scheduling requirements
 
+- Newly created documents, including the initial empty workspace, use the local creation time in the fixed Gregorian 24-hour format `yyyyMMdd-HHmmss` (for example, `20261001-142530`). The time is captured once at creation rather than updating while editing; saving adds `.txt`. If an open document already uses the same base name, append `-2`, `-3`, and so on using in-memory tabs only. Existing documents keep their names; first-save collision handling continues to protect files on disk.
 - The first save of an unsaved tab must never overwrite an existing file, including a file created after the tab was named. A collision must leave both the original file and the unsaved buffer intact.
 - A tab title represents one file name. Saving and renaming must not allow a title to escape its destination directory.
 - App-created documents use `~/.config/neateditor/documents/`, or the equivalent under `XDG_CONFIG_HOME`. Existing open/restored document URLs remain unchanged; this change does not move user files. Directory creation is deferred until the first nonblank save.

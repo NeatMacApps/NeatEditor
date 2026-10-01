@@ -4,7 +4,9 @@ Authoritative public route: a Developer ID-signed + notarized local release
 built by `scripts/publish-release.sh` on the maintainer Mac. The tag CI
 workflow (`.github/workflows/release.yml`) is **validation only**: it builds
 the tagged source, verifies the universal binary and packages, and keeps
-them as private workflow artifacts. It never creates, uploads to, or
+them as login-required workflow artifacts (for a public repo any signed-in
+person with access can download them: authentication is access control,
+not confidentiality). It never creates, uploads to, or
 modifies a public GitHub Release.
 
 ## Durable release requirements
@@ -44,16 +46,26 @@ must contain exactly the signed set, all from the tagged commit:
 `SHA256SUMS.txt` covering both. Only signed artifacts are a public
 install path: older CI-built `*-macOS-universal.*` assets still visible on
 past Releases (e.g. v1.0.3) are unsigned placeholders, not installs.
-The script creates the Release as a **draft**, uploads the three files one
-by one with read-back, asserts the final asset set, and only then
-publishes (`gh release edit --draft=false`). A failed upload leaves a
-draft, never an empty or unsigned Latest. Retrying from the exact same
-source is safe: the immutable-tag check (R1) guarantees the tag still
-matches, and an existing draft for the tag is reused. Release notes are
-bilingual (English first, Simplified Chinese second) with real newlines;
-the English body is the `CHANGELOG.md` section for the version, which
-must exist. `CURRENT_PROJECT_VERSION` must be strictly greater than the
-live appcast's `<sparkle:version>`.
+Before any upload the script queries the tag's Release page: an existing
+page must be a draft (`isDraft=true`) or the script stops. An
+already-published page is never mutated — the only allowed path is a
+strictly read-only already-complete check (exact three-file set, then
+downloaded bytes verified), after which the script proceeds directly to
+the appcast step. "Exact" means whole-set string comparison of the three
+expected basenames as fixed strings: near-name matches and any extra
+file fail. The script creates a missing page as a **draft**, uploads the
+three files one by one with read-back, asserts the exact set, then
+downloads the draft assets (authenticated `gh release download` into a
+disposable directory) and compares bytes (`cmp`) plus SHA256 against the
+locally verified three — names alone never suffice. Only then does it
+publish (`gh release edit --draft=false`). Any failure before that point
+dies with the page left as a draft; no failure path publishes. Retrying
+from the exact same source is safe: the immutable-tag check (R1)
+guarantees the tag still matches, and an existing draft for the tag is
+reused. Release notes are bilingual (English first, Simplified Chinese
+second) with real newlines; the body is the `CHANGELOG.md` section for
+the version, which must exist. `CURRENT_PROJECT_VERSION` must be strictly
+greater than the live appcast's `<sparkle:version>`.
 
 R5 — Portability and secrets. The script stays runnable under macOS
 `/bin/bash` 3.2 (no associative arrays, no `${var,,}`, no `readarray`).
@@ -111,10 +123,11 @@ for other long local jobs.
    `stapler validate` + `SHA256SUMS.txt` over DMG + ZIP.
 6. Full route only: tag the built commit, push branch + tag (tag push
    retried once), create the Release as a **draft** with bilingual
-   CHANGELOG-based notes, upload signed files one by one with read-back,
-   assert the final asset set, publish the Release, commit + push the
-   appcast, anonymous download + XML + build-number verification
-   (raw-CDN-lag tolerant retry).
+   CHANGELOG-based notes (an existing page must be a draft; a published
+   page is never mutated), upload signed files one by one with read-back,
+   assert the exact three-file set, download-verify bytes + SHA256, then
+   publish the Release, commit + push the appcast, anonymous download +
+   XML + build-number verification (raw-CDN-lag tolerant retry).
 
 ## Ownership split (no contradictions)
 
@@ -144,7 +157,9 @@ xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" \
 - GitHub: [Releases REST API](https://docs.github.com/en/rest/releases/releases),
   [least-privilege GITHUB_TOKEN permissions](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/controlling-permissions-for-github_token)
   (validation workflow uses `contents: read`; `upload-artifact` keeps
-  packages as login-gated workflow artifacts, see
+  packages as login-required workflow artifacts — for a public repo any
+  signed-in person with access can download them, so authentication is
+  access control, not confidentiality, see
   [actions/upload-artifact](https://github.com/actions/upload-artifact)).
 - Workspace: `~/Codes/_standards/workspace-docs/swift-docs/macos-signing-notarization-distribution.md`
   (route A archive+export, self-checks, no `--deep`, no `setsid`).

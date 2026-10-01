@@ -135,7 +135,7 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 - 维护者在签名 Mac 上用 `scripts/publish-release.sh` 构建 DMG + Sparkle ZIP（Developer ID 签名、公证、装订；三件上传并回读确认后才从草稿转公开）。
 - 每个签名公开 Release 包含签名 DMG（首次安装）、签名 Sparkle 更新 ZIP（应用内更新）和 `SHA256SUMS.txt`，双语说明取自该版本的 `CHANGELOG.md` 条目。
-- tag 触发的 GitHub Actions 只构建校验打标签源码，未签名包仅作为私有工作流产物保留，不要把它们当作正式版本安装。
+- tag 触发的 GitHub Actions 只构建校验打标签源码，未签名包仅作为需登录的 workflow 产物保留（公开仓库中有权限的登录用户可下载，登录是访问控制而非保密）；不要把它们当作正式版本安装。
 
 完整流程、要求与交付交接见 [RELEASING.md](./RELEASING.md)。本 checkout 不宣称除 Release 说明与校验文件之外的任何交付已验证。
 

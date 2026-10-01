@@ -1,10 +1,12 @@
 name: Release Validation
 
 # Tag CI is validation only. It proves the tagged source builds universal
-# and packages, and keeps the packages as private workflow artifacts
-# (login-gated, expiring). It never creates or touches a public GitHub
-# Release: public installs come exclusively from the maintainer's local
-# signed + notarized publish (see RELEASING.md R4). Least-privilege token:
+# and packages, and keeps the packages as login-required workflow artifacts
+# (for a public repo any signed-in person with access can download them:
+# authentication is access control, not confidentiality). It never creates
+# or touches a public GitHub Release: public installs come exclusively
+# from the maintainer's local signed + notarized publish (see RELEASING.md
+# R4). Least-privilege token:
 # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/controlling-permissions-for-github_token
 
 on:
@@ -122,8 +124,8 @@ jobs:
           # These are unsigned build-proof packages for this tag run only.
           # They must never be attached to a public Release.
 
-      - name: Upload Private Validation Artifact
-        # Login-gated, expiring workflow artifact — not a public Release.
+      - name: Upload Login-Required Validation Artifact
+        # Login-required, expiring workflow artifact — not a public Release.
         # Inputs: https://github.com/actions/upload-artifact
         uses: actions/upload-artifact@v4
         with:

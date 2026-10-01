@@ -108,7 +108,7 @@ Ce dépôt publie via des releases locales signées, pas via CI.
 
 - Le mainteneur construit le DMG + ZIP Sparkle en local avec `scripts/publish-release.sh` (signé Developer ID, notarié ; publié depuis le brouillon seulement après envoi et relecture).
 - Chaque release publique signée contient le DMG signé (première installation), le ZIP Sparkle signé (mises à jour in-app) et `SHA256SUMS.txt`, avec les notes bilingues du `CHANGELOG.md` de la version.
-- Le workflow GitHub Actions piloté par tags ne compile que pour valider et conserve les paquets non signés comme artefacts privés ; ne les installez pas comme release.
+- Le workflow GitHub Actions piloté par tags ne compile que pour valider et conserve les paquets non signés comme artefacts de workflow nécessitant une connexion (toute personne connectée y ayant accès peut les télécharger) ; ne les installez pas comme release.
 
 Installation : sur Releases, choisissez une version dont les notes mentionnent signature Developer ID + notarisation — n'installez que des fichiers signés (les anciens `*-macOS-universal.*`, p. ex. sur v1.0.3, sont des placeholders non signés). Glissez vers `Applications`, puis `open -a NeatEditor`. Seul macOS 15.0+ est pris en charge.
 

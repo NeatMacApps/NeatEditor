@@ -108,7 +108,7 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 - 메인테이너가 `scripts/publish-release.sh`로 DMG + Sparkle ZIP을 로컬에서 빌드합니다(Developer ID 서명, 공증 완료. 업로드와 읽기 확인 후 초안에서 공개).
 - 서명된 공개 릴리스에는 서명된 DMG(최초 설치용), 서명된 Sparkle ZIP(앱 내 업데이트용), `SHA256SUMS.txt`가 들어가며, 이중 언어 안내문은 해당 버전의 `CHANGELOG.md` 항목에서 가져옵니다.
-- 태그 기반 GitHub Actions는 검증 빌드 전용이며 미서명 패키지는 비공개 워크플로 아티팩트로만 보관합니다. 릴리스로 설치하지 마세요.
+- 태그 기반 GitHub Actions는 검증 빌드 전용이며 미서명 패키지는 로그인이 필요한 워크플로 아티팩트로만 보관합니다(공개 저장소에서는 접근 권한이 있는 로그인 사용자라면 누구나 받을 수 있어 인증이 기밀성을 뜻하지는 않습니다). 릴리스로 설치하지 마세요.
 
 설치 흐름: Releases에서 Developer ID 서명 + 공증 표기가 있는 버전을 골라 서명된 파일만 사용하세요(v1.0.3 등의 오래된 `*-macOS-universal.*`은 미서명 CI 플레이스홀더입니다). `Applications`에 드래그한 뒤 `open -a NeatEditor`로 실행합니다. macOS 15.0+만 지원됩니다.
 

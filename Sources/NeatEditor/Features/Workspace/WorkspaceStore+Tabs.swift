@@ -6,7 +6,7 @@ extension WorkspaceStore {
     func createNewDocument() {
         saveSelectedDocumentIfNeeded()
 
-        let newTitle = persistenceService.nextUntitledName(existingTabs: tabs)
+        let newTitle = persistenceService.defaultDocumentName(existingTabs: tabs)
         let newTab = EditorTab(title: newTitle)
         tabs.append(newTab)
         selectedTabID = newTab.id

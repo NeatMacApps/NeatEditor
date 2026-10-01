@@ -259,26 +259,32 @@ struct DocumentPersistenceService {
             && nsError.code == NSFileWriteFileExistsError
     }
 
-    /// Names the next untitled tab from in-memory tabs only. Deliberately
+    /// Names a new tab from its local creation time and in-memory tabs only. Deliberately
     /// avoids scanning the documents directory so startup and new-tab
     /// construction never block on synchronous filesystem I/O; first-save
     /// collision handling protects on-disk files regardless of naming.
-    func nextUntitledName(existingTabs: [EditorTab]) -> String {
-        var maxN = 0
-        let baseName = String(localized: "Untitled")
+    func defaultDocumentName(
+        existingTabs: [EditorTab],
+        date: Date = Date(),
+        timeZone: TimeZone = .current
+    ) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        let baseName = formatter.string(from: date)
+        let existingNames = Set(existingTabs.map {
+            ($0.title as NSString).deletingPathExtension
+        })
 
-        for tab in existingTabs {
-            let nameWithoutExtension = (tab.title as NSString).deletingPathExtension
-            if nameWithoutExtension.hasPrefix(baseName) {
-                let suffix = nameWithoutExtension
-                    .dropFirst(baseName.count)
-                    .trimmingCharacters(in: .whitespaces)
-                if let number = Int(suffix), number > maxN {
-                    maxN = number
-                }
-            }
+        var candidate = baseName
+        var suffix = 2
+        while existingNames.contains(candidate) {
+            candidate = "\(baseName)-\(suffix)"
+            suffix += 1
         }
 
-        return "\(baseName) \(maxN + 1)"
+        return candidate
     }
 }

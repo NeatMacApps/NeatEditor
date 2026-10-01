@@ -135,7 +135,7 @@ Public installs come from the signed local release route, not from CI:
 
 - The maintainer builds the DMG + Sparkle ZIP on the signing Mac with `scripts/publish-release.sh` (Developer ID-signed, notarized, stapled; published from a draft only after all three files upload and read back).
 - Each signed public Release holds the signed DMG (first install), the signed Sparkle update ZIP (in-app updates), and `SHA256SUMS.txt`, with bilingual notes taken from the `CHANGELOG.md` entry for the version.
-- The tag-triggered GitHub Actions workflow only builds and validates the tagged source and keeps unsigned packages as private workflow artifacts; never install those as a release.
+- The tag-triggered GitHub Actions workflow only builds and validates the tagged source and keeps unsigned packages as login-required workflow artifacts (any signed-in person with access can download them); never install those as a release.
 
 The full route, requirements, and coordinator handoff are documented in [RELEASING.md](./RELEASING.md). No delivery in this checkout is claimed as verified beyond what the Release notes and checksums state.
 
