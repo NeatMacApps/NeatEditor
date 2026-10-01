@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # NeatEditor 的 macOS 直分发发布器。
 #
-# 默认行为：可靠地脱离当前终端后台执行完整发布，日志写入 build/release-logs/。
-# 完整链路：归档 → Developer ID 导出 → 签名校验 → 公证并装订 App
+# 默认行为：经 Python start_new_session 可靠脱离当前会话后台执行完整发布，
+# 日志写入 build/release-logs/，PID 写入 publish-latest.pid。
+# 完整链路：提交快照 → 归档 → Developer ID 导出 → 签名校验 → 公证并装订 App
 # → 制作 dmg → 公证并装订 dmg → Gatekeeper 校验 → GitHub Release。
 #
 # 用法：
@@ -51,16 +52,20 @@ log_step() { printf '\n\033[1;34m▶ %s\033[0m\n' "$*"; }
 die() { printf '\n\033[1;31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 
 # 公证可能需要数十分钟；默认先脱离当前会话再执行。子进程会完整串行后续步骤，
-# 不依赖 Agent 或终端保持在线。
+# 不依赖 Agent 或终端保持在线。脱离经 scripts/run-detached.py 以 Python
+# start_new_session=True 实现（macOS 没有 setsid；裸 nohup 仍挂在调用方
+# 会话下，会话一断即被带走）。只打印日志路径与 PID，不打印任何密钥内容。
 if [[ "${foreground}" == false && "${dry_run}" == false && "${NEATEDITOR_RELEASE_CHILD:-}" != "1" ]]; then
   log_dir="${ROOT_DIR}/build/release-logs"
   mkdir -p "${log_dir}"
   log_file="${log_dir}/publish-$(date +%Y%m%d-%H%M%S).log"
+  : > "${log_file}"
+  pid_file="${log_dir}/publish-latest.pid"
   child_args=(--foreground)
   [[ "${local_only}" == true ]] && child_args+=(--local-only)
-  NEATEDITOR_RELEASE_CHILD=1 nohup "${BASH_SOURCE[0]}" "${child_args[@]}" \
-    >"${log_file}" 2>&1 < /dev/null &
-  printf '发布已在后台启动（进程 %s）。日志：%s\n' "$!" "${log_file}"
+  child_pid="$(/usr/bin/python3 "${ROOT_DIR}/scripts/run-detached.py" "${log_file}" "${pid_file}" \
+    "${BASH_SOURCE[0]}" "${child_args[@]}")" || die "后台发布启动失败，详见 ${log_file}"
+  printf '发布已在后台启动（进程 %s）。日志：%s\n' "${child_pid}" "${log_file}"
   exit 0
 fi
 
@@ -167,6 +172,7 @@ create_dmg() {
 
 cd "${ROOT_DIR}"
 log_step "检查发布前置条件"
+# 凭据只校验存在性与连通性；绝不打印密钥值或密钥文件内容。
 identities="$(security find-identity -v -p codesigning)"
 grep -q "${SIGN_IDENTITY}" <<<"${identities}" || die "钥匙串中没有 Developer ID Application 证书"
 [[ -f "${NOTARY_KEY}" ]] || die "找不到苹果公证密钥"
@@ -179,26 +185,56 @@ build_number="$(sed -n 's/^ *CURRENT_PROJECT_VERSION: //p' project.yml | tr -d '
 [[ "${build_number}" =~ ^[1-9][0-9]*$ ]] || die "内部构建号必须是正整数"
 readonly version build_number
 readonly dmg_path="${BUILD_DIR}/${APP_NAME}-${version}.dmg"
+readonly checksum_path="${BUILD_DIR}/SHA256SUMS.txt"
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "发布必须在 Git 仓库中运行"
+if [[ -f .git/MERGE_HEAD || -d .git/rebase-merge || -d .git/rebase-apply ]]; then
+  die "仓库正处于合并或变基中，先解决后再发布"
+fi
+# 内部构建号是 Sparkle 判定新旧的唯一依据，必须严格大于已发布 appcast 的最大值。
+# 依据：https://sparkle-project.org/documentation/publishing/（Internal build numbers）。
+appcast_build="$(sed -n 's/.*<sparkle:version>\([0-9][0-9]*\)<\/sparkle:version>.*/\1/p' "${APPCAST_PATH}" 2>/dev/null | sort -n | tail -1)"
+[[ -n "${appcast_build:-}" ]] || die "无法从 appcast.xml 读取已发布内部构建号"
+if [[ "${build_number}" -le "${appcast_build}" ]]; then
+  die "内部构建号 ${build_number} 未大于已发布构建号 ${appcast_build}；先递增 CURRENT_PROJECT_VERSION"
+fi
 
 if [[ "${local_only}" == false && "${dry_run}" == false ]]; then
-  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "完整发布必须在 Git 仓库中运行"
   gh repo view "${REPOSITORY}" --json isPrivate,defaultBranchRef --jq '.isPrivate == false and .defaultBranchRef.name == "main"' \
     | grep -q true || die "GitHub 公开仓或默认分支不符合发布基线"
 fi
 
 if [[ "${dry_run}" == true ]]; then
-  printf '发布配置检查通过：v%s（内部构建号 %s）。\n' "${version}" "${build_number}"
+  printf '发布配置检查通过：v%s（内部构建号 %s，大于已发布构建号 %s）。\n' "${version}" "${build_number}" "${appcast_build}"
   exit 0
 fi
 
-log_step "生成工程并归档 Developer ID 版本"
+# 单实例互斥：同一工作树禁止并行发版（两实例抢产物目录会签坏密封，公证 Invalid）。
+lock_dir="${BUILD_DIR}/.publish-lock"
+if ! mkdir "${lock_dir}" 2>/dev/null; then
+  die "另一个发布正在运行（${lock_dir} 已存在）；确认无发布进程后手动删除再跑"
+fi
+trap 'rm -rf "${lock_dir}"' EXIT
+
+log_step "生成工程并纳入发布快照"
 xcodegen generate >/dev/null
+# 提交优先：归档、打标签、落盘全部来自这次提交。工作区改动（含他人未提交
+# 源码）一并纳入提交，绝不丢弃、贮藏（stash）、重置或隔离。
+git add -A
+if ! git diff --cached --quiet; then
+  git commit -m "chore: 发布 v${version} 快照（构建号 ${build_number}）" >/dev/null
+fi
+SOURCE_COMMIT="$(git rev-parse HEAD)"
+readonly SOURCE_COMMIT
+[[ -z "$(git status --porcelain)" ]] || die "工作区仍有未纳入快照的改动"
+printf '发布源提交：%s\n' "${SOURCE_COMMIT}"
+
+log_step "归档 Developer ID 版本"
 rm -rf "${ARCHIVE_PATH}" "${EXPORT_DIR}"
 xcodebuild -project "${APP_NAME}.xcodeproj" -scheme "${APP_NAME}" -configuration Release \
   -destination 'platform=macOS' -derivedDataPath "${DERIVED_DATA}" -archivePath "${ARCHIVE_PATH}" archive >/dev/null
 
 work_dir="$(mktemp -d)"
-trap 'rm -rf "${work_dir}"' EXIT
+trap 'rm -rf "${work_dir}" "${lock_dir}"' EXIT
 export_options="${work_dir}/ExportOptions.plist"
 cat > "${export_options}" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -214,6 +250,9 @@ EOF
 xcodebuild -exportArchive -archivePath "${ARCHIVE_PATH}" -exportOptionsPlist "${export_options}" \
   -exportPath "${EXPORT_DIR}" >/dev/null
 [[ -d "${APP_PATH}" ]] || die "Developer ID 导出产物不存在"
+# 来源指纹守卫：构建不得漂移或污染工作区，否则产物与标签对不上源提交。
+[[ "$(git rev-parse HEAD)" == "${SOURCE_COMMIT}" ]] || die "构建期间 HEAD 已漂移，停止发布"
+[[ -z "$(git status --porcelain)" ]] || die "构建污染了工作区，先检查再发布"
 readonly sparkle_bin_dir="${DERIVED_DATA}/SourcePackages/artifacts/sparkle/Sparkle/bin"
 [[ -x "${sparkle_bin_dir}/generate_appcast" ]] || die "找不到 Sparkle 的 generate_appcast 工具"
 resign_sparkle_framework
@@ -239,11 +278,14 @@ appcast_dir="${work_dir}/appcast"
 release_notes_file="${appcast_dir}/${APP_NAME}-${version}.md"
 mkdir -p "${appcast_dir}"
 rm -f "${update_zip_path}"
-ditto -c -k --keepParent "${APP_PATH}" "${update_zip_path}"
+# 更新包用 Sparkle 文档指定的打法（--sequesterRsrc --keepParent，保留符号链接）。
+# 依据：https://sparkle-project.org/documentation/publishing/
+ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${update_zip_path}"
 ditto "${update_zip_path}" "${appcast_dir}/$(basename "${update_zip_path}")"
 cat > "${release_notes_file}" <<EOF
 # NeatEditor ${version}
 
+- Update package is Sparkle EdDSA-signed, Developer ID-signed and notarized by Apple.
 - 更新包经过 Sparkle EdDSA 签名、Developer ID 签名与苹果公证。
 EOF
 [[ -f "${APPCAST_PATH}" ]] && ditto "${APPCAST_PATH}" "${appcast_dir}/appcast.xml"
@@ -270,42 +312,105 @@ notarize_and_wait "${dmg_path}"
 xcrun stapler staple "${dmg_path}" >/dev/null
 
 log_step "验证陌生用户安装链路"
-gatekeeper_result="$(spctl -a -vvv -t exec "${APP_PATH}" 2>&1 || true)"
+gatekeeper_result="$(spctl -a -vvv -t install "${APP_PATH}" 2>&1 || true)"
 grep -q accepted <<<"${gatekeeper_result}" || die "Gatekeeper 校验未通过：$(head -3 <<<"${gatekeeper_result}")"
 xcrun stapler validate "${dmg_path}" >/dev/null || die "dmg 票据校验失败"
-shasum -a 256 "${dmg_path}" > "${dmg_path}.sha256"
+rm -f "${checksum_path}"
+(cd "${BUILD_DIR}" && shasum -a 256 "$(basename "${dmg_path}")" "$(basename "${update_zip_path}")" > "$(basename "${checksum_path}")")
 
 if [[ "${local_only}" == true ]]; then
-  printf '本地发布产物已验证：%s（更新包：%s）\n' "${dmg_path}" "${update_zip_path}"
+  printf '本地发布产物已验证：%s（更新包：%s，校验：%s）\n' "${dmg_path}" "${update_zip_path}" "${checksum_path}"
   exit 0
 fi
 
-log_step "提交、打标签并发布 GitHub Release"
-git add -A
-if ! git diff --cached --quiet; then
-  git commit -m "chore: 发布 v${version}"
-fi
-if ! git rev-parse "v${version}" >/dev/null 2>&1; then
-  git tag -a "v${version}" -m "v${version}"
+log_step "打标签并发布 GitHub Release"
+# 构建产物已来自 SOURCE_COMMIT；标签必须指向该提交，标签不可移动。
+if git rev-parse "v${version}" >/dev/null 2>&1; then
+  [[ "$(git rev-list -n 1 "v${version}")" == "${SOURCE_COMMIT}" ]] \
+    || die "标签 v${version} 已存在且指向另一提交（标签不可移动）；先核对远端再处理"
+else
+  git tag -a "v${version}" "${SOURCE_COMMIT}" -m "v${version}"
 fi
 git push origin "${DEFAULT_BRANCH}"
-git push origin "v${version}"
-notes="NeatEditor ${version}\n\n- 此安装包已通过 Developer ID 签名、苹果公证和票据装订。\n- 下载 dmg 后拖入 Applications 即可安装。\n- 已支持应用内自动检查、下载和安装更新。"
-gh release create "v${version}" --repo "${REPOSITORY}" --title "v${version}" --notes "${notes}" 2>/dev/null || true
-gh release upload "v${version}" "${dmg_path}" "${dmg_path}.sha256" "${update_zip_path}" --repo "${REPOSITORY}" --clobber
+if ! git push origin "v${version}"; then
+  sleep 10
+  git push origin "v${version}" || die "标签推送失败（两次尝试）"
+fi
+
+# 推送标签会触发 CI Release 任务（上传未签名占位产物）。等它结束再传签名
+# 产物，避免两者互相覆盖；API 偶发失败时不阻塞签名发布（后文仍会删占位并核对）。
+log_step "等待同标签 CI 占位任务结束"
+ci_waited=0
+while [[ "${ci_waited}" -lt 1800 ]]; do
+  ci_busy="$(gh run list --workflow Release --limit 20 --json headBranch,status \
+    --jq '[.[] | select(.headBranch == "v'"${version}"'" and (.status == "queued" or .status == "in_progress" or .status == "waiting"))] | length' 2>/dev/null || printf '0')"
+  [[ "${ci_busy}" == "0" ]] && break
+  sleep 30
+  ci_waited=$((ci_waited + 30))
+done
+if [[ "${ci_busy}" != "0" ]]; then
+  printf '警告：CI Release 任务仍在运行，继续上传签名产物；若其随后覆盖附件，需重跑本脚本后半段。\n'
+fi
+
+# 发行说明中英双语、英文在前，用真实换行（\n 字面量在 --notes 里不会展开）。
+notes_file="${work_dir}/release-notes.md"
+cat > "${notes_file}" <<EOF
+NeatEditor ${version}
+
+Signed with a Developer ID certificate, notarized by Apple, and stapled for offline Gatekeeper checks.
+Download the DMG below, drag NeatEditor.app to Applications, then launch with: open -a NeatEditor
+In-app Sparkle updates are EdDSA-signed and verified before install.
+
+NeatEditor ${version}（简体中文）
+
+已用 Developer ID 签名、经苹果公证并装订票据，断网也可通过 Gatekeeper 校验。
+下载下方 DMG，把 NeatEditor.app 拖入 Applications，再执行 open -a NeatEditor 启动。
+应用内 Sparkle 更新带 EdDSA 签名，安装前验签。
+EOF
+gh release create "v${version}" --repo "${REPOSITORY}" --title "v${version}" --notes-file "${notes_file}" 2>/dev/null || true
+# 先删 CI 的未签名占位产物（*-macOS-universal.*），再逐个上传签名文件并回读。
+# 单条命令只传一个文件：多文件同传曾回报成功却只留下一个。
+existing_assets="$(gh release view "v${version}" --repo "${REPOSITORY}" --json assets --jq '.assets[].name' 2>/dev/null || true)"
+for asset_name in ${existing_assets}; do
+  case "${asset_name}" in
+    *-macOS-universal.*)
+      gh release delete-asset "v${version}" "${asset_name}" --repo "${REPOSITORY}" -y >/dev/null || true
+      ;;
+  esac
+done
+gh release upload "v${version}" "${dmg_path}" --repo "${REPOSITORY}" --clobber
+gh release view "v${version}" --repo "${REPOSITORY}" --json assets --jq '.assets[].name'
+gh release upload "v${version}" "${update_zip_path}" --repo "${REPOSITORY}" --clobber
+gh release view "v${version}" --repo "${REPOSITORY}" --json assets --jq '.assets[].name'
+gh release upload "v${version}" "${checksum_path}" --repo "${REPOSITORY}" --clobber
+final_assets="$(gh release view "v${version}" --repo "${REPOSITORY}" --json assets --jq '.assets[].name')"
+printf '%s\n' "${final_assets}"
+grep -q "$(basename "${dmg_path}")" <<<"${final_assets}" || die "发行页缺少签名 dmg"
+grep -q "$(basename "${update_zip_path}")" <<<"${final_assets}" || die "发行页缺少签名更新包"
+grep -q "SHA256SUMS.txt" <<<"${final_assets}" || die "发行页缺少校验文件"
+if grep -q "macOS-universal" <<<"${final_assets}"; then
+  die "发行页仍残留未签名 CI 占位产物，禁止当作公开发布"
+fi
 ditto "${appcast_dir}/appcast.xml" "${APPCAST_PATH}"
 git add "${APPCAST_PATH}"
 if ! git diff --cached --quiet; then
-  git commit -m "chore: 发布 v${version} 更新清单"
+  git commit -m "chore: 发布 v${version} 更新清单" >/dev/null
   git push origin "${DEFAULT_BRANCH}"
 fi
 asset_url="https://github.com/${REPOSITORY}/releases/download/v${version}/$(basename "${dmg_path}")"
 update_url="${UPDATE_DOWNLOAD_PREFIX}/v${version}/$(basename "${update_zip_path}")"
 curl -fsSL --range 0-0 "${asset_url}" -o /dev/null || die "公开安装包无法匿名下载"
-curl -fsSL "${UPDATE_FEED_URL}" -o "${work_dir}/published-appcast.xml" \
-  || die "公开更新清单无法匿名下载"
-xmllint --noout "${work_dir}/published-appcast.xml" || die "公开更新清单不是合法 XML"
-grep -q "<sparkle:version>${build_number}</sparkle:version>" "${work_dir}/published-appcast.xml" \
-  || die "公开更新清单没有当前内部构建号 ${build_number}"
 curl -fsSL --range 0-0 "${update_url}" -o /dev/null || die "Sparkle 更新包无法匿名下载"
+# raw CDN 有滞后：仓内已是新构建号而 CDN 仍是旧条目时只等不回滚（见 RELEASING.md R6）。
+appcast_ok=false
+for appcast_try in 1 2 3 4 5 6; do
+  if curl -fsSL "${UPDATE_FEED_URL}" -o "${work_dir}/published-appcast.xml" \
+    && xmllint --noout "${work_dir}/published-appcast.xml" \
+    && grep -q "<sparkle:version>${build_number}</sparkle:version>" "${work_dir}/published-appcast.xml"; then
+    appcast_ok=true
+    break
+  fi
+  sleep 30
+done
+[[ "${appcast_ok}" == true ]] || die "公开更新清单在 3 分钟内仍无当前内部构建号 ${build_number}（只重跑终检，禁止重签重公证）"
 printf '发布完成：%s（自动更新：%s）\n' "${asset_url}" "${UPDATE_FEED_URL}"

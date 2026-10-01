@@ -60,16 +60,34 @@ Standard macOS text shortcuts such as `Command + Z`, `Command + X`, `Command + C
 
 ## Current Status
 
-NeatEditor is ready to use as a lightweight macOS plain text editor and is now being published as `1.0.0`.
+NeatEditor is ready to use as a lightweight macOS plain text editor; the current marketing version is `1.0.4` (build `3`).
 
 - Platform target: macOS 15.0+
 - Stack: Swift 6, SwiftUI, AppKit bridge, Observation, XcodeGen
-- Validation today: build verification and manual testing
+- Validation today: `xcodebuild ... test` (18 unit tests: editor text sync, document persistence, preferences), build verification, and manual testing
+- Distribution today: Developer ID-signed + notarized DMG built locally via `scripts/publish-release.sh` (see [RELEASING.md](./RELEASING.md))
 - Scope today: plain text workflow, no rich text, plugins, or cross-platform support
 
 ## Quick Start
 
-### Requirements
+### Install (macOS)
+
+1. Download the latest signed `NeatEditor-<version>.dmg` from [GitHub Releases](https://github.com/NeatEditor/NeatEditor/releases/latest) (optionally verify with `SHA256SUMS.txt`).
+2. Open the DMG and drag `NeatEditor.app` to `Applications`.
+3. First launch:
+
+```bash
+open -a NeatEditor
+```
+
+The app opens with a ready-to-use document; press `Command + N` for a new one.
+
+### Supported Platforms
+
+- Supported: macOS 15.0+ (Apple silicon and Intel, universal build).
+- Not supported: Linux and Windows. The app depends on AppKit and macOS-only code signing/notarization, so it neither builds nor runs there and no packages are provided.
+
+### Requirements (Building From Source)
 
 - macOS 15.0+
 - Xcode 16.2+
@@ -99,25 +117,26 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 - `project.yml` is the source of truth for the project structure.
 - Run `xcodegen generate` after adding or removing source files.
-- The repository does not yet include a test target, so `xcodebuild ... test` is not configured.
+- `NeatEditorTests` covers editor text sync, document persistence, and preferences (18 tests). Run them with:
+
+```bash
+xcodebuild -project "NeatEditor.xcodeproj" \
+  -scheme "NeatEditor" \
+  -configuration Debug \
+  -destination 'platform=macOS' \
+  test
+```
 - For behavior changes, prefer validating with the built app rather than relying on previews alone.
 
 ## Releases
 
-This repository includes a tag-driven GitHub Releases workflow.
+Public installs come from the signed local release route, not from CI:
 
-- Push a tag like `v1.0.0` and GitHub Actions will build the release automatically.
-- The workflow produces a macOS universal zip.
-- The release also includes `SHA256SUMS.txt`.
+- The maintainer builds the DMG + Sparkle ZIP on the signing Mac with `scripts/publish-release.sh` (Developer ID-signed, notarized, stapled).
+- Each public Release holds the signed DMG (first install), the signed Sparkle update ZIP (in-app updates), and `SHA256SUMS.txt`.
+- The tag-triggered GitHub Actions workflow only uploads unsigned build placeholders; never install those as a release.
 
-The simplest release flow is:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-See [RELEASING.md](./RELEASING.md) for details.
+The full route, requirements, and coordinator handoff are documented in [RELEASING.md](./RELEASING.md).
 
 ## Project Structure
 
@@ -157,11 +176,7 @@ NeatEditor/
 
 ## Known Gaps
 
-These are reasonable next steps after the initial public release:
-
-- Add a test target for save, rename, and state restoration flows.
-- Add Apple code signing, notarization, and DMG packaging for smoother distribution.
-- Add a general CI workflow for pushes and pull requests.
+- Add a general CI workflow for pushes and pull requests (today only the unsigned tag workflow exists).
 
 ## Contributing
 

@@ -64,7 +64,7 @@ NeatEditor は、軽量な macOS 向けプレーンテキストエディタと�
 
 - 対応プラットフォーム: macOS 15.0+
 - 技術スタック: Swift 6、SwiftUI、AppKit bridge、Observation、XcodeGen
-- 現在の検証方法: ビルド確認と手動テスト
+- 現在の検証方法: `xcodebuild ... test`（単体テスト18件: テキスト同期、永続化、設定）、ビルド確認と手動テスト
 - 現在の対象範囲: プレーンテキスト中心、リッチテキストやプラグイン、クロスプラットフォーム対応は未実装
 
 ## クイックスタート
@@ -99,23 +99,18 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 - `project.yml` がプロジェクト構成の唯一のソースです。
 - ソースファイルを追加または削除したら `xcodegen generate` を実行してください。
-- 現在はテスト target がないため、`xcodebuild ... test` は未設定です。
+- `NeatEditorTests` はテキスト同期、永続化、設定をカバーしています（18件）。`xcodebuild ... test` で実行できます（英語 README 参照）。
 - 挙動変更の確認は、プレビューだけでなくビルド済みアプリで行うことを推奨します。
 
 ## リリース
 
-このリポジトリには、Git tag を起点にした GitHub Releases ワークフローが含まれています。
+このリポジトリは CI ではなく署名済みローカルリリースで公開しています。
 
-- `v1.0.0` のような tag を push すると GitHub Actions が自動でリリースをビルドします。
-- ワークフローは macOS universal zip を生成します。
-- リリースには `SHA256SUMS.txt` も含まれます。
+- メンテナは `scripts/publish-release.sh` で DMG + Sparkle ZIP をローカルビルドします（Developer ID 署名、公証済み）。
+- 公開リリースには署名済み DMG（初回インストール用）、署名済み Sparkle ZIP（アプリ内更新用）、`SHA256SUMS.txt` が含まれます。
+- tag 起点の GitHub Actions は未署名のプレースホルダのみを上げます。リリースとしてインストールしないでください。
 
-最もシンプルなリリース手順:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
+最もシンプルな導入手順: Releases から署名済み DMG を取得し `Applications` にドラッグ後、`open -a NeatEditor` で起動します。対応は macOS 15.0+ のみです。
 
 詳細は [RELEASING.md](./RELEASING.md) を参照してください。
 
@@ -134,9 +129,7 @@ git push origin v1.0.0
 
 ## 今後の改善候補
 
-- 保存、リネーム、状態復元をカバーするテスト target を追加する。
-- Apple の署名、公証、DMG パッケージ化を追加して配布体験を改善する。
-- push と pull request を対象にした一般的な CI ワークフローを追加する。
+- push と pull request を対象にした一般的な CI ワークフローを追加する（現在は未署名の tag ワークフローのみ）。
 
 ## コントリビュート
 

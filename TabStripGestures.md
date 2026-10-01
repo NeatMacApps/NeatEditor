@@ -32,6 +32,8 @@ This document describes the gesture requirements, pin accessory alignment, and i
    * **Behavior**: Center the circular pin control equally from the window's top and right edges, following the top-right corner's concentric placement. Derive both insets from the title bar height and button diameter. The space reserved for tab overflow must not shift the pin inward.
    * **Acceptance**: Inspect the installed window at normal and minimum widths, both unpinned and pinned. Clicking the pin must still toggle Always on Top.
 
+   The original accessory frame put the center 28 pt from the right edge but 18 pt from the top. Use the native SwiftUI `Button` with the public [frame and padding APIs](https://developer.apple.com/documentation/swiftui/layout-adjustments), verified in the Xcode 27 SDK. Installed Release verification on 2026-10-01 measured 19 pt on both axes at 901 × 538 and the actual minimum 470 × 502; screenshots confirmed both states, and clicking switched the window between normal layer 0 and floating layer 3. The screenshot skill's default window list filters floating layers; use its raw window enumeration and capture helper for the pinned window rather than treating the missing list entry as a hidden app.
+
 ---
 
 ## Core Constraint: Why SwiftUI Gestures Are Not Allowed

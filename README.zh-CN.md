@@ -60,16 +60,34 @@ NeatEditor 的目标很直接：减少界面噪音，把注意力还给文字本
 
 ## 当前状态
 
-NeatEditor 现在已经可以作为一个轻量 macOS 纯文本编辑器使用，并以 `1.0.0` 版本公开发布。
+NeatEditor 现在已经可以作为一个轻量 macOS 纯文本编辑器使用，当前展示版本为 `1.0.4`（内部构建号 `3`）。
 
 - 平台目标：macOS 15.0+
 - 技术栈：Swift 6、SwiftUI、AppKit bridge、Observation、XcodeGen
-- 当前验证方式：构建校验和手动测试
+- 当前验证方式：`xcodebuild ... test`（18 个单元测试：编辑器文本同步、文档持久化、偏好设置）、构建校验和手动测试
+- 当前分发方式：通过 `scripts/publish-release.sh` 在本机打出 Developer ID 签名 + 公证 DMG（见 [RELEASING.md](./RELEASING.md)）
 - 当前范围：专注纯文本，不包含富文本、插件系统或跨平台支持
 
 ## 快速开始
 
-### 环境要求
+### 安装（macOS）
+
+1. 从 [GitHub Releases](https://github.com/NeatEditor/NeatEditor/releases/latest) 下载最新签名版 `NeatEditor-<版本>.dmg`（可用 `SHA256SUMS.txt` 自行校验）。
+2. 打开 DMG，把 `NeatEditor.app` 拖入 `Applications`。
+3. 首次启动：
+
+```bash
+open -a NeatEditor
+```
+
+应用启动即创建可用文档；按 `Command + N` 新建文档。
+
+### 支持的平台
+
+- 支持：macOS 15.0+（Apple silicon 与 Intel，universal 构建）。
+- 不支持：Linux 与 Windows。应用依赖 AppKit 与 macOS 专属签名/公证，在这些平台上无法构建也无法运行，不提供安装包。
+
+### 环境要求（从源码构建）
 
 - macOS 15.0+
 - Xcode 16.2+
@@ -99,25 +117,26 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 - `project.yml` 是工程结构的真实来源。
 - 新增或删除源文件后，请重新执行 `xcodegen generate`。
-- 仓库目前没有测试 target，所以 `xcodebuild ... test` 尚未配置。
+- `NeatEditorTests` 覆盖编辑器文本同步、文档持久化与偏好设置（共 18 个测试），运行方式：
+
+```bash
+xcodebuild -project "NeatEditor.xcodeproj" \
+  -scheme "NeatEditor" \
+  -configuration Debug \
+  -destination 'platform=macOS' \
+  test
+```
 - 如果你修改了运行流程或交互逻辑，优先用构建产物进行实际验证。
 
 ## 发布版本
 
-仓库已经配置了基于 Git tag 的 GitHub Releases 自动流程。
+公开安装包来自本机签名发版流程，而不是 CI：
 
-- 推送 `v1.0.0` 这样的 tag 后，GitHub Actions 会自动构建 release。
-- 工作流会生成一个 macOS universal zip。
-- Release 页面还会附带 `SHA256SUMS.txt`。
+- 维护者在签名 Mac 上用 `scripts/publish-release.sh` 构建 DMG + Sparkle ZIP（Developer ID 签名、公证、装订）。
+- 每个公开 Release 包含签名 DMG（首次安装）、签名 Sparkle 更新 ZIP（应用内更新）和 `SHA256SUMS.txt`。
+- tag 触发的 GitHub Actions 只上传未签名构建占位文件，不要把它们当作正式版本安装。
 
-最简单的发版方式：
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-更完整的说明见 [RELEASING.md](./RELEASING.md)。
+完整流程、要求与交付交接见 [RELEASING.md](./RELEASING.md)。
 
 ## 仓库文档
 
@@ -135,9 +154,7 @@ git push origin v1.0.0
 ## 已知后续改进方向
 
 - 补运行截图或演示 GIF，提升 GitHub 首页第一印象。
-- 增加测试 target，覆盖保存、重命名、恢复状态等核心流程。
-- 增加 Apple 签名、公证和 DMG 打包，降低用户下载后的安全提示成本。
-- 增加常规 CI workflow，覆盖 push 和 pull request。
+- 增加常规 CI workflow，覆盖 push 和 pull request（目前只有一个未签名的 tag 工作流）。
 
 ## 参与贡献
 

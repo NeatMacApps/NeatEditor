@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0A0C6C11839EF1CD4EA83AC3 /* EditorScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72DD6097751EF581EA256A3 /* EditorScrollView.swift */; };
+		1647932DE3AFF5096BA1A56C /* AutoSaveSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E545B076D7BD325F2B4EF46 /* AutoSaveSchedulerTests.swift */; };
 		16EC1F059C67919FE7417ECA /* WorkspaceCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C1E4F1C5E0852265B8A3A4 /* WorkspaceCommands.swift */; };
 		1C0E2A1A871E5DD7BF4F3DA6 /* DocumentPersistenceServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D088F960E365954BD66BC6A8 /* DocumentPersistenceServiceTests.swift */; };
 		21B6368381D44AB472B6E272 /* ZoomableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CA0DD15623CA315741B803E /* ZoomableTextView.swift */; };
@@ -71,6 +72,7 @@
 		63FEBB9D3DE2E196F6FABC88 /* WorkspaceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceStore.swift; sourceTree = "<group>"; };
 		64C1E4F1C5E0852265B8A3A4 /* WorkspaceCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceCommands.swift; sourceTree = "<group>"; };
 		7AE177253A6D16097E143352 /* NeatEditorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeatEditorApp.swift; sourceTree = "<group>"; };
+		7E545B076D7BD325F2B4EF46 /* AutoSaveSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoSaveSchedulerTests.swift; sourceTree = "<group>"; };
 		7FC9CB3A37D479100CB1B9D6 /* EditorTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextView.swift; sourceTree = "<group>"; };
 		86A7D19FDA6561AA648AA9B9 /* NeatEditorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeatEditorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		98813FD87C11733B55049246 /* EditorTabItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTabItemView.swift; sourceTree = "<group>"; };
@@ -177,6 +179,7 @@
 		65E9A4E7DC74B3FFC4182F01 /* NeatEditorTests */ = {
 			isa = PBXGroup;
 			children = (
+				7E545B076D7BD325F2B4EF46 /* AutoSaveSchedulerTests.swift */,
 				D088F960E365954BD66BC6A8 /* DocumentPersistenceServiceTests.swift */,
 				5A3812B102B3FA8E24D10FEE /* EditorTextSyncStateTests.swift */,
 				F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */,
@@ -379,6 +382,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1647932DE3AFF5096BA1A56C /* AutoSaveSchedulerTests.swift in Sources */,
 				1C0E2A1A871E5DD7BF4F3DA6 /* DocumentPersistenceServiceTests.swift in Sources */,
 				49CA09DC3AAEE99AB71E569E /* EditorTextSyncStateTests.swift in Sources */,
 				97DF5482D6F249403D615719 /* WorkspacePreferencesTests.swift in Sources */,

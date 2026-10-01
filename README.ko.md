@@ -64,7 +64,7 @@ NeatEditor는 가벼운 macOS 일반 텍스트 편집기로 이미 사용할 수
 
 - 대상 플랫폼: macOS 15.0+
 - 기술 스택: Swift 6, SwiftUI, AppKit bridge, Observation, XcodeGen
-- 현재 검증 방식: 빌드 확인 및 수동 테스트
+- 현재 검증 방식: `xcodebuild ... test`(단위 테스트 18건: 텍스트 동기화, 지속성, 환경설정), 빌드 확인 및 수동 테스트
 - 현재 범위: 일반 텍스트 워크플로우 중심, 서식 있는 텍스트와 플러그인, 크로스 플랫폼 지원은 제외
 
 ## 빠른 시작
@@ -99,23 +99,18 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 - `project.yml`이 프로젝트 구조의 기준입니다.
 - 소스 파일을 추가하거나 삭제한 뒤에는 `xcodegen generate`를 실행하세요.
-- 현재는 테스트 target이 없어서 `xcodebuild ... test`가 구성되어 있지 않습니다.
+- `NeatEditorTests`는 텍스트 동기화, 지속성, 환경설정을 다룹니다(18건). `xcodebuild ... test`로 실행하세요(영문 README 참고).
 - 동작 변경을 확인할 때는 미리보기만 보지 말고 실제 빌드한 앱으로 검증하는 편이 좋습니다.
 
 ## 릴리스
 
-이 저장소에는 태그 기반 GitHub Releases 워크플로가 포함되어 있습니다.
+이 저장소는 CI가 아니라 서명된 로컬 릴리스로 공개합니다.
 
-- `v1.0.0` 같은 태그를 푸시하면 GitHub Actions가 릴리스를 자동으로 빌드합니다.
-- 워크플로는 macOS universal zip을 생성합니다.
-- 릴리스에는 `SHA256SUMS.txt`도 포함됩니다.
+- 메인테이너가 `scripts/publish-release.sh`로 DMG + Sparkle ZIP을 로컬에서 빌드합니다(Developer ID 서명, 공증 완료).
+- 공개 릴리스에는 서명된 DMG(최초 설치용), 서명된 Sparkle ZIP(앱 내 업데이트용), `SHA256SUMS.txt`가 포함됩니다.
+- 태그 기반 GitHub Actions는 미서명 플레이스홀더만 업로드합니다. 릴리스로 설치하지 마세요.
 
-가장 단순한 릴리스 흐름:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
+가장 단순한 설치 흐름: Releases에서 서명된 DMG를 받아 `Applications`에 드래그한 뒤 `open -a NeatEditor`로 실행합니다. macOS 15.0+만 지원됩니다.
 
 자세한 내용은 [RELEASING.md](./RELEASING.md)를 참고하세요.
 
@@ -134,9 +129,7 @@ git push origin v1.0.0
 
 ## 다음 개선 후보
 
-- 저장, 이름 변경, 상태 복원을 다루는 테스트 target 추가.
-- Apple 서명, 공증, DMG 패키징을 추가해 배포 경험 개선.
-- push와 pull request를 위한 일반적인 CI 워크플로 추가.
+- push와 pull request를 위한 일반적인 CI 워크플로 추가(현재는 미서명 태그 워크플로만 존재).
 
 ## 기여
 

@@ -64,7 +64,7 @@ NeatEditor ist als leichter Plain-Text-Editor für macOS einsatzbereit und wird 
 
 - Zielplattform: macOS 15.0+
 - Stack: Swift 6, SwiftUI, AppKit bridge, Observation, XcodeGen
-- Aktuelle Validierung: Build-Prüfung und manuelle Tests
+- Aktuelle Validierung: `xcodebuild ... test` (18 Unit-Tests: Text-Sync, Persistenz, Einstellungen), Build-Prüfung und manuelle Tests
 - Aktueller Umfang: Plain-Text-Workflow, kein Rich Text, keine Plugins, keine plattformübergreifende Unterstützung
 
 ## Schnellstart
@@ -99,23 +99,18 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 - `project.yml` ist die Quelle der Wahrheit für die Projektstruktur.
 - Führe `xcodegen generate` nach dem Hinzufügen oder Entfernen von Quelldateien aus.
-- Das Repository enthält noch kein Test-Target, daher ist `xcodebuild ... test` derzeit nicht konfiguriert.
+- `NeatEditorTests` deckt Text-Sync, Persistenz und Einstellungen ab (18 Tests); ausführen mit `xcodebuild ... test` (siehe englisches README).
 - Bei Verhaltensänderungen sollte möglichst mit der gebauten App statt nur mit Previews validiert werden.
 
 ## Releases
 
-Dieses Repository enthält einen tagbasierten GitHub-Releases-Workflow.
+Dieses Repository veröffentlicht über signierte lokale Releases, nicht über CI.
 
-- Push einen Tag wie `v1.0.0`, dann baut GitHub Actions automatisch das Release.
-- Der Workflow erzeugt ein macOS-Universal-Zip.
-- Das Release enthält außerdem `SHA256SUMS.txt`.
+- Der Maintainer baut DMG + Sparkle-ZIP lokal mit `scripts/publish-release.sh` (Developer-ID-signiert, notarisiert).
+- Jedes öffentliche Release enthält das signierte DMG (Erstinstallation), das signierte Sparkle-ZIP (In-App-Updates) und `SHA256SUMS.txt`.
+- Der tagbasierte GitHub-Actions-Workflow lädt nur unsignierte Platzhalter hoch; diese nicht als Release installieren.
 
-Der einfachste Release-Ablauf:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
+Der einfachste Installationsweg: signiertes DMG von der Releases-Seite laden, nach `Applications` ziehen, dann `open -a NeatEditor`. Nur macOS 15.0+ wird unterstützt.
 
 Details stehen in [RELEASING.md](./RELEASING.md).
 
@@ -134,9 +129,7 @@ Details stehen in [RELEASING.md](./RELEASING.md).
 
 ## Bekannte Lücken
 
-- Ein Test-Target für Speichern, Umbenennen und Wiederherstellung des Zustands hinzufügen.
-- Apple-Signierung, Notarisierung und DMG-Paketierung für eine bessere Distribution ergänzen.
-- Einen allgemeinen CI-Workflow für Pushes und Pull Requests hinzufügen.
+- Einen allgemeinen CI-Workflow für Pushes und Pull Requests hinzufügen (derzeit nur der unsignierte Tag-Workflow).
 
 ## Mitwirken
 
