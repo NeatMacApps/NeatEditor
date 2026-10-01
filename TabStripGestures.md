@@ -1,6 +1,6 @@
 # Tab Strip Gestures
 
-This document describes the gesture requirements and implementation details for `EditorTabStripView.swift` and its child views.
+This document describes the gesture requirements, pin accessory alignment, and implementation details for `EditorTabStripView.swift` and its child views.
 
 ---
 
@@ -17,7 +17,7 @@ This document describes the gesture requirements and implementation details for 
    * **Behavior**: Select the tab only. It must not enter rename mode.
 
 4. **Double-click empty title bar space**
-   * **Behavior**: Trigger the macOS title bar zoom action, following the system's `AppleActionOnDoubleClick` preference.
+   * **Behavior**: Let AppKit perform the system-configured title bar action exactly once. The window must retain its resulting size until the next user action.
 
 5. **Click inside the rename field while editing**
    * **Behavior**: Move the insertion point normally without leaving edit mode.
@@ -27,6 +27,10 @@ This document describes the gesture requirements and implementation details for 
 
 7. **Switch to another app while editing**
    * **Behavior**: Save the edited title and leave edit mode.
+
+8. **Top-right pin alignment**
+   * **Behavior**: Center the circular pin control equally from the window's top and right edges, following the top-right corner's concentric placement. Derive both insets from the title bar height and button diameter. The space reserved for tab overflow must not shift the pin inward.
+   * **Acceptance**: Inspect the installed window at normal and minimum widths, both unpinned and pinned. Clicking the pin must still toggle Always on Top.
 
 ---
 
@@ -38,7 +42,8 @@ Reason: SwiftUI multi-click gestures (`TapGesture(count: 2)` and `.onTapGesture(
 
 **Conclusion**: All click and double-click handling must bypass the SwiftUI gesture system and use the following mechanisms instead:
 - **Tab click and double-click**: SwiftUI `Button` action for immediate response plus manual timestamp-based double-click detection
-- **Empty title bar double-click and edit dismissal**: AppKit `NSEvent.addLocalMonitorForEvents`
+- **Empty title bar double-click**: Native AppKit dispatch through SwiftUI `.windowStyle(.hiddenTitleBar)`
+- **Edit dismissal and middle-click close**: AppKit `NSEvent.addLocalMonitorForEvents`
 
 ---
 
@@ -51,7 +56,6 @@ Reason: SwiftUI multi-click gestures (`TapGesture(count: 2)` and `.onTapGesture(
 | `EditorTabStripView` | Parent container that owns `editingTabID` state and provides `dismissEditing()` |
 | `EditorTabItemView` | Per-tab view with a SwiftUI `Button` that handles click, double-click, and rename |
 | `TitleBarEventMonitor` | `NSViewRepresentable` event monitor at the AppKit layer |
-| `tabStripSuppressNextZoom` | File-scoped flag that prevents a tab double-click from also triggering title bar zoom |
 | `tabStripPendingRename` | File-scoped flag that stores the pending renamed title for external dismiss paths |
 
 ### Data Flow
@@ -60,15 +64,13 @@ Reason: SwiftUI multi-click gestures (`TapGesture(count: 2)` and `.onTapGesture(
 User input
   |
   |- mouseDown --> TitleBarEventMonitor
-  |                 |- Outside title bar + editing in progress -> dismissEditing()
-  |                 `- Otherwise -> ignore
+  |                 `- Outside title bar + editing in progress -> dismissEditing()
   |
-  |- mouseUp ----> TitleBarEventMonitor
-  |                 `- clickCount >= 2 + inside title bar + same window
-  |                    -> async { check suppress flag -> zoom or skip }
+  |- empty title bar double-click --> native AppKit window action
   |
-  `- mouseUp ----> SwiftUI Button (EditorTabItemView.handleClick)
-                    |- Set tabStripSuppressNextZoom = true
+  |- middle mouseUp --> TitleBarEventMonitor -> close the hit tab
+  |
+  `- tab mouseUp --> SwiftUI Button (EditorTabItemView.handleClick)
                     |- Selected tab + timestamp double-click check -> begin editing
                     `- Otherwise -> onSelectTab
 ```
@@ -101,50 +103,20 @@ Key details:
 - Record timestamps and check for double-clicks only when `isSelected == true`.
 - A double-click on an inactive tab never renames it: the first click only selects the tab and resets `lastSelectedClickTime` to `.distantPast`, so the second click is treated as the first eligible click for rename timing.
 
-### 3. Empty title bar double-click zoom via AppKit event monitoring
+### 3. Native title bar double-click ownership
 
-`TitleBarEventMonitor` is an `NSViewRepresentable` that hosts `TitleBarEventNSView`, which listens to all local mouse events through `NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseUp])`.
+The main scene uses the public SwiftUI `.windowStyle(.hiddenTitleBar)` API. It hides the title and title bar backing while retaining native window behavior. Empty title bar double-clicks pass through normal AppKit dispatch; the monitor must not call `zoom`, `performZoom` or `performMiniaturize` for the same event. Tab buttons retain immediate selection and inline rename behavior.
 
-**Zoom is checked on `mouseUp`, not `mouseDown`**, because:
-- SwiftUI `Button` actions fire on `mouseUp`.
-- During `mouseDown`, the `Button` action has not run yet, so the suppress flag is not set.
-- Detecting zoom on `mouseDown` and trying to coordinate with `asyncAfter` is unreliable because the time from `mouseDown` to `mouseUp` varies widely.
-- Detecting on `mouseUp` and then using `DispatchQueue.main.async` waits exactly one run loop, by which point the `Button` action has already completed.
+Confirmed regression (2026-10-01): the installed app expanded from 901 × 538 to approximately 2228 × 1266, then returned to 901 × 538 within one second. The local monitor forwarded the event and separately queued `window.zoom(nil)`, leaving two handlers for one double-click. Removing the extra window action restores one native action and avoids duplicating the system preference mapping.
 
-```swift
-} else if event.type == .leftMouseUp {
-    guard event.clickCount >= 2,
-          event.window === self.window,
-          isClickInTitleBarRegion(event) else { return }
+Public API verified in the installed Xcode 27 SDK:
+- [SwiftUI hiddenTitleBar](https://developer.apple.com/documentation/swiftui/windowstyle/hiddentitlebar)
+- [AppKit local event monitoring](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/EventOverview/MonitoringEvents/MonitoringEvents.html)
+- [macOS title bar double-click settings](https://support.apple.com/en-gb/guide/mac-help/mchlp1119/mac)
 
-    DispatchQueue.main.async { [weak self] in
-        if tabStripSuppressNextZoom {
-            tabStripSuppressNextZoom = false
-            return
-        }
-        self?.performTitleBarDoubleClickAction()
-    }
-}
-```
+Acceptance: use the installed app, double-click empty title bar space to enlarge, wait beyond the animation, then double-click again to restore. Inspect sequential window bounds and screenshots. Verify active-tab rename, inactive-tab selection, dragging and pinning without unwanted resizing. Build/test success alone does not establish this behavior.
 
-**Title bar hit testing**: Because the window uses `.hiddenTitleBar`, `contentLayoutRect` matches the entire window. The implementation therefore uses absolute coordinates: `event.locationInWindow.y >= (windowHeight - titleBarHeight)`.
-
-### 4. Suppress flag coordination
-
-`tabStripSuppressNextZoom`, a file-scoped `nonisolated(unsafe) var`, prevents a tab double-click from also triggering title bar zoom:
-
-- `handleClick()` sets the flag to `true` on **every click**, not just the second click, because the event monitor checks `event.clickCount >= 2` and still needs the first click's flag to be alive when the second `mouseUp` arrives.
-- The flag is cleared automatically with `asyncAfter(NSEvent.doubleClickInterval + 0.1)` so it never leaks into unrelated future events.
-- **The auto-clear timeout must be greater than `doubleClickInterval`**. If it expires too early, the first click's flag disappears before the second click arrives and title bar zoom is triggered accidentally.
-
-```swift
-tabStripSuppressNextZoom = true
-DispatchQueue.main.asyncAfter(deadline: .now() + NSEvent.doubleClickInterval + 0.1) {
-    tabStripSuppressNextZoom = false
-}
-```
-
-### 5. Leaving edit mode and saving the title
+### 4. Leaving edit mode and saving the title
 
 Edit mode has multiple exit paths with slightly different commit behavior:
 
@@ -164,7 +136,7 @@ Edit mode has multiple exit paths with slightly different commit behavior:
 #### Path C: Switch to another app
 `NSApplication.didResignActiveNotification` follows the same path as Path B.
 
-### 6. Clicking inside the rename field does not dismiss edit mode
+### 5. Clicking inside the rename field does not dismiss edit mode
 
 The monitor only dismisses editing on `mouseDown` when `!isClickInTitleBarRegion(event)` is true. The rename `TextField` lives inside the title bar region, so clicking it does not dismiss editing and caret movement works as expected.
 
@@ -178,33 +150,10 @@ The monitor only dismisses editing on `mouseDown` when `!isClickInTitleBarRegion
 
 2. **Do not write to bindings or mutate the model from `onDisappear`.** During view teardown, that can trigger render cascades. With rapid double-clicks, repeated `TextField` creation and destruction can spike CPU usage dramatically.
 
-3. **Do not use a fixed `asyncAfter` delay to coordinate `mouseDown` with the `Button` action.** The interval between `mouseDown` and `mouseUp` is not stable, so fixed delays are unreliable. Zoom detection belongs on `mouseUp`.
+3. **Do not manually trigger a window action from the local monitor.** Native AppKit owns empty title bar double-clicks; an extra deferred zoom toggles the window back.
 
 4. **Do not trigger commits from `onChange(of: isEditing)`.** `commitTitleEditing()` sets `isEditing = false` through the `editingTabID` binding, which can create a write-notify-write loop.
 
 5. **Do not use `view is NSText` to decide whether the click happened inside the rename field.** The editor itself is also an `NSTextView` subclass, so type checks misclassify clicks. The current implementation uses title bar region checks instead.
 
-6. **Do not make the suppress auto-clear timeout too short.** It must remain greater than `NSEvent.doubleClickInterval`, or the first click's flag will expire before the second click lands.
-
-### Timing Model
-
-Full sequence for double-clicking the selected tab:
-```text
-t=0ms     1st mouseDown  -> monitor: clickCount=1, ignore zoom
-t=100ms   1st mouseUp    -> Button handleClick: suppress=true, lastSelectedClickTime=now
-t=300ms   2nd mouseDown  -> monitor: clickCount=2, but still mouseDown, ignore zoom
-t=400ms   2nd mouseUp    -> monitor: clickCount=2, inside title bar, async { check suppress }
-                          -> Button handleClick: detect double-click -> enter edit mode, suppress=true
-t=401ms   async block    -> suppress=true -> skip zoom
-t=500ms   auto-clear     -> suppress=false (from the 1st click's asyncAfter)
-```
-
-Full sequence for double-clicking empty title bar space:
-```text
-t=0ms     1st mouseDown  -> monitor: clickCount=1
-t=100ms   1st mouseUp    -> monitor: clickCount=1, skip. No Button here, suppress unchanged
-t=300ms   2nd mouseDown  -> monitor: clickCount=2, but still mouseDown, ignore
-t=400ms   2nd mouseUp    -> monitor: clickCount=2, async { check suppress }
-                          -> No Button involved, suppress is still false
-t=401ms   async block    -> suppress=false -> performTitleBarDoubleClickAction()
-```
+6. **Do not consume tab mouse events to prevent a duplicate custom zoom.** Remove the duplicate zoom; keep native button dispatch and rename behavior intact.

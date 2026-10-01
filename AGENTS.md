@@ -1,14 +1,14 @@
 <!-- managed:inherited-agents:start -->
-<!-- source: /Users/geraltgraham/Codes/NeatEditor/AGENTS.md -->
+<!-- source: ~/Codes/NeatEditor/AGENTS.md -->
 # NeatEditor
 
 macOS 纯文本编辑器（SwiftUI + AppKit）。
 
-通用工程规范：[Swift 规范](/Users/geraltgraham/Codes/_standards/swift.md)
+通用工程规范：[Swift 规范](~/Codes/_standards/swift.md)
 
 ## 文档导航
 
-- [app-macos/AGENTS.md](/Users/geraltgraham/Codes/NeatEditor/app-macos/AGENTS.md)：改、评审或排查编辑器功能前必读。
+- [app-macos/AGENTS.md](~/Codes/NeatEditor/app-macos/AGENTS.md)：改、评审或排查编辑器功能前必读。
 - 标题栏、标签外观与液态玻璃等界面约束仍以全局 CLIENT_UI 与现有 design 文档为准（本仓无独立标题栏指南）。
 
 <!-- managed:inherited-agents:end -->
@@ -191,7 +191,7 @@ xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration D
 - 文档标签页由 `EditorTab` 建模，集中存放在 `WorkspaceStore.tabs`。
 - 当前选中文档由 `WorkspaceStore.selectedTabID` 驱动。
 - 标签栏手势通过 `TitleBarEventMonitor` (AppKit `NSEvent` 局部监听) 实现，以绕过 SwiftUI `TapGesture` 导致的 ~250ms 点击延迟。
-- 标签双击重命名使用 `NSEvent.doubleClickInterval` 手动判定，并配合文件级标志位 `tabStripSuppressNextZoom` 防止同时触发窗口缩放。
+- 标签双击重命名使用 `NSEvent.doubleClickInterval` 手动判定；空白标题栏双击由系统原生处理，详见 `TabStripGestures.md`。
 - 重命名编辑模式通过 `tabStripPendingRename` 在视图销毁前同步状态，确保点击外部区域或应用失去焦点时能正确保存并退出。
 - 自动保存由 `WorkspaceStore.queueAutoSave(for:)` 触发，底层通过 `AutoSaveScheduler` 做 2 秒 debounce。
 - 新建标签前、切换标签时、关闭当前标签时，都会先保存当前选中文档。
@@ -212,5 +212,6 @@ xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration D
 
 ## 文档导航
 
+- [TabStripGestures.md](TabStripGestures.md): Tab click, rename, window zoom, and concentric top-right pin alignment.
 - `docs/troubleshooting/2026-08-09-app-icon-stale-install.md`：改、替换、还原代码或排查「图标变成白底手写 A / 被还原到几个月前」前**必读**。不读会把公开仓里的占位图装回本机，盖掉现行蓝底卷纸图标。
 - 现行图标母版：`design/app-icon/AppIcon-1024.png`。工程内 `AppIcon.appiconset` 必须跟这张走，不要跟 git 历史上的占位图走。

@@ -6,7 +6,16 @@ tests live in `Tests/NeatEditorTests/EditorTextSyncStateTests.swift`; this file
 records the manual editing scenarios that were reasoned through and verified
 against the running app where automation cannot reach AppKit.
 
-## Root causes fixed
+## Persistence and scheduling requirements
+
+- The first save of an unsaved tab must never overwrite an existing file, including a file created after the tab was named. A collision must leave both the original file and the unsaved buffer intact.
+- A tab title represents one file name. Saving and renaming must not allow a title to escape its destination directory.
+- App-created documents use `~/.config/neateditor/documents/`, or the equivalent under `XDG_CONFIG_HOME`. Existing open/restored document URLs remain unchanged; this change does not move user files. Directory creation is deferred until the first nonblank save.
+- Blank or whitespace-only content must continue to leave existing files untouched.
+- Replacing or cancelling a delayed autosave must prevent the old task from clearing the new task's cancellation handle. Completed tasks must not retain their scheduler.
+- Startup and new-tab construction must avoid scanning user directories synchronously for file names; first-save collision handling protects files regardless of naming.
+
+## Text synchronization history
 
 1. **Stale-snapshot overwrite** — `updateNSView` used to assign
    `textView.string = text` whenever the two differed. After rapid edits the

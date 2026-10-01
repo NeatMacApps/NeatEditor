@@ -13,15 +13,15 @@ struct EditorTabStripView: View {
     static let titleBarHeight: CGFloat = 38
     static let leadingPadding: CGFloat = 76
     static let trailingTabScrollPadding: CGFloat = 12
-    static let trailingAccessoryWidth: CGFloat = 48
-    static let trailingAccessoryPadding: CGFloat = 4
+    static let trailingAccessoryWidth: CGFloat = 52
+    static let pinButtonInset = (titleBarHeight - PinWindowButton.diameter) / 2
     static let overflowFadeWidth: CGFloat = 16
     static let overflowVisibilityThreshold: CGFloat = 1
     static let minimumWindowEdge: CGFloat = {
         // Keep the window large enough for traffic lights, two tabs, and the pin accessory.
         ceil(
             leadingPadding + trailingTabScrollPadding + trailingAccessoryWidth
-                + trailingAccessoryPadding + (EditorTabItemView.minimumTabWidth * 2) + 24
+                + (EditorTabItemView.minimumTabWidth * 2) + 24
         )
     }()
 
@@ -126,11 +126,9 @@ struct EditorTabStripView: View {
             TitleBarAccessoryBackground()
                 .overlay(alignment: .topTrailing) {
                     PinWindowButton(isWindowPinned: $isWindowPinned)
-                        .frame(width: Self.trailingAccessoryWidth)
-                        .padding(.trailing, Self.trailingAccessoryPadding)
-                        .padding(.top, 4)
+                        .padding([.top, .trailing], Self.pinButtonInset)
                 }
-                .frame(width: Self.trailingAccessoryWidth + Self.trailingAccessoryPadding)
+                .frame(width: Self.trailingAccessoryWidth)
         }
         .coordinateSpace(name: TabBarLayout.coordinateSpaceName)
         .onPreferenceChange(SelectedTabFramePreferenceKey.self) { frame in
@@ -436,6 +434,8 @@ private struct TabStripScrollInterceptor: NSViewRepresentable {
 }
 
 private struct PinWindowButton: View {
+    static let diameter: CGFloat = 28
+
     @Binding var isWindowPinned: Bool
     @State private var isHovering = false
     @State private var suppressActionAfterDrag = false
@@ -450,7 +450,7 @@ private struct PinWindowButton: View {
             Image(systemName: "pin.fill")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(isWindowPinned ? Color.accentColor : Color.secondary)
-                .frame(width: 28, height: 28)
+                .frame(width: Self.diameter, height: Self.diameter)
                 .background {
                     Circle()
                         .fill(isHovering || isWindowPinned ? EditorChrome.hoverFill : .clear)

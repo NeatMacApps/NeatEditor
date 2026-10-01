@@ -150,14 +150,6 @@ struct EditorTabItemView: View {
     private func handleClick() {
         guard !isEditing else { return }
 
-        // Suppress the monitor's zoom for this click event, auto-clearing
-        // after the double-click interval so it never leaks into future events
-        // but survives long enough to cover a full double-click sequence.
-        tabStripSuppressNextZoom = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + NSEvent.doubleClickInterval + 0.1) {
-            tabStripSuppressNextZoom = false
-        }
-
         if isSelected {
             let now = Date()
             if now.timeIntervalSince(lastSelectedClickTime) < NSEvent.doubleClickInterval {
