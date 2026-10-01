@@ -59,7 +59,7 @@ struct WorkspaceCommands: Commands {
             .disabled(workspaceStore.selectedTabID == nil)
         }
 
-        CommandMenu("View") {
+        CommandGroup(after: .toolbar) {
             Button("Zoom In") {
                 workspaceStore.increaseEditorFontSize()
             }

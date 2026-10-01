@@ -64,7 +64,7 @@ NeatEditor는 가벼운 macOS 일반 텍스트 편집기로 이미 사용할 수
 
 - 대상 플랫폼: macOS 15.0+
 - 기술 스택: Swift 6, SwiftUI, AppKit bridge, Observation, XcodeGen
-- 현재 검증 방식: `xcodebuild ... test`(단위 테스트 18건: 텍스트 동기화, 지속성, 환경설정), 빌드 확인 및 수동 테스트
+- 현재 검증 방식: `xcodebuild ... test`(단위 테스트: 텍스트 동기화, 지속성, 자동 저장 스케줄링, 워크스페이스 실패 경로, 네이티브 IME 확정 처리, 글꼴 설정), 빌드 확인 및 수동 테스트
 - 현재 범위: 일반 텍스트 워크플로우 중심, 서식 있는 텍스트와 플러그인, 크로스 플랫폼 지원은 제외
 
 ## 빠른 시작
@@ -99,18 +99,18 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 - `project.yml`이 프로젝트 구조의 기준입니다.
 - 소스 파일을 추가하거나 삭제한 뒤에는 `xcodegen generate`를 실행하세요.
-- `NeatEditorTests`는 텍스트 동기화, 지속성, 환경설정을 다룹니다(18건). `xcodebuild ... test`로 실행하세요(영문 README 참고).
+- `NeatEditorTests`는 텍스트 동기화, 지속성, 자동 저장 스케줄링, 워크스페이스 실패 경로, 네이티브 IME 확정 처리, 글꼴 설정을 다룹니다. `xcodebuild ... test`로 실행하세요(영문 README 참고).
 - 동작 변경을 확인할 때는 미리보기만 보지 말고 실제 빌드한 앱으로 검증하는 편이 좋습니다.
 
 ## 릴리스
 
 이 저장소는 CI가 아니라 서명된 로컬 릴리스로 공개합니다.
 
-- 메인테이너가 `scripts/publish-release.sh`로 DMG + Sparkle ZIP을 로컬에서 빌드합니다(Developer ID 서명, 공증 완료).
-- 공개 릴리스에는 서명된 DMG(최초 설치용), 서명된 Sparkle ZIP(앱 내 업데이트용), `SHA256SUMS.txt`가 포함됩니다.
-- 태그 기반 GitHub Actions는 미서명 플레이스홀더만 업로드합니다. 릴리스로 설치하지 마세요.
+- 메인테이너가 `scripts/publish-release.sh`로 DMG + Sparkle ZIP을 로컬에서 빌드합니다(Developer ID 서명, 공증 완료. 업로드와 읽기 확인 후 초안에서 공개).
+- 서명된 공개 릴리스에는 서명된 DMG(최초 설치용), 서명된 Sparkle ZIP(앱 내 업데이트용), `SHA256SUMS.txt`가 들어가며, 이중 언어 안내문은 해당 버전의 `CHANGELOG.md` 항목에서 가져옵니다.
+- 태그 기반 GitHub Actions는 검증 빌드 전용이며 미서명 패키지는 비공개 워크플로 아티팩트로만 보관합니다. 릴리스로 설치하지 마세요.
 
-가장 단순한 설치 흐름: Releases에서 서명된 DMG를 받아 `Applications`에 드래그한 뒤 `open -a NeatEditor`로 실행합니다. macOS 15.0+만 지원됩니다.
+설치 흐름: Releases에서 Developer ID 서명 + 공증 표기가 있는 버전을 골라 서명된 파일만 사용하세요(v1.0.3 등의 오래된 `*-macOS-universal.*`은 미서명 CI 플레이스홀더입니다). `Applications`에 드래그한 뒤 `open -a NeatEditor`로 실행합니다. macOS 15.0+만 지원됩니다.
 
 자세한 내용은 [RELEASING.md](./RELEASING.md)를 참고하세요.
 
@@ -129,7 +129,7 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 ## 다음 개선 후보
 
-- push와 pull request를 위한 일반적인 CI 워크플로 추가(현재는 미서명 태그 워크플로만 존재).
+- push와 pull request를 위한 일반적인 CI 워크플로 추가(현재는 태그 검증 워크플로만 존재).
 
 ## 기여
 

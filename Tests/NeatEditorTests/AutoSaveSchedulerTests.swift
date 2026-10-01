@@ -52,6 +52,25 @@ struct AutoSaveSchedulerTests {
         #expect(second == 0)
     }
 
+    @Test("a stale predecessor finishing after replacement cannot drop it")
+    func stalePredecessorCannotDropReplacement() async throws {
+        let scheduler = AutoSaveScheduler(delay: .milliseconds(300))
+        let id = UUID()
+        var second = 0
+
+        scheduler.schedule(for: id) {}
+        scheduler.schedule(for: id) { second += 1 }
+        // Let the cancelled predecessor's cleanup run to completion after the
+        // replacement was scheduled, then cancel the replacement itself. With
+        // the old unconditional cleanup the replacement's handle would
+        // already be gone here and this cancel would be a no-op.
+        try await Task.sleep(for: .milliseconds(50))
+        scheduler.cancel(for: id)
+
+        try await Task.sleep(for: .milliseconds(500))
+        #expect(second == 0)
+    }
+
     @Test("reentrant reschedule keeps a cancellable handle")
     func reentrantRescheduleStaysCancellable() async throws {
         let scheduler = AutoSaveScheduler(delay: .milliseconds(150))

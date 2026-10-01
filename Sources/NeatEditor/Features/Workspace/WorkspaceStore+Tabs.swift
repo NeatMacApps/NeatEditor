@@ -78,7 +78,7 @@ extension WorkspaceStore {
             return
         }
 
-        saveDocument(id: id)
+        guard saveDocument(id: id) else { return }
         autoSaveScheduler.cancel(for: id)
 
         let closedTab = tabs[index]
@@ -104,7 +104,7 @@ extension WorkspaceStore {
     }
 
     func closeOtherDocuments(keeping id: UUID) {
-        saveAllDocuments()
+        guard tabs.contains(where: { $0.id == id }), saveAllDocuments() else { return }
         let idsToClose = tabs.filter { $0.id != id }.map { $0.id }
         for closeID in idsToClose {
             guard let index = tabs.firstIndex(where: { $0.id == closeID }) else { continue }

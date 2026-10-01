@@ -125,14 +125,14 @@ extension WorkspaceStore {
 
         do {
             let data = try JSONEncoder().encode(state)
-            UserDefaults.standard.set(data, forKey: UserDefaultsKey.workspaceState)
+            userDefaults.set(data, forKey: UserDefaultsKey.workspaceState)
         } catch {
             Self.logger.error("Failed to save workspace state: \(error.localizedDescription, privacy: .public)")
         }
     }
 
     func loadState() -> WorkspaceState? {
-        guard let data = UserDefaults.standard.data(forKey: UserDefaultsKey.workspaceState) else {
+        guard let data = userDefaults.data(forKey: UserDefaultsKey.workspaceState) else {
             return nil
         }
 
@@ -154,14 +154,7 @@ extension WorkspaceStore {
 
         for tabState in state.tabs {
             if tabState.isSettings {
-                let settingsTab = EditorTab(
-                    title: String(localized: "Settings"),
-                    isSettings: true
-                )
-                tabs.append(settingsTab)
-                if state.isSettingsSelected {
-                    restoredSelectedTabID = settingsTab.id
-                }
+                continue
             } else if let fileURL = tabState.fileURL {
                 let openedTab = persistenceService.openDocumentLazily(at: fileURL)
                 tabs.append(openedTab)

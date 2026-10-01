@@ -64,7 +64,7 @@ NeatEditor ya está listo para usarse como un editor ligero de texto plano para 
 
 - Plataforma objetivo: macOS 15.0+
 - Stack: Swift 6, SwiftUI, AppKit bridge, Observation, XcodeGen
-- Validación actual: `xcodebuild ... test` (18 pruebas unitarias: sincronización de texto, persistencia, preferencias), verificación de compilación y pruebas manuales
+- Validación actual: `xcodebuild ... test` (pruebas unitarias: sincronización de texto, persistencia, programación de autoguardado, rutas de fallo del workspace, commits de composición nativos, preferencias de tamaño de fuente), verificación de compilación y pruebas manuales
 - Alcance actual: flujo de texto plano, sin texto enriquecido, plugins ni soporte multiplataforma
 
 ## Inicio rápido
@@ -99,18 +99,18 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 - `project.yml` es la fuente de verdad de la estructura del proyecto.
 - Ejecuta `xcodegen generate` después de añadir o eliminar archivos fuente.
-- `NeatEditorTests` cubre sincronización de texto, persistencia y preferencias (18 pruebas); ejecútalas con `xcodebuild ... test` (ver README en inglés).
+- `NeatEditorTests` cubre sincronización de texto, persistencia, programación de autoguardado, rutas de fallo del workspace, commits de composición nativos y preferencias de tamaño de fuente; ejecútalas con `xcodebuild ... test` (ver README en inglés).
 - Para cambios de comportamiento, conviene validar con la app compilada en lugar de depender solo de las previews.
 
 ## Releases
 
 Este repositorio publica mediante releases locales firmadas, no mediante CI.
 
-- El mantenedor compila el DMG + ZIP de Sparkle en local con `scripts/publish-release.sh` (firmado con Developer ID, notarizado).
-- Cada release pública contiene el DMG firmado (primera instalación), el ZIP firmado de Sparkle (actualizaciones en la app) y `SHA256SUMS.txt`.
-- El flujo de GitHub Actions basado en tags solo sube marcadores sin firmar; no los instales como release.
+- El mantenedor compila el DMG + ZIP de Sparkle en local con `scripts/publish-release.sh` (firmado con Developer ID, notarizado; se publica desde el borrador solo tras subir y releer).
+- Cada release pública firmada contiene el DMG firmado (primera instalación), el ZIP firmado de Sparkle (actualizaciones en la app) y `SHA256SUMS.txt`, con notas bilingües del `CHANGELOG.md` de la versión.
+- El flujo de GitHub Actions basado en tags solo compila para validar y conserva paquetes sin firmar como artefactos privados; no los instales como release.
 
-Instalación más simple: descarga el DMG firmado desde Releases, arrástralo a `Applications` y luego `open -a NeatEditor`. Solo macOS 15.0+ es compatible.
+Instalación: en Releases elige una versión cuyas notas indiquen firma Developer ID + notarización — instala solo archivos firmados (los `*-macOS-universal.*` antiguos, p. ej. en v1.0.3, son marcadores sin firmar). Arrástralo a `Applications` y luego `open -a NeatEditor`. Solo macOS 15.0+ es compatible.
 
 Consulta [RELEASING.md](./RELEASING.md) para más detalles.
 
@@ -129,7 +129,7 @@ Consulta [RELEASING.md](./RELEASING.md) para más detalles.
 
 ## Próximos huecos
 
-- Añadir un flujo general de CI para pushes y pull requests (hoy solo existe el flujo de tags, sin firmar).
+- Añadir un flujo general de CI para pushes y pull requests (hoy solo existe el flujo de validación de tags).
 
 ## Contribuir
 

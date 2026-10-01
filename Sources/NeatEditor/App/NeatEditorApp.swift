@@ -21,6 +21,9 @@ struct NeatEditorApp: App {
         ExternalFileOpenCoordinator.shared.handler = { [weak workspaceStore] urls in
             workspaceStore?.openFiles(at: urls)
         }
+        ExternalFileOpenCoordinator.shared.saveBeforeTermination = { [weak workspaceStore] in
+            workspaceStore?.saveAllDocuments() ?? true
+        }
     }
 
     var body: some Scene {

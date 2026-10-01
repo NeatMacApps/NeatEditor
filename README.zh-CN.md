@@ -39,6 +39,7 @@ NeatEditor 的目标很直接：减少界面噪音，把注意力还给文字本
 - 支持窗口置顶以及标题栏空白区域双击缩放窗口。
 - 已落盘文档重命名时会同步处理磁盘文件名，并允许编辑扩展名。
 - 空白内容不会覆盖已有文件，这是当前产品的明确设计选择。
+- 应用创建的文档位于 `~/.config/neateditor/documents/`（或 `XDG_CONFIG_HOME` 对应位置），首次保存时创建。
 
 ## 主要快捷键
 
@@ -60,11 +61,11 @@ NeatEditor 的目标很直接：减少界面噪音，把注意力还给文字本
 
 ## 当前状态
 
-NeatEditor 现在已经可以作为一个轻量 macOS 纯文本编辑器使用，当前展示版本为 `1.0.4`（内部构建号 `3`）。
+NeatEditor 现在已经可以作为一个轻量 macOS 纯文本编辑器使用。
 
 - 平台目标：macOS 15.0+
 - 技术栈：Swift 6、SwiftUI、AppKit bridge、Observation、XcodeGen
-- 当前验证方式：`xcodebuild ... test`（18 个单元测试：编辑器文本同步、文档持久化、偏好设置）、构建校验和手动测试
+- 当前验证方式：`xcodebuild ... test`（单元测试覆盖编辑器文本同步、文档持久化、自动保存调度、工作区失败路径、原生输入法组合提交、字号偏好）、构建校验和手动测试
 - 当前分发方式：通过 `scripts/publish-release.sh` 在本机打出 Developer ID 签名 + 公证 DMG（见 [RELEASING.md](./RELEASING.md)）
 - 当前范围：专注纯文本，不包含富文本、插件系统或跨平台支持
 
@@ -72,7 +73,7 @@ NeatEditor 现在已经可以作为一个轻量 macOS 纯文本编辑器使用�
 
 ### 安装（macOS）
 
-1. 从 [GitHub Releases](https://github.com/NeatEditor/NeatEditor/releases/latest) 下载最新签名版 `NeatEditor-<版本>.dmg`（可用 `SHA256SUMS.txt` 自行校验）。
+1. 打开 [GitHub Releases](https://github.com/NeatEditor/NeatEditor/releases)，选择发行说明中写明 Developer ID 签名 + 公证的版本。只有签名产物才是安装路径：旧的 `*-macOS-universal.*` 文件（例如 v1.0.3 上的）是未签名 CI 占位文件，不要安装。如提供 `SHA256SUMS.txt` 可自行校验。
 2. 打开 DMG，把 `NeatEditor.app` 拖入 `Applications`。
 3. 首次启动：
 
@@ -117,7 +118,7 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 - `project.yml` 是工程结构的真实来源。
 - 新增或删除源文件后，请重新执行 `xcodegen generate`。
-- `NeatEditorTests` 覆盖编辑器文本同步、文档持久化与偏好设置（共 18 个测试），运行方式：
+- `NeatEditorTests` 覆盖编辑器文本同步、文档持久化、自动保存调度、工作区失败路径、原生输入法组合提交与字号偏好，手动编辑场景见 [docs/editing-text-sync-test-cases.md](./docs/editing-text-sync-test-cases.md)，运行方式：
 
 ```bash
 xcodebuild -project "NeatEditor.xcodeproj" \
@@ -132,11 +133,11 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 公开安装包来自本机签名发版流程，而不是 CI：
 
-- 维护者在签名 Mac 上用 `scripts/publish-release.sh` 构建 DMG + Sparkle ZIP（Developer ID 签名、公证、装订）。
-- 每个公开 Release 包含签名 DMG（首次安装）、签名 Sparkle 更新 ZIP（应用内更新）和 `SHA256SUMS.txt`。
-- tag 触发的 GitHub Actions 只上传未签名构建占位文件，不要把它们当作正式版本安装。
+- 维护者在签名 Mac 上用 `scripts/publish-release.sh` 构建 DMG + Sparkle ZIP（Developer ID 签名、公证、装订；三件上传并回读确认后才从草稿转公开）。
+- 每个签名公开 Release 包含签名 DMG（首次安装）、签名 Sparkle 更新 ZIP（应用内更新）和 `SHA256SUMS.txt`，双语说明取自该版本的 `CHANGELOG.md` 条目。
+- tag 触发的 GitHub Actions 只构建校验打标签源码，未签名包仅作为私有工作流产物保留，不要把它们当作正式版本安装。
 
-完整流程、要求与交付交接见 [RELEASING.md](./RELEASING.md)。
+完整流程、要求与交付交接见 [RELEASING.md](./RELEASING.md)。本 checkout 不宣称除 Release 说明与校验文件之外的任何交付已验证。
 
 ## 仓库文档
 
@@ -154,7 +155,7 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 ## 已知后续改进方向
 
 - 补运行截图或演示 GIF，提升 GitHub 首页第一印象。
-- 增加常规 CI workflow，覆盖 push 和 pull request（目前只有一个未签名的 tag 工作流）。
+- 增加常规 CI workflow，覆盖 push 和 pull request（目前只有 tag 校验工作流）。
 
 ## 参与贡献
 

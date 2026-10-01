@@ -31,6 +31,7 @@ struct SettingsView: View {
                                 }
                             }
                             .frame(width: 120)
+                            .accessibilityLabel("Tab Behavior")
                             
                             Spacer()
                         }
@@ -45,6 +46,7 @@ struct SettingsView: View {
                                 }
                             }
                             .frame(width: 160)
+                            .accessibilityLabel("Language")
                             
                             Spacer()
                         }
@@ -69,15 +71,7 @@ struct SettingsView: View {
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                                         .fill(Color(NSColor.textBackgroundColor))
                                 )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(
-                                            editorTextSoftnessValidationMessage == nil
-                                            ? EditorChrome.border
-                                            : Color.orange,
-                                            lineWidth: EditorChrome.lineWidth
-                                        )
-                                )
+                                .accessibilityLabel("Editor Text Softness JSON")
                                 .onChange(of: editorTextSoftnessJSON) { _, newValue in
                                     applyEditorTextSoftnessJSON(newValue)
                                 }
@@ -108,6 +102,7 @@ struct SettingsView: View {
             .frame(maxWidth: 800, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .focusEffectDisabled()
         .background(EditorChrome.editorSurface)
         .overlay {
             EditorSurfaceBorderShape()

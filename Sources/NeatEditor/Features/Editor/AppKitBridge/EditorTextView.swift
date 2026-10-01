@@ -16,6 +16,7 @@ struct EditorTextView: NSViewRepresentable {
     let onIncreaseFontSize: () -> Void
     let onDecreaseFontSize: () -> Void
     let onOpenFiles: ([URL]) -> Void
+    let onRegisterCommitHandler: (@escaping @MainActor (UUID) -> Void) -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -46,6 +47,8 @@ struct EditorTextView: NSViewRepresentable {
             coordinator.handleCompositionEnd(in: textView, containerView: containerView)
         }
         containerView.applyFontSize(fontSize)
+
+        context.coordinator.registerCommitHandler(for: textView)
 
         return containerView
     }
@@ -144,6 +147,19 @@ struct EditorTextView: NSViewRepresentable {
 
         init(parent: EditorTextView) {
             self.parent = parent
+        }
+
+        func registerCommitHandler(for textView: ZoomableTextView) {
+            parent.onRegisterCommitHandler { [weak self, weak textView] id in
+                guard let self, let textView, textView.isEditable,
+                      sync.boundTabID == id else { return }
+                if textView.hasMarkedText() {
+                    textView.unmarkText()
+                }
+                if textView.string != sync.lastKnownText {
+                    reportAppKitText(textView.string)
+                }
+            }
         }
 
         func textView(

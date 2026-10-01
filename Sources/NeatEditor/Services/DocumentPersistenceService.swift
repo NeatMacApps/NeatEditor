@@ -18,11 +18,13 @@ struct DocumentPersistenceService {
 
     init(
         fileManager: FileManager = .default,
-        defaultDirectory: URL? = nil
+        defaultDirectory: URL? = nil,
+        environment: [String: String]? = nil
     ) {
         self.fileManager = fileManager
+        let environment = environment ?? ProcessInfo.processInfo.environment
         self.defaultDirectory = defaultDirectory
-            ?? Self.resolveDefaultDirectory(using: fileManager)
+            ?? Self.resolveDefaultDirectory(using: fileManager, environment: environment)
     }
 
     func save(tab: EditorTab) throws -> EditorTab {
@@ -47,11 +49,16 @@ struct DocumentPersistenceService {
         let fileName = (validatedTitle as NSString).pathExtension.isEmpty
             ? "\(validatedTitle).txt"
             : validatedTitle
+        guard let data = savedTab.content.data(using: .utf8) else {
+            throw CocoaError(
+                .fileWriteInapplicableStringEncoding,
+                userInfo: [NSFilePathErrorKey: fileName]
+            )
+        }
 
         // Deferred until the first non-blank save so merely opening the app or
         // creating empty tabs never touches the filesystem.
-        try fileManager.createDirectory(at: defaultDirectory, withIntermediateDirectories: true)
-        let fileURL = try exclusiveCreateFile(named: fileName, content: savedTab.content)
+        let fileURL = try exclusivePublish(data: data, named: fileName)
         savedTab.fileURL = fileURL
         savedTab.title = fileURL.lastPathComponent
 
@@ -80,20 +87,22 @@ struct DocumentPersistenceService {
             throw PersistenceError.destinationAlreadyExists(destinationURL)
         }
 
-        if fileManager.fileExists(atPath: normalizedFileURL.path) {
-            // moveItem itself refuses to overwrite an existing destination, so
-            // a file created at the destination between the check above and
-            // now still cannot be clobbered; map that race to the same error.
-            do {
-                try fileManager.moveItem(at: normalizedFileURL, to: destinationURL)
-            } catch let error as CocoaError where error.code == .fileWriteFileExists {
-                throw PersistenceError.destinationAlreadyExists(destinationURL)
-            } catch let error as NSError
-                where error.domain == NSCocoaErrorDomain
-                    && error.code == NSFileWriteFileExistsError
-            {
-                throw PersistenceError.destinationAlreadyExists(destinationURL)
-            }
+        guard fileManager.fileExists(atPath: normalizedFileURL.path) else {
+            // The persisted file is gone; refuse to repoint the tab at a
+            // destination that may later belong to an unrelated file.
+            throw CocoaError(
+                .fileReadNoSuchFile,
+                userInfo: [NSFilePathErrorKey: normalizedFileURL.path]
+            )
+        }
+
+        // moveItem itself refuses to overwrite an existing destination, so
+        // a file created at the destination between the check above and
+        // now still cannot be clobbered; map that race to the same error.
+        do {
+            try fileManager.moveItem(at: normalizedFileURL, to: destinationURL)
+        } catch where isFileExistsError(error) {
+            throw PersistenceError.destinationAlreadyExists(destinationURL)
         }
 
         renamedTab.fileURL = destinationURL
@@ -128,22 +137,23 @@ struct DocumentPersistenceService {
         fileURL.standardizedFileURL.resolvingSymlinksInPath()
     }
 
-    private static func resolveDefaultDirectory(using fileManager: FileManager) -> URL {
+    static func resolveDefaultDirectory(
+        using fileManager: FileManager,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> URL {
         // App-owned documents live under the XDG config home so they stay out
         // of the user's Documents folder. Existing fileURLs are never
-        // rewritten, so this only affects newly saved documents.
-        if let xdgConfigHome = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"],
+        // rewritten, so this only affects newly saved documents. Relative
+        // XDG values are ignored per the base directory specification, which
+        // requires an absolute path.
+        if let xdgConfigHome = environment["XDG_CONFIG_HOME"],
            !xdgConfigHome.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         {
             let expanded = (xdgConfigHome as NSString).expandingTildeInPath
-            let base: URL
-            if (expanded as NSString).isAbsolutePath {
-                base = URL(fileURLWithPath: expanded, isDirectory: true)
-            } else {
-                base = fileManager.homeDirectoryForCurrentUser
-                    .appendingPathComponent(expanded, isDirectory: true)
+            if expanded.hasPrefix("/") {
+                return URL(fileURLWithPath: expanded, isDirectory: true)
+                    .appendingPathComponent("neateditor/documents", isDirectory: true)
             }
-            return base.appendingPathComponent("neateditor/documents", isDirectory: true)
         }
 
         return fileManager.homeDirectoryForCurrentUser.appendingPathComponent(
@@ -175,11 +185,32 @@ struct DocumentPersistenceService {
         return trimmed
     }
 
-    /// Creates a new file that must not already exist and writes the content
-    /// into it. Uses O_EXCL so a file appearing between the existence check
-    /// and creation still cannot be overwritten; on collision a numbered
-    /// sibling name is tried instead, leaving both contents intact.
-    private func exclusiveCreateFile(named fileName: String, content: String) throws -> URL {
+    /// Publishes a complete file at a fresh name without ever overwriting an
+    /// existing one. The content is written once to a unique private staging
+    /// sibling (never at a candidate name, so a failed or interrupted write
+    /// cannot leave a partial document), then each candidate name is claimed
+    /// with an exclusive hard-link publication reusing that same inode; a
+    /// name taken in the meantime yields the next numbered sibling, leaving
+    /// both contents intact. Pre-existing files are never modified.
+    private func exclusivePublish(data: Data, named fileName: String) throws -> URL {
+        try fileManager.createDirectory(
+            at: defaultDirectory,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
+
+        // .withoutOverwriting guards the staging name itself; it is never
+        // combined with .atomic — NSData.h forbids that pair.
+        let stagingURL = defaultDirectory.appendingPathComponent(
+            ".neateditor-staging-\(UUID().uuidString)"
+        )
+        defer { try? fileManager.removeItem(at: stagingURL) }
+        try data.write(to: stagingURL, options: .withoutOverwriting)
+        try fileManager.setAttributes(
+            [.posixPermissions: 0o600],
+            ofItemAtPath: stagingURL.path
+        )
+
         let baseName = (fileName as NSString).deletingPathExtension
         let pathExtension = (fileName as NSString).pathExtension
 
@@ -194,9 +225,19 @@ struct DocumentPersistenceService {
                 candidate = "\(baseName) \(attempt + 1).\(pathExtension)"
             }
             lastCandidate = candidate
-            let candidateURL = defaultDirectory.appendingPathComponent(candidate)
-            if try writeExclusively(content: content, to: candidateURL) {
-                return normalizedFileURL(for: candidateURL)
+
+            do {
+                try fileManager.linkItem(
+                    at: stagingURL,
+                    to: defaultDirectory.appendingPathComponent(candidate)
+                )
+                // The candidate now links the complete staged inode and keeps
+                // its 600 mode; the staging alias is dropped by the defer.
+                return normalizedFileURL(
+                    for: defaultDirectory.appendingPathComponent(candidate)
+                )
+            } catch where isFileExistsError(error) {
+                continue
             }
         }
 
@@ -205,44 +246,17 @@ struct DocumentPersistenceService {
         )
     }
 
-    /// Returns true when this call created and wrote the file, false when the
-    /// file already existed. Throws on any other failure.
-    private func writeExclusively(content: String, to fileURL: URL) throws -> Bool {
-        guard let data = content.data(using: .utf8) else {
-            throw CocoaError(.fileWriteInapplicableStringEncoding, userInfo: [NSFilePathErrorKey: fileURL.path])
+    /// An existing destination surfaces as NSFileWriteFileExistsError from
+    /// FileManager copy/move/link calls. CocoaError bridges to NSError
+    /// preserving domain and code, so a single NSError check covers both the
+    /// Swift and Objective-C spellings in one place.
+    private func isFileExistsError(_ error: Error) -> Bool {
+        if let error = error as? CocoaError, error.code == .fileWriteFileExists {
+            return true
         }
-
-        let path = fileURL.path
-        let descriptor = path.withCString { cPath in
-            open(cPath, O_WRONLY | O_CREAT | O_EXCL, mode_t(0o644))
-        }
-        if descriptor == -1 {
-            if errno == EEXIST {
-                return false
-            }
-            let code = errno
-            throw NSError(domain: NSPOSIXErrorDomain, code: Int(code), userInfo: [NSFilePathErrorKey: path])
-        }
-        defer { close(descriptor) }
-
-        try data.withUnsafeBytes { (buffer: UnsafeRawBufferPointer) in
-            var written = 0
-            while written < buffer.count {
-                guard let baseAddress = buffer.baseAddress else { break }
-                let result = write(descriptor, baseAddress.advanced(by: written), buffer.count - written)
-                if result == -1 {
-                    if errno == EINTR {
-                        continue
-                    }
-                    let code = errno
-                    try? fileManager.removeItem(at: fileURL)
-                    throw NSError(domain: NSPOSIXErrorDomain, code: Int(code), userInfo: [NSFilePathErrorKey: path])
-                }
-                written += result
-            }
-        }
-
-        return true
+        let nsError = error as NSError
+        return nsError.domain == NSCocoaErrorDomain
+            && nsError.code == NSFileWriteFileExistsError
     }
 
     /// Names the next untitled tab from in-memory tabs only. Deliberately

@@ -43,16 +43,16 @@ extension WorkspaceStore {
         // Only update if it actually differs from what's currently in UserDefaults
         // to avoid triggering "restart required" continuously.
         if appLanguage == .system {
-            if UserDefaults.standard.object(forKey: UserDefaultsKey.appleLanguages) != nil {
-                UserDefaults.standard.removeObject(forKey: UserDefaultsKey.appleLanguages)
+            if userDefaults.object(forKey: UserDefaultsKey.appleLanguages) != nil {
+                userDefaults.removeObject(forKey: UserDefaultsKey.appleLanguages)
                 isLanguageChangePendingRestart = true
             }
         } else {
-            let currentLanguages = UserDefaults.standard.stringArray(
+            let currentLanguages = userDefaults.stringArray(
                 forKey: UserDefaultsKey.appleLanguages
             )
             if currentLanguages?.first != appLanguage.rawValue {
-                UserDefaults.standard.set(
+                userDefaults.set(
                     [appLanguage.rawValue],
                     forKey: UserDefaultsKey.appleLanguages
                 )

@@ -13,6 +13,8 @@ final class ExternalFileOpenCoordinator {
 
     private var pendingFileURLs: [URL] = []
 
+    var saveBeforeTermination: (@MainActor () -> Bool)?
+
     private init() {}
 
     func enqueue(_ urls: [URL]) {
@@ -42,6 +44,12 @@ final class ExternalFileOpenCoordinator {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        ExternalFileOpenCoordinator.shared.saveBeforeTermination?() == false
+            ? .terminateCancel
+            : .terminateNow
+    }
+
     func application(_ application: NSApplication, open urls: [URL]) {
         ExternalFileOpenCoordinator.shared.enqueue(urls)
     }

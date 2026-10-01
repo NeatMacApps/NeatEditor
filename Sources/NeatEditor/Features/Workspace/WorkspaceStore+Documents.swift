@@ -75,23 +75,38 @@ extension WorkspaceStore {
                 let messageFormat = String(
                     localized: "“%@” already exists in this folder. Use a different name and try again."
                 )
-                renameFailureAlert = RenameFailureAlert(
+                presentDocumentFailure(
                     title: String(localized: "Rename Failed"),
                     message: String(format: messageFormat, url.lastPathComponent)
                 )
+            } else {
+                presentDocumentFailure(title: String(localized: "Rename Failed"), message: error.localizedDescription)
             }
             Self.logger.error("Failed to rename document: \(error.localizedDescription, privacy: .public)")
         }
     }
 
-    func dismissRenameFailureAlert() {
-        renameFailureAlert = nil
+    func dismissDocumentFailureAlert() {
+        documentFailureAlert = nil
     }
 
-    func saveDocument(id: UUID) {
-        guard let index = tabs.firstIndex(where: { $0.id == id }), !tabs[index].isSettings else { return }
+    private func presentDocumentFailure(title: String, message: String) {
+        guard documentFailureAlert == nil else { return }
+        documentFailureAlert = DocumentFailureAlert(title: title, message: message)
+    }
 
-        guard tabs[index].isContentLoaded else { return }
+    func updateDocumentContent(_ content: String, for id: UUID) {
+        guard let index = tabs.firstIndex(where: { $0.id == id }) else { return }
+        tabs[index].content = content
+    }
+
+    @discardableResult
+    func saveDocument(id: UUID) -> Bool {
+        commitEditorChanges?(id)
+        guard let index = tabs.firstIndex(where: { $0.id == id }), !tabs[index].isSettings else { return true }
+
+        guard tabs[index].isContentLoaded else { return true }
+        autoSaveScheduler.cancel(for: id)
 
         do {
             tabs[index] = try persistenceService.save(tab: tabs[index])
@@ -102,20 +117,28 @@ extension WorkspaceStore {
                 )
             }
             saveState()
+            return true
         } catch {
+            presentDocumentFailure(title: String(localized: "Save Failed"), message: error.localizedDescription)
             Self.logger.error("Failed to save document: \(error.localizedDescription, privacy: .public)")
+            return false
         }
     }
 
-    func saveAllDocuments() {
+    @discardableResult
+    func saveAllDocuments() -> Bool {
+        var didSaveAll = true
         for tab in tabs {
-            saveDocument(id: tab.id)
+            if !saveDocument(id: tab.id) {
+                didSaveAll = false
+            }
         }
         // saveDocument enqueues a debounced saveState; force a synchronous
         // flush here because saveAllDocuments is invoked at lifecycle
         // boundaries (scenePhase != active, app termination) where we cannot
         // rely on the debounce window completing.
         flushPendingSaveState()
+        return didSaveAll
     }
 
     func cancelAutoSave(for id: UUID) {
@@ -157,6 +180,10 @@ extension WorkspaceStore {
 
                 loadingTabIDs.remove(id)
                 guard let currentIndex = self.tabs.firstIndex(where: { $0.id == id }) else { return }
+                guard self.tabs[currentIndex].fileURL.map(persistenceService.normalizedFileURL(for:)) == normalizedURL else {
+                    loadTabContentIfNeeded(id: id)
+                    return
+                }
                 // The editor is non-editable while loading, so non-empty
                 // content here means something else already provided it —
                 // never silently discard it with the stale load result.
@@ -170,14 +197,13 @@ extension WorkspaceStore {
                 loadingTabIDs.remove(id)
                 Self.logger.error("Failed to load document content lazily at \(fileURL.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
                 guard let currentIndex = self.tabs.firstIndex(where: { $0.id == id }) else { return }
-                if self.tabs[currentIndex].content.isEmpty {
-                    let messageFormat = String(localized: "Failed to load document: %@")
-                    self.tabs[currentIndex].content = String(
-                        format: messageFormat,
-                        error.localizedDescription
-                    )
+                guard self.tabs[currentIndex].fileURL.map(persistenceService.normalizedFileURL(for:)) == normalizedURL else {
+                    loadTabContentIfNeeded(id: id)
+                    return
                 }
-                self.tabs[currentIndex].isContentLoaded = true
+                // An error is never document text. Keep the placeholder
+                // unsaveable so lifecycle autosave cannot corrupt the file.
+                presentDocumentFailure(title: String(localized: "Open Failed"), message: error.localizedDescription)
             }
         }
     }

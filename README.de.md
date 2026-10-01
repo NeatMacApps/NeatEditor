@@ -64,7 +64,7 @@ NeatEditor ist als leichter Plain-Text-Editor für macOS einsatzbereit und wird 
 
 - Zielplattform: macOS 15.0+
 - Stack: Swift 6, SwiftUI, AppKit bridge, Observation, XcodeGen
-- Aktuelle Validierung: `xcodebuild ... test` (18 Unit-Tests: Text-Sync, Persistenz, Einstellungen), Build-Prüfung und manuelle Tests
+- Aktuelle Validierung: `xcodebuild ... test` (Unit-Tests: Text-Sync, Persistenz, Autosave-Planung, Workspace-Fehlerpfade, native IME-Commits, Schriftgrößen-Einstellungen), Build-Prüfung und manuelle Tests
 - Aktueller Umfang: Plain-Text-Workflow, kein Rich Text, keine Plugins, keine plattformübergreifende Unterstützung
 
 ## Schnellstart
@@ -99,18 +99,18 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 - `project.yml` ist die Quelle der Wahrheit für die Projektstruktur.
 - Führe `xcodegen generate` nach dem Hinzufügen oder Entfernen von Quelldateien aus.
-- `NeatEditorTests` deckt Text-Sync, Persistenz und Einstellungen ab (18 Tests); ausführen mit `xcodebuild ... test` (siehe englisches README).
+- `NeatEditorTests` deckt Text-Sync, Persistenz, Autosave-Planung, Workspace-Fehlerpfade, native IME-Commits und Schriftgrößen-Einstellungen ab; ausführen mit `xcodebuild ... test` (siehe englisches README).
 - Bei Verhaltensänderungen sollte möglichst mit der gebauten App statt nur mit Previews validiert werden.
 
 ## Releases
 
 Dieses Repository veröffentlicht über signierte lokale Releases, nicht über CI.
 
-- Der Maintainer baut DMG + Sparkle-ZIP lokal mit `scripts/publish-release.sh` (Developer-ID-signiert, notarisiert).
-- Jedes öffentliche Release enthält das signierte DMG (Erstinstallation), das signierte Sparkle-ZIP (In-App-Updates) und `SHA256SUMS.txt`.
-- Der tagbasierte GitHub-Actions-Workflow lädt nur unsignierte Platzhalter hoch; diese nicht als Release installieren.
+- Der Maintainer baut DMG + Sparkle-ZIP lokal mit `scripts/publish-release.sh` (Developer-ID-signiert, notarisiert; erst nach Upload plus Rücklesen aus dem Entwurf veröffentlicht).
+- Jede signierte öffentliche Release enthält das signierte DMG (Erstinstallation), das signierte Sparkle-ZIP (In-App-Updates) und `SHA256SUMS.txt`, mit zweisprachigen Hinweisen aus dem `CHANGELOG.md`-Eintrag der Version.
+- Der tagbasierte GitHub-Actions-Workflow baut nur zur Validierung und behält unsignierte Pakete als private Workflow-Artefakte; diese nicht als Release installieren.
 
-Der einfachste Installationsweg: signiertes DMG von der Releases-Seite laden, nach `Applications` ziehen, dann `open -a NeatEditor`. Nur macOS 15.0+ wird unterstützt.
+Installationsweg: Auf der Releases-Seite eine Version wählen, deren Hinweise Developer-ID-Signierung + Notarisierung nennen — nur signierte Dateien installieren (ältere `*-macOS-universal.*`-Dateien, z. B. unter v1.0.3, sind unsignierte CI-Platzhalter). Nach `Applications` ziehen, dann `open -a NeatEditor`. Nur macOS 15.0+ wird unterstützt.
 
 Details stehen in [RELEASING.md](./RELEASING.md).
 
@@ -129,7 +129,7 @@ Details stehen in [RELEASING.md](./RELEASING.md).
 
 ## Bekannte Lücken
 
-- Einen allgemeinen CI-Workflow für Pushes und Pull Requests hinzufügen (derzeit nur der unsignierte Tag-Workflow).
+- Einen allgemeinen CI-Workflow für Pushes und Pull Requests hinzufügen (derzeit nur der Tag-Validierungs-Workflow).
 
 ## Mitwirken
 

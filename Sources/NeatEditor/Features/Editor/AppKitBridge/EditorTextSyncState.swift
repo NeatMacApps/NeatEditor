@@ -25,6 +25,8 @@ struct EditorTextSyncState {
     /// Last string both sides agreed on.
     private(set) var lastKnownText: String?
 
+    private var hasTextViewEdits = false
+
     enum Update {
         /// Assign this string to the text view (tab switch or external change).
         case pushToTextView(String)
@@ -37,6 +39,7 @@ struct EditorTextSyncState {
     mutating func noteTextViewContent(_ string: String, for tabID: UUID) {
         boundTabID = tabID
         lastKnownText = string
+        hasTextViewEdits = true
     }
 
     /// Record a string that was just pushed programmatically
@@ -44,6 +47,7 @@ struct EditorTextSyncState {
     mutating func notePushedText(_ text: String, for tabID: UUID) {
         boundTabID = tabID
         lastKnownText = text
+        hasTextViewEdits = false
     }
 
     /// Decide what `updateNSView` should do for the given binding value.
@@ -55,6 +59,7 @@ struct EditorTextSyncState {
         guard boundTabID == tabID else {
             boundTabID = tabID
             lastKnownText = text
+            hasTextViewEdits = false
             return .pushToTextView(text)
         }
 
@@ -66,7 +71,9 @@ struct EditorTextSyncState {
         // own AppKit -> SwiftUI report (or nothing changed at all). The live
         // text view may already contain newer keystrokes than this snapshot,
         // so it must not be overwritten.
-        guard text != lastKnownText else {
+        // Once AppKit has reported an edit, it owns the live buffer for this
+        // tab. Delayed model snapshots are not external replacements.
+        guard !hasTextViewEdits, text != lastKnownText else {
             return .keepTextView
         }
 

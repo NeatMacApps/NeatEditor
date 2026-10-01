@@ -8,7 +8,7 @@
 #
 # 用法：
 #   scripts/publish-release.sh                 # 后台完整发布
-#   scripts/publish-release.sh --local-only    # 后台完成本地产物，不推送
+#   scripts/publish-release.sh --local-only    # 后台完成本地产物，不推送远端
 #   scripts/publish-release.sh --foreground    # 在当前终端运行（仅排障）
 #   scripts/publish-release.sh --dry-run       # 只检查前置条件和发布配置
 
@@ -197,6 +197,9 @@ appcast_build="$(sed -n 's/.*<sparkle:version>\([0-9][0-9]*\)<\/sparkle:version>
 if [[ "${build_number}" -le "${appcast_build}" ]]; then
   die "内部构建号 ${build_number} 未大于已发布构建号 ${appcast_build}；先递增 CURRENT_PROJECT_VERSION"
 fi
+# 发行说明的英文正文取自 CHANGELOG；缺条目直接失败，不用签名话术凑数。
+changelog_notes="$(awk -v ver="${version}" '/^## / { active = ($2 == ver); next } active { print }' CHANGELOG.md)"
+[[ -n "${changelog_notes:-}" ]] || die "CHANGELOG.md 缺少 ${version} 条目，先补变更记录再发布"
 
 if [[ "${local_only}" == false && "${dry_run}" == false ]]; then
   gh repo view "${REPOSITORY}" --json isPrivate,defaultBranchRef --jq '.isPrivate == false and .defaultBranchRef.name == "main"' \
@@ -209,6 +212,8 @@ if [[ "${dry_run}" == true ]]; then
 fi
 
 # 单实例互斥：同一工作树禁止并行发版（两实例抢产物目录会签坏密封，公证 Invalid）。
+# 父目录只在真实运行时创建；--dry-run 在此前已退出，不落任何目录。
+mkdir -p "${BUILD_DIR}"
 lock_dir="${BUILD_DIR}/.publish-lock"
 if ! mkdir "${lock_dir}" 2>/dev/null; then
   die "另一个发布正在运行（${lock_dir} 已存在）；确认无发布进程后手动删除再跑"
@@ -227,11 +232,20 @@ SOURCE_COMMIT="$(git rev-parse HEAD)"
 readonly SOURCE_COMMIT
 [[ -z "$(git status --porcelain)" ]] || die "工作区仍有未纳入快照的改动"
 printf '发布源提交：%s\n' "${SOURCE_COMMIT}"
+# 标签先行校验：已存在的标签必须指向本次源提交，否则在耗时的构建/公证之前停下。
+# 标签不可移动；同源重试会命中“已存在且一致”分支继续走。
+if git rev-parse "v${version}" >/dev/null 2>&1; then
+  [[ "$(git rev-list -n 1 "v${version}")" == "${SOURCE_COMMIT}" ]] \
+    || die "标签 v${version} 已存在且指向另一提交（标签不可移动）；先核对远端再处理"
+else
+  git tag -a "v${version}" "${SOURCE_COMMIT}" -m "v${version}"
+fi
 
 log_step "归档 Developer ID 版本"
 rm -rf "${ARCHIVE_PATH}" "${EXPORT_DIR}"
 xcodebuild -project "${APP_NAME}.xcodeproj" -scheme "${APP_NAME}" -configuration Release \
-  -destination 'platform=macOS' -derivedDataPath "${DERIVED_DATA}" -archivePath "${ARCHIVE_PATH}" archive >/dev/null
+  -destination 'platform=macOS' -derivedDataPath "${DERIVED_DATA}" -archivePath "${ARCHIVE_PATH}" \
+  ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO archive >/dev/null
 
 work_dir="$(mktemp -d)"
 trap 'rm -rf "${work_dir}" "${lock_dir}"' EXIT
@@ -253,6 +267,18 @@ xcodebuild -exportArchive -archivePath "${ARCHIVE_PATH}" -exportOptionsPlist "${
 # 来源指纹守卫：构建不得漂移或污染工作区，否则产物与标签对不上源提交。
 [[ "$(git rev-parse HEAD)" == "${SOURCE_COMMIT}" ]] || die "构建期间 HEAD 已漂移，停止发布"
 [[ -z "$(git status --porcelain)" ]] || die "构建污染了工作区，先检查再发布"
+# 构建身份守卫：产物内的展示版本/构建号必须与配置一致，且为 universal 二进制。
+# 公证之前校验，错配不进苹果队列。
+bundle_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${APP_PATH}/Contents/Info.plist" 2>/dev/null || true)"
+bundle_build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "${APP_PATH}/Contents/Info.plist" 2>/dev/null || true)"
+[[ "${bundle_version}" == "${version}" ]] \
+  || die "产物展示版本 ${bundle_version:-未知} 与配置 ${version} 不一致"
+[[ "${bundle_build}" == "${build_number}" ]] \
+  || die "产物构建号 ${bundle_build:-未知} 与配置 ${build_number} 不一致"
+lipo -info "${APP_PATH}/Contents/MacOS/${APP_NAME}" | grep -q -e 'arm64' \
+  || die "产物不是 universal 二进制"
+lipo -info "${APP_PATH}/Contents/MacOS/${APP_NAME}" | grep -q -e 'x86_64' \
+  || die "产物不是 universal 二进制"
 readonly sparkle_bin_dir="${DERIVED_DATA}/SourcePackages/artifacts/sparkle/Sparkle/bin"
 [[ -x "${sparkle_bin_dir}/generate_appcast" ]] || die "找不到 Sparkle 的 generate_appcast 工具"
 resign_sparkle_framework
@@ -324,60 +350,40 @@ if [[ "${local_only}" == true ]]; then
 fi
 
 log_step "打标签并发布 GitHub Release"
-# 构建产物已来自 SOURCE_COMMIT；标签必须指向该提交，标签不可移动。
-if git rev-parse "v${version}" >/dev/null 2>&1; then
-  [[ "$(git rev-list -n 1 "v${version}")" == "${SOURCE_COMMIT}" ]] \
-    || die "标签 v${version} 已存在且指向另一提交（标签不可移动）；先核对远端再处理"
-else
-  git tag -a "v${version}" "${SOURCE_COMMIT}" -m "v${version}"
-fi
+# 标签已在构建前创建并校验（见上文）；此处只推送。构建产物来自 SOURCE_COMMIT。
 git push origin "${DEFAULT_BRANCH}"
 if ! git push origin "v${version}"; then
   sleep 10
   git push origin "v${version}" || die "标签推送失败（两次尝试）"
 fi
 
-# 推送标签会触发 CI Release 任务（上传未签名占位产物）。等它结束再传签名
-# 产物，避免两者互相覆盖；API 偶发失败时不阻塞签名发布（后文仍会删占位并核对）。
-log_step "等待同标签 CI 占位任务结束"
-ci_waited=0
-while [[ "${ci_waited}" -lt 1800 ]]; do
-  ci_busy="$(gh run list --workflow Release --limit 20 --json headBranch,status \
-    --jq '[.[] | select(.headBranch == "v'"${version}"'" and (.status == "queued" or .status == "in_progress" or .status == "waiting"))] | length' 2>/dev/null || printf '0')"
-  [[ "${ci_busy}" == "0" ]] && break
-  sleep 30
-  ci_waited=$((ci_waited + 30))
-done
-if [[ "${ci_busy}" != "0" ]]; then
-  printf '警告：CI Release 任务仍在运行，继续上传签名产物；若其随后覆盖附件，需重跑本脚本后半段。\n'
-fi
-
-# 发行说明中英双语、英文在前，用真实换行（\n 字面量在 --notes 里不会展开）。
+# 标签 CI 已改为纯校验（只读权限、私有产物），不再发布任何公开附件，
+# 因此本脚本不等待 CI，也不再删除占位产物。发行页一律先建草稿：上传失败
+# 只留草稿，绝不产生空的或未签名的 Latest。同源重试安全：标签不可移动，
+# 已存在的草稿直接复用。
+# 发行说明中英双语、英文在前，用真实换行。英文正文取自 CHANGELOG 当版条目。
 notes_file="${work_dir}/release-notes.md"
-cat > "${notes_file}" <<EOF
-NeatEditor ${version}
+{
+  printf 'NeatEditor %s\n\n' "${version}"
+  printf '%s\n' "${changelog_notes}"
+  cat <<'EOF'
 
-Signed with a Developer ID certificate, notarized by Apple, and stapled for offline Gatekeeper checks.
-Download the DMG below, drag NeatEditor.app to Applications, then launch with: open -a NeatEditor
-In-app Sparkle updates are EdDSA-signed and verified before install.
+---
 
-NeatEditor ${version}（简体中文）
+NeatEditor（简体中文）
 
-已用 Developer ID 签名、经苹果公证并装订票据，断网也可通过 Gatekeeper 校验。
+本版本已用 Developer ID 签名、经苹果公证并装订票据，断网也可通过 Gatekeeper 校验。
 下载下方 DMG，把 NeatEditor.app 拖入 Applications，再执行 open -a NeatEditor 启动。
-应用内 Sparkle 更新带 EdDSA 签名，安装前验签。
+应用内 Sparkle 更新带 EdDSA 签名，安装前验签。以上英文为当版完整变更记录。
 EOF
-gh release create "v${version}" --repo "${REPOSITORY}" --title "v${version}" --notes-file "${notes_file}" 2>/dev/null || true
-# 先删 CI 的未签名占位产物（*-macOS-universal.*），再逐个上传签名文件并回读。
-# 单条命令只传一个文件：多文件同传曾回报成功却只留下一个。
-existing_assets="$(gh release view "v${version}" --repo "${REPOSITORY}" --json assets --jq '.assets[].name' 2>/dev/null || true)"
-for asset_name in ${existing_assets}; do
-  case "${asset_name}" in
-    *-macOS-universal.*)
-      gh release delete-asset "v${version}" "${asset_name}" --repo "${REPOSITORY}" -y >/dev/null || true
-      ;;
-  esac
-done
+} > "${notes_file}"
+if gh release view "v${version}" --repo "${REPOSITORY}" >/dev/null 2>&1; then
+  printf '复用已存在的 v%s 发行页（同源重试）。\n' "${version}"
+else
+  gh release create "v${version}" --repo "${REPOSITORY}" --title "v${version}" --draft --notes-file "${notes_file}" \
+    || die "草稿发行页创建失败（未产生公开 Latest）"
+fi
+# 逐个上传签名文件并回读。单条命令只传一个文件：多文件同传曾回报成功却只留下一个。
 gh release upload "v${version}" "${dmg_path}" --repo "${REPOSITORY}" --clobber
 gh release view "v${version}" --repo "${REPOSITORY}" --json assets --jq '.assets[].name'
 gh release upload "v${version}" "${update_zip_path}" --repo "${REPOSITORY}" --clobber
@@ -385,12 +391,16 @@ gh release view "v${version}" --repo "${REPOSITORY}" --json assets --jq '.assets
 gh release upload "v${version}" "${checksum_path}" --repo "${REPOSITORY}" --clobber
 final_assets="$(gh release view "v${version}" --repo "${REPOSITORY}" --json assets --jq '.assets[].name')"
 printf '%s\n' "${final_assets}"
-grep -q "$(basename "${dmg_path}")" <<<"${final_assets}" || die "发行页缺少签名 dmg"
-grep -q "$(basename "${update_zip_path}")" <<<"${final_assets}" || die "发行页缺少签名更新包"
-grep -q "SHA256SUMS.txt" <<<"${final_assets}" || die "发行页缺少校验文件"
+grep -q "$(basename "${dmg_path}")" <<<"${final_assets}" || die "发行页缺少签名 dmg（仍是草稿，未公开）"
+grep -q "$(basename "${update_zip_path}")" <<<"${final_assets}" || die "发行页缺少签名更新包（仍是草稿，未公开）"
+grep -q "SHA256SUMS.txt" <<<"${final_assets}" || die "发行页缺少校验文件（仍是草稿，未公开）"
 if grep -q "macOS-universal" <<<"${final_assets}"; then
-  die "发行页仍残留未签名 CI 占位产物，禁止当作公开发布"
+  die "发行页残留未签名 CI 占位产物，保持草稿并人工清理后再发布"
 fi
+# 三件齐且核对无误后才公开。
+gh release edit "v${version}" --repo "${REPOSITORY}" --draft=false || die "草稿转公开失败"
+gh release view "v${version}" --repo "${REPOSITORY}" --json isDraft --jq '.isDraft' | grep -q false \
+  || die "发行页仍是草稿"
 ditto "${appcast_dir}/appcast.xml" "${APPCAST_PATH}"
 git add "${APPCAST_PATH}"
 if ! git diff --cached --quiet; then

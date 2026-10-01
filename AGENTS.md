@@ -97,7 +97,7 @@ done
 ```bash
 xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration Debug -destination 'platform=macOS' test
 ```
-- `NeatEditorTests` covers text synchronization, document persistence, font-size preferences, and autosave scheduling (29 cases).
+- `NeatEditorTests` covers text synchronization, document persistence, autosave scheduling, workspace failure paths, native composition commits, and font preferences.
 - 手动编辑场景（剪切/撤销/输入法/切 tab/懒加载竞态/缩放手势）见 `docs/editing-text-sync-test-cases.md`。
 
 单个测试类：
@@ -213,6 +213,8 @@ xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration D
 ## 文档导航
 
 - [TabStripGestures.md](TabStripGestures.md): Tab click, rename, window zoom, and concentric top-right pin alignment.
+- [docs/editing-text-sync-test-cases.md](docs/editing-text-sync-test-cases.md): Editing and persistence contracts, failure recovery, input-method ownership, and manual acceptance scenarios.
+- [docs/code-review.md](docs/code-review.md): Code review findings, implemented fixes, verification evidence, and remaining architecture decisions.
 - [Notarization agreement rejection](docs/troubleshooting/2026-10-01-notary-agreement.md): Account agreement preflight failure and release recovery.
 - `docs/troubleshooting/2026-08-09-app-icon-stale-install.md`：改、替换、还原代码或排查「图标变成白底手写 A / 被还原到几个月前」前**必读**。不读会把公开仓里的占位图装回本机，盖掉现行蓝底卷纸图标。
 - 现行图标母版：`design/app-icon/AppIcon-1024.png`。工程内 `AppIcon.appiconset` 必须跟这张走，不要跟 git 历史上的占位图走。

@@ -37,7 +37,7 @@ struct EditorTextSyncStateTests {
         // A previously scheduled updateNSView still carries the older "ab".
         // It can no longer be mistaken for an external change because the
         // agreement point already moved to "abc".
-        let update = sync.update(for: tabID, text: "abc", hasMarkedText: false)
+        let update = sync.update(for: tabID, text: "ab", hasMarkedText: false)
         guard case .keepTextView = update else {
             Issue.record("stale snapshot must not overwrite newer buffer content")
             return

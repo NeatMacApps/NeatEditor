@@ -13,7 +13,21 @@ against the running app where automation cannot reach AppKit.
 - App-created documents use `~/.config/neateditor/documents/`, or the equivalent under `XDG_CONFIG_HOME`. Existing open/restored document URLs remain unchanged; this change does not move user files. Directory creation is deferred until the first nonblank save.
 - Blank or whitespace-only content must continue to leave existing files untouched.
 - Replacing or cancelling a delayed autosave must prevent the old task from clearing the new task's cancellation handle. Completed tasks must not retain their scheduler.
+- Each scheduled operation has a unique identity that cannot be reused after completion. Cancellation must release bookkeeping for closed tabs.
+- A first save publishes a complete file only after writing succeeds; failed or interrupted writes must not leave a partial document at the final name. App-owned document directories and files are private to the account.
 - Startup and new-tab construction must avoid scanning user directories synchronously for file names; first-save collision handling protects files regardless of naming.
+
+## Workspace failure and editing requirements
+
+- A failed read must never become document content or mark a placeholder as successfully loaded. The failed tab stays unsaveable, reports the error through the existing native alert, and can retry through Open or reselection.
+- Save and rename errors must be visible. A failed save keeps the tab and its buffer open, including Close Other Tabs and application quit.
+- Editor bindings resolve a stable tab identity on every write; deleting or reordering tabs must not redirect an old editor's final report into another tab.
+- Save, close and tab transitions commit the displayed editor's pending input-method composition before reading the buffer. Use the public `NSTextView` text system and SwiftUI `alert` APIs; no replacement text control or alert is required.
+- Once AppKit reports an edit, same-tab snapshots cannot overwrite its live text. Lazy initial content can still be pushed before editing; changing tabs resets the ownership decision. The stale-snapshot regression must actually pass an older string.
+- Restoring a workspace must select a document and must not open or foreground Settings proactively.
+- Tests isolate workspace preferences from the user's actual saved session.
+- Search and Settings retain their current product behavior while native controls receive meaningful accessibility labels and no custom control-outline focus frames.
+- Zoom commands belong to the existing native View menu, using `CommandGroup`; the app must not create a second View menu. Existing zoom shortcuts remain available.
 
 ## Text synchronization history
 

@@ -16,7 +16,7 @@ final class WorkspaceStore {
         let index: Int
     }
 
-    struct RenameFailureAlert: Identifiable {
+    struct DocumentFailureAlert: Identifiable {
         let id = UUID()
         let title: String
         let message: String
@@ -36,7 +36,7 @@ final class WorkspaceStore {
     }
     var isLanguageChangePendingRestart = false
     var searchState = WorkspaceSearchState()
-    var renameFailureAlert: RenameFailureAlert?
+    var documentFailureAlert: DocumentFailureAlert?
     var canReopenClosedTab: Bool {
         !closedTabs.isEmpty
     }
@@ -48,6 +48,12 @@ final class WorkspaceStore {
 
     @ObservationIgnored
     let autoSaveScheduler: AutoSaveScheduler
+
+    @ObservationIgnored
+    let userDefaults: UserDefaults
+
+    @ObservationIgnored
+    var commitEditorChanges: (@MainActor (UUID) -> Void)?
 
     // saveState() is invoked from many small mutating paths and previously did
     // a synchronous JSONEncoder + UserDefaults write per call. Coalesce
@@ -68,10 +74,12 @@ final class WorkspaceStore {
 
     init(
         persistenceService: DocumentPersistenceService = DocumentPersistenceService(),
-        autoSaveScheduler: AutoSaveScheduler = AutoSaveScheduler()
+        autoSaveScheduler: AutoSaveScheduler = AutoSaveScheduler(),
+        userDefaults: UserDefaults = .standard
     ) {
         self.persistenceService = persistenceService
         self.autoSaveScheduler = autoSaveScheduler
+        self.userDefaults = userDefaults
         
         if let state = loadState() {
             restoreState(state)

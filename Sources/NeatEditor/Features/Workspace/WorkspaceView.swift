@@ -41,7 +41,7 @@ struct WorkspaceView: View {
                 } else {
                     EditorTextView(
                         tabID: tab.id,
-                        text: $bindableWorkspace.tabs[index].content,
+                          text: Self.textBinding(for: tab.id, in: workspaceStore),
                         fontSize: workspaceStore.preferences.editorFontSize,
                         isEditable: tab.isContentLoaded,
                         tabBehavior: workspaceStore.preferences.tabBehavior,
@@ -63,9 +63,12 @@ struct WorkspaceView: View {
                         onDecreaseFontSize: {
                             workspaceStore.decreaseEditorFontSize()
                         },
-                        onOpenFiles: { urls in
-                            workspaceStore.openFiles(at: urls)
-                        }
+                          onOpenFiles: { urls in
+                              workspaceStore.openFiles(at: urls)
+                          },
+                          onRegisterCommitHandler: { handler in
+                              workspaceStore.commitEditorChanges = handler
+                          }
                     )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .clipped()
@@ -90,14 +93,15 @@ struct WorkspaceView: View {
                 searchBar
             }
         }
+        .focusEffectDisabled()
         .ignoresSafeArea(.all, edges: .top)
         .alert(
-            workspaceStore.renameFailureAlert?.title ?? "Rename Failed",
-            isPresented: renameFailureAlertIsPresented,
-            presenting: workspaceStore.renameFailureAlert
+            workspaceStore.documentFailureAlert?.title ?? String(localized: "Save Failed"),
+            isPresented: documentFailureAlertIsPresented,
+            presenting: workspaceStore.documentFailureAlert
         ) { _ in
             Button("OK", role: .cancel) {
-                workspaceStore.dismissRenameFailureAlert()
+                workspaceStore.dismissDocumentFailureAlert()
             }
         } message: { alert in
             Text(alert.message)
@@ -134,10 +138,6 @@ struct WorkspaceView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(Color(NSColor.textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(EditorChrome.border, lineWidth: EditorChrome.lineWidth)
-                )
                 .focusEffectDisabled()
                 .focused($isSearchFieldFocused)
                 .onSubmit {
@@ -195,12 +195,19 @@ struct WorkspaceView: View {
         !workspaceStore.searchState.canSubmit
     }
 
-    private var renameFailureAlertIsPresented: Binding<Bool> {
+    static func textBinding(for id: UUID, in store: WorkspaceStore) -> Binding<String> {
         Binding(
-            get: { workspaceStore.renameFailureAlert != nil },
+            get: { store.tabs.first(where: { $0.id == id })?.content ?? "" },
+            set: { store.updateDocumentContent($0, for: id) }
+        )
+    }
+
+    private var documentFailureAlertIsPresented: Binding<Bool> {
+        Binding(
+            get: { workspaceStore.documentFailureAlert != nil },
             set: { isPresented in
                 if !isPresented {
-                    workspaceStore.dismissRenameFailureAlert()
+                    workspaceStore.dismissDocumentFailureAlert()
                 }
             }
         )

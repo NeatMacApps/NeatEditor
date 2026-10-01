@@ -64,7 +64,7 @@ NeatEditor は、軽量な macOS 向けプレーンテキストエディタと�
 
 - 対応プラットフォーム: macOS 15.0+
 - 技術スタック: Swift 6、SwiftUI、AppKit bridge、Observation、XcodeGen
-- 現在の検証方法: `xcodebuild ... test`（単体テスト18件: テキスト同期、永続化、設定）、ビルド確認と手動テスト
+- 現在の検証方法: `xcodebuild ... test`（単体テスト: テキスト同期、永続化、自動保存スケジューリング、ワークスペースの失敗経路、ネイティブ IME 確定処理、フォント設定）、ビルド確認と手動テスト
 - 現在の対象範囲: プレーンテキスト中心、リッチテキストやプラグイン、クロスプラットフォーム対応は未実装
 
 ## クイックスタート
@@ -99,18 +99,18 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 - `project.yml` がプロジェクト構成の唯一のソースです。
 - ソースファイルを追加または削除したら `xcodegen generate` を実行してください。
-- `NeatEditorTests` はテキスト同期、永続化、設定をカバーしています（18件）。`xcodebuild ... test` で実行できます（英語 README 参照）。
+- `NeatEditorTests` はテキスト同期、永続化、自動保存スケジューリング、ワークスペースの失敗経路、ネイティブ IME 確定処理、フォント設定をカバーしています。`xcodebuild ... test` で実行できます（英語 README 参照）。
 - 挙動変更の確認は、プレビューだけでなくビルド済みアプリで行うことを推奨します。
 
 ## リリース
 
 このリポジトリは CI ではなく署名済みローカルリリースで公開しています。
 
-- メンテナは `scripts/publish-release.sh` で DMG + Sparkle ZIP をローカルビルドします（Developer ID 署名、公証済み）。
-- 公開リリースには署名済み DMG（初回インストール用）、署名済み Sparkle ZIP（アプリ内更新用）、`SHA256SUMS.txt` が含まれます。
-- tag 起点の GitHub Actions は未署名のプレースホルダのみを上げます。リリースとしてインストールしないでください。
+- メンテナは `scripts/publish-release.sh` で DMG + Sparkle ZIP をローカルビルドします（Developer ID 署名、公証済み。アップロードと読み戻し確認後にドラフトから公開）。
+- 署名済み公開リリースには署名済み DMG（初回インストール用）、署名済み Sparkle ZIP（アプリ内更新用）、`SHA256SUMS.txt` が含まれ、バイリンガルの説明は当該版の `CHANGELOG.md` 項目から取ります。
+- tag 起点の GitHub Actions は検証ビルド専用で、未署名パッケージはプライベートなワークフロー成果物としてのみ保持します。リリースとしてインストールしないでください。
 
-最もシンプルな導入手順: Releases から署名済み DMG を取得し `Applications` にドラッグ後、`open -a NeatEditor` で起動します。対応は macOS 15.0+ のみです。
+導入手順: Releases で Developer ID 署名 + 公証の記載がある版を選び、署名済みファイルのみ使います（v1.0.3 等の旧 `*-macOS-universal.*` は未署名 CI プレースホルダです）。`Applications` にドラッグ後、`open -a NeatEditor` で起動します。対応は macOS 15.0+ のみです。
 
 詳細は [RELEASING.md](./RELEASING.md) を参照してください。
 
@@ -129,7 +129,7 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 ## 今後の改善候補
 
-- push と pull request を対象にした一般的な CI ワークフローを追加する（現在は未署名の tag ワークフローのみ）。
+- push と pull request を対象にした一般的な CI ワークフローを追加する（現在は tag 検証ワークフローのみ）。
 
 ## コントリビュート
 

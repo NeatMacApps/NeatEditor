@@ -39,6 +39,7 @@ NeatEditor is built around a simple goal: reduce interface noise and keep your a
 - Pin-to-top window support and native title bar double-click zoom behavior.
 - Disk-backed rename behavior that preserves editable file extensions.
 - Blank content never overwrites existing files by design.
+- App-created documents live under `~/.config/neateditor/documents/` (or the `XDG_CONFIG_HOME` equivalent), created on first save.
 
 ## Main Shortcuts
 
@@ -60,11 +61,11 @@ Standard macOS text shortcuts such as `Command + Z`, `Command + X`, `Command + C
 
 ## Current Status
 
-NeatEditor is ready to use as a lightweight macOS plain text editor; the current marketing version is `1.0.4` (build `3`).
+NeatEditor is ready to use as a lightweight macOS plain text editor.
 
 - Platform target: macOS 15.0+
 - Stack: Swift 6, SwiftUI, AppKit bridge, Observation, XcodeGen
-- Validation today: `xcodebuild ... test` (18 unit tests: editor text sync, document persistence, preferences), build verification, and manual testing
+- Validation today: `xcodebuild ... test` (unit tests covering editor text sync, document persistence, autosave scheduling, workspace failure paths, native composition commits, and font preferences), build verification, and manual testing
 - Distribution today: Developer ID-signed + notarized DMG built locally via `scripts/publish-release.sh` (see [RELEASING.md](./RELEASING.md))
 - Scope today: plain text workflow, no rich text, plugins, or cross-platform support
 
@@ -72,7 +73,7 @@ NeatEditor is ready to use as a lightweight macOS plain text editor; the current
 
 ### Install (macOS)
 
-1. Download the latest signed `NeatEditor-<version>.dmg` from [GitHub Releases](https://github.com/NeatEditor/NeatEditor/releases/latest) (optionally verify with `SHA256SUMS.txt`).
+1. Open [GitHub Releases](https://github.com/NeatEditor/NeatEditor/releases) and pick a Release whose notes state Developer ID-signed + notarized. Only signed artifacts are an install path: older `*-macOS-universal.*` assets (for example on v1.0.3) are unsigned CI placeholders — do not install those. Verify with `SHA256SUMS.txt` when provided.
 2. Open the DMG and drag `NeatEditor.app` to `Applications`.
 3. First launch:
 
@@ -117,7 +118,7 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 - `project.yml` is the source of truth for the project structure.
 - Run `xcodegen generate` after adding or removing source files.
-- `NeatEditorTests` covers editor text sync, document persistence, and preferences (18 tests). Run them with:
+- `NeatEditorTests` covers editor text sync, document persistence, autosave scheduling, workspace failure paths, native composition commits, and font preferences. Manual editing scenarios live in [docs/editing-text-sync-test-cases.md](./docs/editing-text-sync-test-cases.md). Run them with:
 
 ```bash
 xcodebuild -project "NeatEditor.xcodeproj" \
@@ -132,11 +133,11 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 Public installs come from the signed local release route, not from CI:
 
-- The maintainer builds the DMG + Sparkle ZIP on the signing Mac with `scripts/publish-release.sh` (Developer ID-signed, notarized, stapled).
-- Each public Release holds the signed DMG (first install), the signed Sparkle update ZIP (in-app updates), and `SHA256SUMS.txt`.
-- The tag-triggered GitHub Actions workflow only uploads unsigned build placeholders; never install those as a release.
+- The maintainer builds the DMG + Sparkle ZIP on the signing Mac with `scripts/publish-release.sh` (Developer ID-signed, notarized, stapled; published from a draft only after all three files upload and read back).
+- Each signed public Release holds the signed DMG (first install), the signed Sparkle update ZIP (in-app updates), and `SHA256SUMS.txt`, with bilingual notes taken from the `CHANGELOG.md` entry for the version.
+- The tag-triggered GitHub Actions workflow only builds and validates the tagged source and keeps unsigned packages as private workflow artifacts; never install those as a release.
 
-The full route, requirements, and coordinator handoff are documented in [RELEASING.md](./RELEASING.md).
+The full route, requirements, and coordinator handoff are documented in [RELEASING.md](./RELEASING.md). No delivery in this checkout is claimed as verified beyond what the Release notes and checksums state.
 
 ## Project Structure
 
@@ -176,7 +177,7 @@ NeatEditor/
 
 ## Known Gaps
 
-- Add a general CI workflow for pushes and pull requests (today only the unsigned tag workflow exists).
+- Add a general CI workflow for pushes and pull requests (today only the tag validation workflow exists).
 
 ## Contributing
 

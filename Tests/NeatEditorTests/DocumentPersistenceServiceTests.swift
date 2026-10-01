@@ -147,7 +147,23 @@ struct DocumentPersistenceServiceTests {
             Issue.record("wrong error for separator rename: \(error)")
         }
 
-        #expect(FileManager.default.fileExists(atPath: saved.fileURL!.path))
+        #expect(FileManager.default.fileExists(atPath: (try #require(saved.fileURL)).path))
+    }
+
+    @Test("renaming a tab whose file disappeared fails without changing the tab")
+    func renameMissingSourceFailsWithoutChangingTab() throws {
+        let (service, _) = try makeService()
+        let saved = try service.save(tab: EditorTab(title: "gone", content: "v"))
+        let savedURL = try #require(saved.fileURL)
+        try FileManager.default.removeItem(at: savedURL)
+
+        do {
+            _ = try service.rename(tab: saved, to: "elsewhere.txt")
+            Issue.record("renaming a missing source must throw")
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+        } catch {
+            Issue.record("wrong error for missing source rename: \(error)")
+        }
     }
 
     @Test("blank saves never create the documents directory")
@@ -176,34 +192,60 @@ struct DocumentPersistenceServiceTests {
 
         let savedURL = try #require(saved.fileURL)
         #expect(try String(contentsOf: savedURL, encoding: .utf8) == "hello")
+        let directoryPermissions = try FileManager.default.attributesOfItem(
+            atPath: missingDirectory.path
+        )[.posixPermissions] as? Int
+        #expect(directoryPermissions == 0o700)
+        let filePermissions = try FileManager.default.attributesOfItem(
+            atPath: savedURL.path
+        )[.posixPermissions] as? Int
+        #expect(filePermissions == 0o600)
+    }
+
+    @Test("repeated first-save collisions keep every original and publish complete data")
+    func repeatedFirstSaveCollisions() throws {
+        let (service, directory) = try makeService()
+        let firstURL = directory.appendingPathComponent("Taken.txt")
+        let secondURL = directory.appendingPathComponent("Taken 2.txt")
+        try "first-original".write(to: firstURL, atomically: true, encoding: .utf8)
+        try "second-original".write(to: secondURL, atomically: true, encoding: .utf8)
+        let payload = String(repeating: "complete-data\n", count: 1000)
+
+        let saved = try service.save(tab: EditorTab(title: "Taken", content: payload))
+        let savedURL = try #require(saved.fileURL)
+
+        #expect(try String(contentsOf: firstURL, encoding: .utf8) == "first-original")
+        #expect(try String(contentsOf: secondURL, encoding: .utf8) == "second-original")
+        #expect(savedURL.lastPathComponent == "Taken 3.txt")
+        #expect(try String(contentsOf: savedURL, encoding: .utf8) == payload)
+        let stagingLeftovers = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+            .filter { $0.hasPrefix(".neateditor-staging-") }
+        #expect(stagingLeftovers.isEmpty)
+        let filePermissions = try FileManager.default.attributesOfItem(
+            atPath: savedURL.path
+        )[.posixPermissions] as? Int
+        #expect(filePermissions == 0o600)
     }
 
     @Test("default directory follows XDG_CONFIG_HOME")
     func defaultDirectoryRespectsXDG() throws {
         let xdgHome = FileManager.default.temporaryDirectory
             .appendingPathComponent("NeatEditorXDG-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: xdgHome, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: xdgHome) }
-
-        let previous = getenv("XDG_CONFIG_HOME").map { String(cString: $0) }
-        setenv("XDG_CONFIG_HOME", xdgHome.path, 1)
-        defer {
-            if let previous {
-                setenv("XDG_CONFIG_HOME", previous, 1)
-            } else {
-                unsetenv("XDG_CONFIG_HOME")
-            }
-        }
 
         #expect(
-            DocumentPersistenceService().defaultDirectory.path
+            DocumentPersistenceService(environment: ["XDG_CONFIG_HOME": xdgHome.path])
+                .defaultDirectory.path
                 == xdgHome.appendingPathComponent("neateditor/documents", isDirectory: true).path
         )
 
-        unsetenv("XDG_CONFIG_HOME")
         #expect(
-            DocumentPersistenceService().defaultDirectory.path
+            DocumentPersistenceService(environment: [:]).defaultDirectory.path
                 .hasSuffix(".config/neateditor/documents")
+        )
+
+        #expect(
+            DocumentPersistenceService(environment: ["XDG_CONFIG_HOME": "relative/path"])
+                .defaultDirectory.path.hasSuffix(".config/neateditor/documents")
         )
     }
 }

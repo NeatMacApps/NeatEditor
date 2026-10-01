@@ -1,10 +1,6 @@
 import AppKit
 import SwiftUI
 
-/// Set by tab button actions to prevent the title bar event monitor
-/// from also triggering window zoom on the same double-click.
-nonisolated(unsafe) var tabStripSuppressNextZoom = false
-
 /// Written by EditorTabItemView before editing ends, read by
 /// EditorTabStripView's dismiss callback to call onRenameTab.
 nonisolated(unsafe) var tabStripPendingRename: String?
@@ -514,7 +510,7 @@ private struct TitleBarEventMonitor: NSViewRepresentable {
         private func installMonitor() {
             removeMonitor()
             clickMonitor = NSEvent.addLocalMonitorForEvents(
-                matching: [.leftMouseDown, .leftMouseUp, .otherMouseUp]
+                matching: [.leftMouseDown, .otherMouseUp]
             ) { [weak self] event in
                 self?.handleMouseEvent(event)
                 return event
@@ -536,24 +532,6 @@ private struct TitleBarEventMonitor: NSViewRepresentable {
                     DispatchQueue.main.async { [weak self] in
                         self?.onDismissEditing?()
                     }
-                }
-            } else if event.type == .leftMouseUp {
-                // Title bar double-click zoom on mouseUp so the SwiftUI Button
-                // action (also mouseUp) has already set the suppress flag.
-                guard event.clickCount >= 2,
-                    event.window === self.window,
-                    isEventInTitleBarRegion(event)
-                else { return }
-
-                // Defer to the next run loop iteration. The Button action fires
-                // synchronously during event dispatch, so by the next iteration
-                // the suppress flag is guaranteed to be set if a tab was clicked.
-                DispatchQueue.main.async { [weak self] in
-                    if tabStripSuppressNextZoom {
-                        tabStripSuppressNextZoom = false
-                        return
-                    }
-                    self?.performTitleBarDoubleClickAction()
                 }
             } else if event.type == .otherMouseUp, event.buttonNumber == 2 {
                 guard let tabID = tabID(at: event) else {
@@ -591,16 +569,6 @@ private struct TitleBarEventMonitor: NSViewRepresentable {
             return event.locationInWindow.y >= (windowHeight - titleBarHeight)
         }
 
-        private func performTitleBarDoubleClickAction() {
-            let action =
-                UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") ?? "Maximize"
-            guard action != "None", let window = self.window else { return }
-            if action == "Maximize" {
-                window.zoom(nil)
-            } else if action == "Minimize" {
-                window.performMiniaturize(nil)
-            }
-        }
     }
 }
 
