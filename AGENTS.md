@@ -8,8 +8,36 @@ macOS 纯文本编辑器（SwiftUI + AppKit）。
 
 ## 文档导航
 
+
+- Read the documents whose described content is relevant to the current task.
+
 - [app-macos/AGENTS.md](~/Codes/NeatEditor/app-macos/AGENTS.md)：改、评审或排查编辑器功能前必读。
 - 标题栏、标签外观与液态玻璃等界面约束仍以全局 CLIENT_UI 与现有 design 文档为准（本仓无独立标题栏指南）。
+
+- `docs/WORKSPACE_TABS_KNOWLEDGE_BASE.md`: 工作区与多标签管理：标签新建/切换/关闭/重开/废纸篓、存旧前置、状态快照、标题栏手势.
+
+- `docs/EDITOR_SYNC_KNOWLEDGE_BASE.md`: 编辑器文本同步与 AppKit 桥接：同步裁决、换绑六步、IME 组字、撤销隔离、搜索高亮、缩放与行号.
+
+- `docs/PERSISTENCE_AUTOSAVE_KNOWLEDGE_BASE.md`: 文档持久化与自动保存：空白策略、独占首存、重命名搬文件、2 秒调度 token、懒打开、失败呈现.
+
+## 待补充知识库（doc-init backlog）
+
+- [待补充] 应用启动与外部打开 KB — Entry anchor: app-macos/Sources/NeatEditor/App/; Content summary: 应用启动、外部文件打开协调、状态恢复、菜单命令.
+- [待补充] 偏好设置与本地化 KB — Entry anchor: app-macos/Sources/NeatEditor/Models/; Content summary: 设置页、偏好记忆、语言切换、中英文案.
+- [待补充] 发布与更新分发 KB — Entry anchor: app-macos/scripts/publish-release.sh; Content summary: Sparkle 更新、appcast、签名公证、发布流程.
+
+## 领域地图（doc-init）
+
+<!-- 覆盖度复核基线：2026-10-01 · 源码指纹 扫描 94 文件 / Swift 34 · Python 1 / 0 子模块 -->
+
+| 领域 | 入口锚点 |
+|------|---------|
+| 工作区与多标签管理 | app-macos/Sources/NeatEditor/Features/Workspace/ |
+| 编辑器文本同步与 AppKit 桥接 | app-macos/Sources/NeatEditor/Features/Editor/AppKitBridge/ |
+| 文档持久化与自动保存 | app-macos/Sources/NeatEditor/Services/ · app-macos/Tests/NeatEditorTests/ |
+| 应用启动与外部打开 | app-macos/Sources/NeatEditor/App/ |
+| 偏好设置与本地化 | app-macos/Sources/NeatEditor/Models/ · app-macos/Sources/NeatEditor/Features/Workspace/SettingsView.swift |
+| 发布与更新分发 | app-macos/scripts/publish-release.sh |
 
 <!-- managed:inherited-agents:end -->
 
