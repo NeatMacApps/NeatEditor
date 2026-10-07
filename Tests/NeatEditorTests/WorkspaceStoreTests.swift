@@ -130,23 +130,65 @@ struct WorkspaceStoreTests {
         return (coordinator, textView)
     }
 
-    @Test("native marked text is committed before close saves the document")
-    func nativeCompositionSavedBeforeClose() throws {
+    private func composeCommittedText(
+        _ committed: String, thenMark marked: String,
+        coordinator: EditorTextView.Coordinator, textView: ZoomableTextView
+    ) {
+        textView.string = committed
+        coordinator.reportAppKitText(committed)
+        textView.setSelectedRange(NSRange(location: (committed as NSString).length, length: 0))
+        textView.setMarkedText(marked, selectedRange: NSRange(location: (marked as NSString).length, length: 0),
+                               replacementRange: NSRange(location: NSNotFound, length: 0))
+    }
+
+    @Test("autosave during composition writes committed text and leaves the pinyin marked")
+    func saveDuringCompositionSkipsMarkedText() throws {
         let (store, directory, defaults, suite) = try makeWorkspace()
         defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
         let id = try #require(store.selectedTabID)
         let (coordinator, textView) = makeEditor(for: id, store: store)
         defer { withExtendedLifetime(coordinator) {} }
-        textView.setMarkedText("拼音", selectedRange: NSRange(location: 2, length: 0),
-                               replacementRange: NSRange(location: NSNotFound, length: 0))
+        composeCommittedText("你好", thenMark: "hui", coordinator: coordinator, textView: textView)
         #expect(textView.hasMarkedText())
+
+        #expect(store.saveDocument(id: id))
+
+        #expect(textView.hasMarkedText())
+        #expect(textView.string == "你好hui")
+        let url = try #require(store.tabs.first(where: { $0.id == id })?.fileURL)
+        #expect(try String(contentsOf: url, encoding: .utf8) == "你好")
+    }
+
+    @Test("closing a tab mid-composition never saves the pinyin")
+    func closeDuringCompositionSkipsMarkedText() throws {
+        let (store, directory, defaults, suite) = try makeWorkspace()
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+        let id = try #require(store.selectedTabID)
+        let (coordinator, textView) = makeEditor(for: id, store: store)
+        defer { withExtendedLifetime(coordinator) {} }
+        composeCommittedText("你好", thenMark: "hui", coordinator: coordinator, textView: textView)
 
         store.closeDocument(id: id)
 
-        #expect(!textView.hasMarkedText())
         let closed = try #require(store.closedTabs.last)
         let url = try #require(closed.tab.fileURL)
-        #expect(try String(contentsOf: url, encoding: .utf8) == "拼音")
+        #expect(try String(contentsOf: url, encoding: .utf8) == "你好")
+    }
+
+    @Test("switching tabs discards the composition instead of committing it")
+    func tabSwitchDiscardsComposition() throws {
+        let (store, directory, defaults, suite) = try makeWorkspace()
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+        let id = try #require(store.selectedTabID)
+        let (coordinator, textView) = makeEditor(for: id, store: store)
+        defer { withExtendedLifetime(coordinator) {} }
+        composeCommittedText("你好", thenMark: "hui", coordinator: coordinator, textView: textView)
+
+        coordinator.discardComposition(in: textView)
+
+        #expect(!textView.hasMarkedText())
+        #expect(store.tabs.first(where: { $0.id == id })?.content == "你好")
+        #expect(coordinator.sync.lastKnownText == "你好")
     }
 
     @Test("saving an unloaded placeholder does not claim initial file content as an edit")

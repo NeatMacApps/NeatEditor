@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.6 - 2026-10-07
+
+### Fixed
+
+- Autosave, Save, closing a tab and switching apps no longer write uncommitted input-method text (such as pinyin still waiting for a candidate) into the file. Only committed text is saved, and the composition on screen stays untouched.
+- Switching tabs mid-composition discards the uncommitted text and resets the input method, so the pinyin lands in neither tab and later keystrokes no longer come out as raw letters.
+
+### 简体中文
+
+- 自动保存、手动保存、关闭标签和切换到其他应用时，不再把还没选字上屏的拼音写进文件；只保存已上屏的文字，屏幕上正在输入的拼音保持不变。
+- 输入拼音途中切换标签时，未上屏的拼音会被丢弃并重置输入法，不会落进任何一个标签，之后打字也不会再冒出原始字母。
+
 ## 1.0.5 - 2026-10-01
 
 ### Fixed

@@ -25,7 +25,8 @@ Default-name acceptance (2026-10-01): all 42 tests passed, including local-time 
 - A failed read must never become document content or mark a placeholder as successfully loaded. The failed tab stays unsaveable, reports the error through the existing native alert, and can retry through Open or reselection.
 - Save and rename errors must be visible. A failed save keeps the tab and its buffer open, including Close Other Tabs and application quit.
 - Editor bindings resolve a stable tab identity on every write; deleting or reordering tabs must not redirect an old editor's final report into another tab.
-- Save, close and tab transitions commit the displayed editor's pending input-method composition before reading the buffer. Use the public `NSTextView` text system and SwiftUI `alert` APIs; no replacement text control or alert is required.
+- Uncommitted input-method text (pinyin or other marked text still waiting for the user to choose characters) is never document content. Autosave, Save, close, tab switches and app deactivation save only the committed text and must not force the composition to commit. Saving leaves an in-progress composition on screen untouched; once the user commits it, the normal edit path schedules autosave. Switching away from or closing the tab discards the composition and resets the input method through `NSTextInputContext.discardMarkedText()`, so the pinyin lands in neither tab and the input method keeps no stale state. If the system or input method commits text on its own (for example, when another app becomes active), that commit arrives as a normal edit and is saved like typing. Use the public `NSTextView` text system and SwiftUI `alert` APIs; no replacement text control or alert is required.
+- 2026-10-07 regression: the old rule forced `unmarkText()` before every save, which wrote the pinyin display text (for example `hui` while typing Shuangpin `hv` in Rime) into the file and left Rime composing in the background, so later keystrokes produced raw letters such as `hv`.
 - Once AppKit reports an edit, same-tab snapshots cannot overwrite its live text. Lazy initial content can still be pushed before editing; changing tabs resets the ownership decision. The stale-snapshot regression must actually pass an older string.
 - Restoring a workspace must select a document and must not open or foreground Settings proactively.
 - Tests isolate workspace preferences from the user's actual saved session.
@@ -44,8 +45,8 @@ Default-name acceptance (2026-10-01): all 42 tests passed, including local-time 
    at completion, the editor is non-editable until then, and a non-empty
    buffer is never overwritten by a stale load.
 3. **Cross-tab pollution** — one `NSTextView` is shared by all tabs. Switching
-   tabs now flushes in-flight IME composition to the old tab, clears the
-   shared undo stack, and resets search highlights, so Cmd+Z can never replay
+   tabs now discards in-flight IME composition (it belongs to neither tab;
+   see the input-method requirement above), clears the shared undo stack, and resets search highlights, so Cmd+Z can never replay
    another tab's edits into the current buffer.
 
 ## Manual scenarios (TC)
@@ -57,7 +58,8 @@ Default-name acceptance (2026-10-01): all 42 tests passed, including local-time 
 | TC-03 | Open a large file, type/select before content appears | Editor non-editable until loaded; no keystrokes lost, no placeholder saved | Pass (code + launch check) |
 | TC-04 | Edit tab A, switch to B, Cmd+Z in B | Nothing to undo from A; B untouched | Pass (undo cleared on switch) |
 | TC-05 | Switch back A→B→A | Each tab shows its own content and selection | Pass (unit: switch/switch-back cases) |
-| TC-06 | Pinyin composition (marked text), switch tab mid-composition | Composition commits into the old tab; new tab shows its own text | Pass (code path: flush-before-switch) |
+| TC-06 | Pinyin composition (marked text), switch tab mid-composition | Composition is discarded; old tab and its file keep only committed text; new tab shows its own text and the next keystroke starts a fresh composition | 2026-10-07: unit test + code path |
+| TC-13 | Type pinyin without committing, wait past the 2-second autosave, press Cmd+S, then switch to another app | File holds only committed text while the pinyin stays on screen as marked text; any text the input method commits later is saved like typing | 2026-10-07: unit test + installed-app check |
 | TC-07 | Search open, edit text | Highlights follow the new matches, selection does not jump | Pass |
 | TC-08 | Search open, switch tab | Old highlights cleared; current query applies to the new tab without jumping | Pass |
 | TC-09 | Cmd+= / Cmd+- and View menu Zoom In/Out | Font size steps 10…36, remembered per file | Pass (unit: stepping/clamp/remember) |

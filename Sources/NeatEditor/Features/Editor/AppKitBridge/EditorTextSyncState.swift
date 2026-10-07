@@ -52,9 +52,9 @@ struct EditorTextSyncState {
 
     /// Decide what `updateNSView` should do for the given binding value.
     ///
-    /// - Note: on a tab switch the caller must flush in-flight IME
-    ///   composition to the *old* binding *before* calling this (while the
-    ///   coordinator still points at the old tab), then perform the push.
+    /// - Note: on a tab switch the caller must discard in-flight IME
+    ///   composition *before* calling this. Uncommitted marked text belongs
+    ///   to neither tab, so it must not be reported to the old binding.
     mutating func update(for tabID: UUID, text: String, hasMarkedText: Bool) -> Update {
         guard boundTabID == tabID else {
             boundTabID = tabID

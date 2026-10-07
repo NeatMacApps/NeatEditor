@@ -57,16 +57,14 @@ struct EditorTextView: NSViewRepresentable {
         let coordinator = context.coordinator
         let textView = containerView.textView
 
-        // A tab switch reuses this view for a different binding. Flush any
-        // in-flight IME composition to the OLD tab first (the coordinator
-        // still points at it here); otherwise the composition lands in the
-        // newly selected tab. Also drop the previous tab's undo history: the
-        // text view carries a single shared undo stack, and replaying another
-        // tab's edits into this buffer deletes seemingly unrelated lines.
+        // A tab switch reuses this view for a different binding. Uncommitted
+        // IME text (e.g. pinyin awaiting a candidate) is not document content,
+        // so discard it instead of committing it into either tab. Also drop
+        // the previous tab's undo history: the text view carries a single
+        // shared undo stack, and replaying another tab's edits into this
+        // buffer deletes seemingly unrelated lines.
         if coordinator.sync.boundTabID != tabID {
-            if textView.hasMarkedText() {
-                textView.unmarkText()
-            }
+            coordinator.discardComposition(in: textView)
             textView.breakUndoCoalescing()
             textView.undoManager?.removeAllActions()
             containerView.clearSearchHighlights()
@@ -151,14 +149,28 @@ struct EditorTextView: NSViewRepresentable {
 
         func registerCommitHandler(for textView: ZoomableTextView) {
             parent.onRegisterCommitHandler { [weak self, weak textView] id in
+                // While composing, the binding already holds the committed
+                // text; forcing a commit here would save raw pinyin and leave
+                // the input method composing a buffer it no longer owns.
                 guard let self, let textView, textView.isEditable,
-                      sync.boundTabID == id else { return }
-                if textView.hasMarkedText() {
-                    textView.unmarkText()
-                }
+                      sync.boundTabID == id, !textView.hasMarkedText() else { return }
                 if textView.string != sync.lastKnownText {
                     reportAppKitText(textView.string)
                 }
+            }
+        }
+
+        /// Ends an in-flight composition without committing it anywhere:
+        /// the input method is told to drop its state, and any marked
+        /// characters left in the view are released silently so the next
+        /// push replaces them.
+        func discardComposition(in textView: NSTextView) {
+            guard textView.hasMarkedText() else { return }
+            isSyncingFromSwiftUI = true
+            defer { isSyncingFromSwiftUI = false }
+            textView.inputContext?.discardMarkedText()
+            if textView.hasMarkedText() {
+                textView.unmarkText()
             }
         }
 
