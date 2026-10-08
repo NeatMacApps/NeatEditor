@@ -3,6 +3,20 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.6</title>
+            <pubDate>Thu, 08 Oct 2026 15:56:35 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>6</sparkle:version>
+            <sparkle:shortVersionString>1.0.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.6
+
+- Update package is Sparkle EdDSA-signed, Developer ID-signed and notarized by Apple.
+- 更新包经过 Sparkle EdDSA 签名、Developer ID 签名与苹果公证。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.6/NeatEditor-1.0.6.zip" length="3537452" type="application/octet-stream" sparkle:edSignature="i8AEtMuRTXJajdONlYzdgLiucGLUsFQLkiDVi14CKdHPnCw+aIHwITBBq6JE/lmiHmP+nv1C7ELEwmFYvuUiBA=="/>
+        </item>
+        <item>
             <title>1.0.5</title>
             <pubDate>Thu, 01 Oct 2026 22:27:44 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
