@@ -51,6 +51,11 @@
 
 "Untitled" = "未命名";
 
+"Check for Updates…" = "检查更新…";
+"Updates" = "更新";
+"Automatically check for updates" = "自动检查更新";
+"Automatically download and install updates" = "自动下载并安装更新";
+
 "Tab" = "制表符";
 "2 Spaces" = "2 个空格";
 "4 Spaces" = "4 个空格";

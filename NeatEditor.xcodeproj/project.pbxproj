@@ -33,6 +33,7 @@
 		6C4A4EF55D4E956B1CB30509 /* DocumentPersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A960C8B24796C5DB2C6589 /* DocumentPersistenceService.swift */; };
 		83AA4C1985409273788FD141 /* EditorTabItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98813FD87C11733B55049246 /* EditorTabItemView.swift */; };
 		85E7BB7174B4D000CEFDE8A6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4EDF9A6AA28B3E0BB1ED45 /* SettingsView.swift */; };
+		92AE87B6A8CBD6148076B130 /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F0D88DC1A7D3B01D9DBBD6 /* AppUpdater.swift */; };
 		93921D6CEFE951DE0C2E142A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 35B5BE7CD19E6AD7BA68BF31 /* Sparkle */; };
 		97DF5482D6F249403D615719 /* WorkspacePreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */; };
 		A344426D812AD628E5414D35 /* TitleBarTrafficLightAlignmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DB9D86BBC9C10E24C2579C1 /* TitleBarTrafficLightAlignmentView.swift */; };
@@ -95,6 +96,7 @@
 		D72DD6097751EF581EA256A3 /* EditorScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorScrollView.swift; sourceTree = "<group>"; };
 		E1674FE73DFD3A99700320E6 /* WorkspacePreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacePreferences.swift; sourceTree = "<group>"; };
 		E32406E8C86E9797FA92149D /* WorkspaceStore+StateRestoration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+StateRestoration.swift"; sourceTree = "<group>"; };
+		F4F0D88DC1A7D3B01D9DBBD6 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
 		F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacePreferencesTests.swift; sourceTree = "<group>"; };
 		FF4DB92AF9B1A147AEED3F20 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -136,6 +138,7 @@
 			isa = PBXGroup;
 			children = (
 				BD11E00755412FD8FBA19523 /* Commands */,
+				F4F0D88DC1A7D3B01D9DBBD6 /* AppUpdater.swift */,
 				32C74314E17C1CDECDF2EDB4 /* ExternalFileOpenCoordinator.swift */,
 				FF4DB92AF9B1A147AEED3F20 /* Info.plist */,
 				7AE177253A6D16097E143352 /* NeatEditorApp.swift */,
@@ -398,6 +401,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EE8FDF1E46F208FEEE81F43F /* AppLanguage.swift in Sources */,
+				92AE87B6A8CBD6148076B130 /* AppUpdater.swift in Sources */,
 				AB52501F00EC0F86E18D6C3C /* AutoSaveScheduler.swift in Sources */,
 				6C4A4EF55D4E956B1CB30509 /* DocumentPersistenceService.swift in Sources */,
 				4A7455D8ED46B4FC817A58B3 /* EditorChrome.swift in Sources */,
@@ -526,7 +530,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -628,7 +632,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;

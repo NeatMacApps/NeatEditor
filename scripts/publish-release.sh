@@ -17,7 +17,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly ROOT_DIR
 readonly APP_NAME="NeatEditor"
-readonly REPOSITORY="NeatEditor/NeatEditor"
+readonly REPOSITORY="NeatMacApps/NeatEditor"
 readonly DEFAULT_BRANCH="main"
 readonly UPDATE_FEED_URL="https://raw.githubusercontent.com/${REPOSITORY}/main/appcast.xml"
 readonly UPDATE_DOWNLOAD_PREFIX="https://github.com/${REPOSITORY}/releases/download"

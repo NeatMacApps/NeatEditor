@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(WorkspaceStore.self) private var workspaceStore
+    @State private var updater = AppUpdater.shared
     @State private var editorTextSoftnessJSON = ""
     @State private var editorTextSoftnessValidationMessage: String?
 
@@ -87,6 +88,42 @@ struct SettingsView: View {
                                     .font(.caption)
                                     .foregroundColor(.orange)
                             }
+                        }
+                    }
+                    .padding(20)
+                    .background(EditorChrome.editorSurface.opacity(0.5))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(EditorChrome.border, lineWidth: EditorChrome.lineWidth)
+                    )
+                }
+
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Updates")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Toggle("Automatically check for updates", isOn: Binding(
+                            get: { updater.automaticallyChecksForUpdates },
+                            set: { updater.setAutomaticChecks($0) }
+                        ))
+                        .disabled(!updater.canCheckForUpdates)
+
+                        Toggle("Automatically download and install updates", isOn: Binding(
+                            get: { updater.automaticallyDownloadsUpdates },
+                            set: { updater.setAutomaticDownloads($0) }
+                        ))
+                        .disabled(!updater.canCheckForUpdates || !updater.allowsAutomaticUpdates)
+
+                        HStack {
+                            Button("Check for Updates…") {
+                                updater.checkForUpdates()
+                            }
+                            .disabled(!updater.canCheckForUpdates)
+
+                            Spacer()
                         }
                     }
                     .padding(20)

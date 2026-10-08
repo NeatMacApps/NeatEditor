@@ -1,23 +1,18 @@
-import Combine
-import Sparkle
 import SwiftUI
 
 @main
 struct NeatEditorApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     private let workspaceStore: WorkspaceStore
-    private let updaterController: SPUStandardUpdaterController
+    private let updater = AppUpdater.shared
 
     init() {
-        updaterController = SPUStandardUpdaterController(
-            startingUpdater: true,
-            updaterDelegate: nil,
-            userDriverDelegate: nil
-        )
-
         let workspaceStore = WorkspaceStore()
         self.workspaceStore = workspaceStore
 
+        updater.onWillInstallUpdate = { [weak workspaceStore] in
+            workspaceStore?.saveAllDocuments()
+        }
         ExternalFileOpenCoordinator.shared.handler = { [weak workspaceStore] urls in
             workspaceStore?.openFiles(at: urls)
         }
@@ -39,36 +34,21 @@ struct NeatEditorApp: App {
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 800, height: 600)
         .commands {
-            CommandGroup(after: .appInfo) {
-                CheckForUpdatesMenuItem(updater: updaterController.updater)
-            }
+            NeatEditorUpdateCommands()
             WorkspaceCommands(workspaceStore: workspaceStore)
         }
     }
 }
 
-private struct CheckForUpdatesMenuItem: View {
-    @StateObject private var model: CheckForUpdatesMenuItemModel
-    private let updater: SPUUpdater
+private struct NeatEditorUpdateCommands: Commands {
+    @State private var updater = AppUpdater.shared
 
-    init(updater: SPUUpdater) {
-        self.updater = updater
-        _model = StateObject(wrappedValue: CheckForUpdatesMenuItemModel(updater: updater))
-    }
-
-    var body: some View {
-        Button("Check for Updates…", action: updater.checkForUpdates)
-            .disabled(!model.canCheckForUpdates)
-    }
-}
-
-@MainActor
-private final class CheckForUpdatesMenuItemModel: ObservableObject {
-    @Published private(set) var canCheckForUpdates = false
-
-    init(updater: SPUUpdater) {
-        updater.publisher(for: \.canCheckForUpdates)
-            .receive(on: RunLoop.main)
-            .assign(to: &$canCheckForUpdates)
+    var body: some Commands {
+        CommandGroup(after: .appInfo) {
+            Button(String(localized: "Check for Updates…")) {
+                updater.checkForUpdates()
+            }
+            .disabled(!updater.canCheckForUpdates)
+        }
     }
 }

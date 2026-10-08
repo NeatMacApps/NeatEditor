@@ -51,6 +51,11 @@
 
 "Untitled" = "Untitled";
 
+"Check for Updates…" = "Check for Updates…";
+"Updates" = "Updates";
+"Automatically check for updates" = "Automatically check for updates";
+"Automatically download and install updates" = "Automatically download and install updates";
+
 "Tab" = "Tab";
 "2 Spaces" = "2 Spaces";
 "4 Spaces" = "4 Spaces";
