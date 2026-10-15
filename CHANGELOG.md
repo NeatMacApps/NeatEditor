@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.7 - 2026-10-15
+
+### Fixed
+
+- Pinned windows no longer fight over focus when they overlap: a window behind another window at the mouse position no longer steals key focus, so two overlapping pinned windows stop flickering.
+- Hover-to-focus now debounces: the pointer must rest inside the window for 150 ms before takeover, and no steal happens within 350 ms after a focus change, so edges no longer jitter two or three times.
+
+### 简体中文
+
+- 两个置顶窗口交叠时不再来回抢焦点：鼠标位置已被别的窗口盖住时，后窗不再抢 key，重叠区不再闪烁。
+- 悬停抢焦点加入防抖：指针持续停留 150 毫秒才接管，焦点变化后 350 毫秒内不再抢，边沿附近不再抖两三次。
+
 ## 1.0.6 - 2026-10-07
 
 ### Fixed

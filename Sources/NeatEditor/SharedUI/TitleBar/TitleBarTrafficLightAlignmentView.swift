@@ -33,6 +33,10 @@ final class TrafficLightAlignmentHostingView: NSView {
     }
     private var hoverGlobalMonitor: Any?
     private var hoverLocalMonitor: Any?
+    /// 指针持续进入当前窗口框的起始时刻；移出框即清零，配合入场驻留防抖。
+    private var hoverEntryDate: Date?
+    /// 本窗最近一次 key 变化（抢到或被抢）的时刻，配合切换静默防抖。
+    private var lastHoverKeyTransition = Date.distantPast
 
     init(titleBarHeight: CGFloat, isWindowPinned: Bool) {
         self.titleBarHeight = titleBarHeight
@@ -58,6 +62,16 @@ final class TrafficLightAlignmentHostingView: NSView {
             NotificationCenter.default.removeObserver(
                 self,
                 name: NSWindow.didResizeNotification,
+                object: window
+            )
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSWindow.didBecomeKeyNotification,
+                object: window
+            )
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSWindow.didResignKeyNotification,
                 object: window
             )
             if window != newWindow {
@@ -117,6 +131,23 @@ final class TrafficLightAlignmentHostingView: NSView {
             name: NSWindow.didResizeNotification,
             object: window
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleWindowKeyTransition),
+            name: NSWindow.didBecomeKeyNotification,
+            object: window
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleWindowKeyTransition),
+            name: NSWindow.didResignKeyNotification,
+            object: window
+        )
+    }
+
+    @objc
+    private func handleWindowKeyTransition() {
+        lastHoverKeyTransition = Date()
     }
 
     @objc
@@ -140,7 +171,7 @@ final class TrafficLightAlignmentHostingView: NSView {
     }
 
     /// 置顶后鼠标进入窗口即抢回 key 焦点，便于并排多应用快速切换输入。
-    /// 跟随图钉默认开，无独立开关、无悬停延迟。
+    /// 跟随图钉默认开，无独立开关；入场有 150ms 驻留防抖，key 变化后有 350ms 静默。
     private func updateHoverFocusMonitoring() {
         guard isWindowPinned, window != nil else {
             stopHoverFocusMonitoring()
@@ -194,6 +225,29 @@ final class TrafficLightAlignmentHostingView: NSView {
         }
 
         guard window.frame.contains(NSEvent.mouseLocation) else {
+            hoverEntryDate = nil
+            return
+        }
+
+        // 通用防抖：入场驻留 + 切换静默都满足才动手。首次进框先记一笔，
+        // 鼠标一直待在框内才会走到顶层判定，避免高频 IPC 与旧快照对打。
+        let now = Date()
+        guard HoverFocusTopmostCheck.isDebounceSatisfied(
+            now: now,
+            entryDate: hoverEntryDate,
+            lastKeyTransition: lastHoverKeyTransition,
+            dwell: HoverFocusTopmostCheck.dwellBeforeSteal,
+            settle: HoverFocusTopmostCheck.settleAfterKeyChange
+        ) else {
+            if hoverEntryDate == nil {
+                hoverEntryDate = now
+            }
+            return
+        }
+
+        // 交叠区内鼠标同时落在前后两扇窗的框里：只有确认自己是该点位
+        // 最顶层未被遮挡的窗口才抢 key，否则两个置顶窗口来回抢焦点闪烁。
+        guard HoverFocusTopmostCheck.isTopmostWindowAtMouseLocation(window) else {
             return
         }
 
