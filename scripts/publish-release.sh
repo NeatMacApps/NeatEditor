@@ -364,12 +364,7 @@ rm -f "${update_zip_path}"
 # 依据：https://sparkle-project.org/documentation/publishing/
 ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${update_zip_path}"
 ditto "${update_zip_path}" "${appcast_dir}/$(basename "${update_zip_path}")"
-cat > "${release_notes_file}" <<EOF
-# NeatEditor ${version}
-
-- Update package is Sparkle EdDSA-signed, Developer ID-signed and notarized by Apple.
-- 更新包经过 Sparkle EdDSA 签名、Developer ID 签名与苹果公证。
-EOF
+printf '# NeatEditor %s\n\n%s\n' "${version}" "${changelog_notes}" > "${release_notes_file}"
 [[ -f "${APPCAST_PATH}" ]] && ditto "${APPCAST_PATH}" "${appcast_dir}/appcast.xml"
 "${sparkle_bin_dir}/generate_appcast" \
   --account "${SPARKLE_ACCOUNT}" \
@@ -436,7 +431,7 @@ NeatEditor（简体中文）
 
 本版本已用 Developer ID 签名、经苹果公证并装订票据，断网也可通过 Gatekeeper 校验。
 下载下方 DMG，把 NeatEditor.app 拖入 Applications，再执行 open -a NeatEditor 启动。
-应用内 Sparkle 更新带 EdDSA 签名，安装前验签。以上英文为当版完整变更记录。
+应用内 Sparkle 更新带 EdDSA 签名，安装前验签。完整变更见上方中英文说明。
 EOF
   } > "${notes_file}"
   if [[ "${page_state}" == "absent" ]]; then

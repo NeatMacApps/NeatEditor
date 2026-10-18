@@ -25,8 +25,8 @@ struct NeatEditorApp: App {
         Window("NeatEditor", id: "main") {
             WorkspaceView()
                 .frame(
-                    minWidth: EditorTabStripView.minimumWindowEdge,
-                    minHeight: EditorTabStripView.minimumWindowEdge
+                    minWidth: settingsSelected ? max(500, EditorTabStripView.minimumWindowEdge) : EditorTabStripView.minimumWindowEdge,
+                    minHeight: settingsSelected ? max(600, EditorTabStripView.minimumWindowEdge) : EditorTabStripView.minimumWindowEdge
                 )
                 .environment(workspaceStore)
         }
@@ -37,6 +37,10 @@ struct NeatEditorApp: App {
             NeatEditorUpdateCommands()
             WorkspaceCommands(workspaceStore: workspaceStore)
         }
+    }
+
+    private var settingsSelected: Bool {
+        workspaceStore.tabs.contains { $0.id == workspaceStore.selectedTabID && $0.isSettings }
     }
 }
 

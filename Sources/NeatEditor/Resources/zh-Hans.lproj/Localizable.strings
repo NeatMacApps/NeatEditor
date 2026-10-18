@@ -61,3 +61,9 @@
 "4 Spaces" = "4 个空格";
 "Save Failed" = "保存失败";
 "Open Failed" = "打开失败";
+
+"settings.softness.title" = "文字柔和度";
+"settings.softness.light" = "浅色外观";
+"settings.softness.dark" = "深色外观";
+"settings.softness.contrast" = "高对比度";
+"settings.quit" = "退出";

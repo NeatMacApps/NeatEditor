@@ -4,5 +4,6 @@
 
 | 任务 | 状态 | 影响范围 | 开始 | 最近更新 | 备注 |
 |---|---|---|---|---|---|
+| Native settings layout (Codex) | 进行中 | SettingsView, strings, settings acceptance docs, version and release | 10-18 19:25 | 2026-10-18 19:25 | Primary owns UI; preserve workspace Settings tab and preference schema. Replace JSON editing with native percentage sliders; Xcode 27.2, installed visual acceptance and signed release. |
 | Code review and refactoring | 验证中 | Services/tests; editor bridge, workspace, command menus; release tooling, docs and version; excludes active title bar gesture files | 2026-10-01 21:12 | 2026-10-01 22:02 | Primary owns UI; services accepted, 39 tests and analyze passed; release worker running |
 | Fix title bar double-click bounce | 验证中 | EditorTabItemView, TitleBarEventMonitor, gesture docs | 21:11 | 2026-10-01 22:05 | Duplicate zoom removed; full-tree Xcode build/test next; include in active release |

@@ -9,7 +9,7 @@ import Sparkle
 /// - 覆盖安装前通过 `onWillInstallUpdate` 把所有文档落盘，更新替换应用包不会丢草稿。
 @MainActor
 @Observable
-final class AppUpdater: NSObject, @preconcurrency SPUUpdaterDelegate, @preconcurrency SPUStandardUserDriverDelegate {
+final class AppUpdater: NSObject, SPUUpdaterDelegate, @preconcurrency SPUStandardUserDriverDelegate {
     static let shared = AppUpdater()
 
     private(set) var canCheckForUpdates = false

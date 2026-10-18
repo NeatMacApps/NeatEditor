@@ -31,6 +31,16 @@ Default-name acceptance (2026-10-01): all 42 tests passed, including local-time 
 - Restoring a workspace must select a document and must not open or foreground Settings proactively.
 - Tests isolate workspace preferences from the user's actual saved session.
 - Search and Settings retain their current product behavior while native controls receive meaningful accessibility labels and no custom control-outline focus frames.
+
+## Settings layout revision (2026-10-18)
+
+Keep Settings inside the existing workspace tab, including the application-menu and Command-comma entry points, under the editor exception in the macOS baseline. Use a centered 480-point native grouped `Form`: Editor (tab behavior and language), Text Softness (light, dark and high-contrast appearances), Updates (the existing two switches), and the app icon/name/version with Check for Updates and Quit. Ordinary settings fit the supported minimum workspace height without scrolling. Remove the custom cards, focus/control borders and orphan update button.
+
+While Settings is selected, the workspace content minimum is 500 × 600 points so these controls remain visible; opening Settings grows a smaller window through the native minimum-size constraint. Document tabs retain their existing minimum. Switching back does not force the user's window to shrink.
+
+Expose the three existing 0…1 softness preferences through public native `Slider(value:in:step:label:)` controls with percentage values and aligned value/track columns. Changes apply immediately to the same existing preferences; preserve stored values and the serialized schema. The JSON text editor is replaced by these controls. Language-restart guidance remains visible only when applicable. Keep the existing editor tab, document saving/quit guard and update behavior.
+
+References inspected: NeatWebApp's grouped Form/about row and Trailore's native Slider inside a LabeledContent row. Reuse those applicable public controls and spacing; the editor retains its approved workspace host. Apple's [Slider initializer](https://developer.apple.com/documentation/swiftui/slider/init(value:in:step:label:oneditingchanged:)) is available in the installed Xcode 27.2 SDK for this macOS 15+ target. Acceptance must inspect the installed Settings tab in dark/light and English/Chinese, check the minimum window size, change a slider and read back the stored value, then restore the user's original preference. Existing model tests verify preference persistence; they do not establish the visual result.
 - Zoom commands belong to the existing native View menu, using `CommandGroup`; the app must not create a second View menu. Existing zoom shortcuts remain available.
 
 ## Text synchronization history

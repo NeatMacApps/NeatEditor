@@ -4,192 +4,96 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(WorkspaceStore.self) private var workspaceStore
     @State private var updater = AppUpdater.shared
-    @State private var editorTextSoftnessJSON = ""
-    @State private var editorTextSoftnessValidationMessage: String?
 
     var body: some View {
-        @Bindable var bindableWorkspace = workspaceStore
+        @Bindable var workspace = workspaceStore
 
-        ScrollView {
-            VStack(alignment: .leading, spacing: 32) {
-                Text("Settings")
-                    .font(.system(size: 28, weight: .bold))
-                    .padding(.bottom, 8)
-                
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Editor")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("Tab Behavior")
-                                .frame(width: 100, alignment: .leading)
-                            
-                            Picker("", selection: $bindableWorkspace.preferences.tabBehavior) {
-                                ForEach(TabBehavior.allCases, id: \.self) { behavior in
-                                    Text(LocalizedStringKey(behavior.rawValue)).tag(behavior)
-                                }
-                            }
-                            .frame(width: 120)
-                            .accessibilityLabel("Tab Behavior")
-                            
-                            Spacer()
+        VStack(spacing: 0) {
+            Text("Settings")
+                .font(.title2.weight(.semibold))
+                .frame(width: 440, alignment: .leading)
+                .padding(.top, 20)
+            Form {
+                Section("Editor") {
+                    Picker("Tab Behavior", selection: $workspace.preferences.tabBehavior) {
+                        ForEach(TabBehavior.allCases, id: \.self) { behavior in
+                            Text(LocalizedStringKey(behavior.rawValue)).tag(behavior)
                         }
-                        
-                        HStack {
-                            Text("Language")
-                                .frame(width: 100, alignment: .leading)
-                            
-                            Picker("", selection: $bindableWorkspace.preferences.appLanguage) {
-                                ForEach(AppLanguage.allCases, id: \.self) { language in
-                                    Text(LocalizedStringKey(language.localizedNameKey)).tag(language)
-                                }
-                            }
-                            .frame(width: 160)
-                            .accessibilityLabel("Language")
-                            
-                            Spacer()
+                    }
+                    Picker("Language", selection: $workspace.preferences.appLanguage) {
+                        ForEach(AppLanguage.allCases, id: \.self) { language in
+                            Text(LocalizedStringKey(language.localizedNameKey)).tag(language)
                         }
-                        
-                        if workspaceStore.isLanguageChangePendingRestart {
-                            Text("A restart is required for language changes to take effect.")
-                                .font(.caption)
-                                .foregroundColor(.orange)
-                                .padding(.top, 4)
-                        }
-
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Editor Text Softness JSON")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
-                            TextEditor(text: $editorTextSoftnessJSON)
-                                .font(.system(.body, design: .monospaced))
-                                .scrollContentBackground(.hidden)
-                                .padding(12)
-                                .frame(minHeight: 132)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .fill(Color(NSColor.textBackgroundColor))
-                                )
-                                .accessibilityLabel("Editor Text Softness JSON")
-                                .onChange(of: editorTextSoftnessJSON) { _, newValue in
-                                    applyEditorTextSoftnessJSON(newValue)
-                                }
-
-                            Text(
-                                "Supported keys: lightModeTextSoftness, darkModeTextSoftness, highContrastTextSoftness. Values must be between 0 and 1, and valid JSON takes effect immediately."
-                            )
+                    }
+                    if workspaceStore.isLanguageChangePendingRestart {
+                        Text("A restart is required for language changes to take effect.")
                             .font(.caption)
-                            .foregroundColor(.secondary)
-
-                            if let editorTextSoftnessValidationMessage {
-                                Text(editorTextSoftnessValidationMessage)
-                                    .font(.caption)
-                                    .foregroundColor(.orange)
-                            }
-                        }
+                            .foregroundStyle(.orange)
                     }
-                    .padding(20)
-                    .background(EditorChrome.editorSurface.opacity(0.5))
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(EditorChrome.border, lineWidth: EditorChrome.lineWidth)
-                    )
                 }
-
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Updates")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Toggle("Automatically check for updates", isOn: Binding(
-                            get: { updater.automaticallyChecksForUpdates },
-                            set: { updater.setAutomaticChecks($0) }
-                        ))
-                        .disabled(!updater.canCheckForUpdates)
-
-                        Toggle("Automatically download and install updates", isOn: Binding(
-                            get: { updater.automaticallyDownloadsUpdates },
-                            set: { updater.setAutomaticDownloads($0) }
-                        ))
-                        .disabled(!updater.canCheckForUpdates || !updater.allowsAutomaticUpdates)
-
-                        HStack {
-                            Button("Check for Updates…") {
-                                updater.checkForUpdates()
-                            }
-                            .disabled(!updater.canCheckForUpdates)
-
-                            Spacer()
-                        }
-                    }
-                    .padding(20)
-                    .background(EditorChrome.editorSurface.opacity(0.5))
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(EditorChrome.border, lineWidth: EditorChrome.lineWidth)
-                    )
+                Section("settings.softness.title") {
+                    softnessRow("settings.softness.light", value: $workspace.preferences.editorTextSoftness.lightModeTextSoftness)
+                    softnessRow("settings.softness.dark", value: $workspace.preferences.editorTextSoftness.darkModeTextSoftness)
+                    softnessRow("settings.softness.contrast", value: $workspace.preferences.editorTextSoftness.highContrastTextSoftness)
                 }
+                Section("Updates") {
+                    Toggle("Automatically check for updates", isOn: Binding(
+                        get: { updater.automaticallyChecksForUpdates },
+                        set: { updater.setAutomaticChecks($0) }
+                    ))
+                    .disabled(!updater.canCheckForUpdates)
+                    Toggle("Automatically download and install updates", isOn: Binding(
+                        get: { updater.automaticallyDownloadsUpdates },
+                        set: { updater.setAutomaticDownloads($0) }
+                    ))
+                    .disabled(!updater.canCheckForUpdates || !updater.allowsAutomaticUpdates)
+                }
+                Section { aboutRow }
             }
-            .padding(40)
-            .frame(maxWidth: 800, alignment: .leading)
+            .formStyle(.grouped)
+            .toggleStyle(.switch)
+            .scrollDisabled(true)
+            .frame(width: 480)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .focusEffectDisabled()
-        .background(EditorChrome.editorSurface)
-        .overlay {
-            EditorSurfaceBorderShape()
-                .stroke(EditorChrome.border, lineWidth: EditorChrome.lineWidth)
-        }
-        .onAppear {
-            synchronizeEditorTextSoftnessJSON()
-        }
-        .onChange(of: workspaceStore.preferences.editorTextSoftness) { _, _ in
-            synchronizeEditorTextSoftnessJSON()
-        }
     }
 
-    private func synchronizeEditorTextSoftnessJSON() {
-        guard let jsonString = try? workspaceStore.preferences.editorTextSoftness.formattedJSONString() else {
-            return
-        }
-
-        guard editorTextSoftnessJSON != jsonString else {
-            if editorTextSoftnessValidationMessage == nil {
-                return
+    private func softnessRow(_ title: LocalizedStringKey, value: Binding<CGFloat>) -> some View {
+        LabeledContent {
+            HStack(spacing: 10) {
+                Text(Double(value.wrappedValue), format: .percent.precision(.fractionLength(0)))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .frame(width: 40, alignment: .trailing)
+                Slider(value: value, in: 0...1, step: 0.01) {
+                    Text(title)
+                }
+                .labelsHidden()
+                .frame(width: 160)
             }
-
-            editorTextSoftnessValidationMessage = nil
-            return
+        } label: {
+            Text(title)
         }
-
-        editorTextSoftnessJSON = jsonString
-        editorTextSoftnessValidationMessage = nil
     }
 
-    private func applyEditorTextSoftnessJSON(_ jsonString: String) {
-        do {
-            let decodedConfiguration = try WorkspacePreferences.EditorTextSoftnessConfiguration
-                .decodeValidating(jsonString: jsonString)
-            editorTextSoftnessValidationMessage = nil
-
-            guard workspaceStore.preferences.editorTextSoftness != decodedConfiguration else {
-                return
+    private var aboutRow: some View {
+        HStack(spacing: 10) {
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 32, height: 32)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(verbatim: "NeatEditor").fontWeight(.medium)
+                Text(verbatim: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
-
-            workspaceStore.preferences.editorTextSoftness = decodedConfiguration
-        } catch {
-            editorTextSoftnessValidationMessage = error.localizedDescription
+            .accessibilityElement(children: .combine)
+            Spacer(minLength: 12)
+            Button("Check for Updates…") { updater.checkForUpdates() }
+                .disabled(!updater.canCheckForUpdates)
+            Button("settings.quit") { NSApp.terminate(nil) }
         }
     }
-}
-
-#Preview {
-    SettingsView()
-        .environment(WorkspaceStore())
-        .frame(width: 600, height: 400)
 }

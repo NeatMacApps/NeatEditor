@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.8 - 2026-10-18
+
+### Changed
+
+- Settings uses a compact native grouped form with aligned controls, switches and app information. It remains a workspace tab.
+- Adjust text softness for light, dark and high-contrast appearances with native percentage sliders; existing preferences and immediate application are preserved.
+- Settings has a 500 × 600 point content minimum so all controls remain visible in smaller windows.
+
+### 简体中文
+
+- 设置改为紧凑的原生分组表单，统一对齐控件、开关和应用信息，继续保留在工作区标签中。
+- 浅色、深色和高对比度外观的文字柔和度可用系统滑块按百分比调整，沿用现有偏好并即时生效。
+- 设置的内容最小尺寸为 500 × 600 点，较小的窗口也能完整显示全部控件。
+
 ## 1.0.7 - 2026-10-15
 
 ### Fixed

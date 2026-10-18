@@ -98,11 +98,11 @@ struct AutoSaveSchedulerTests {
     @Test("pending tasks do not retain the scheduler")
     func pendingTaskDoesNotRetainScheduler() throws {
         var scheduler: AutoSaveScheduler? = AutoSaveScheduler(delay: .seconds(10))
-        weak var weakScheduler = scheduler
+        let schedulerWasReleased = { [weak scheduler] in scheduler == nil }
 
         scheduler?.schedule(for: UUID()) {}
         scheduler = nil
 
-        #expect(weakScheduler == nil)
+        #expect(schedulerWasReleased())
     }
 }
