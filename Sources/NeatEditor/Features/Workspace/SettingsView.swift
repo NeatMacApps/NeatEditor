@@ -66,7 +66,7 @@ struct SettingsView: View {
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .frame(width: 40, alignment: .trailing)
-                Slider(value: value, in: 0...1, step: 0.01) {
+                Slider(value: value, in: 0...1) {
                     Text(title)
                 }
                 .labelsHidden()
