@@ -3,6 +3,28 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.9</title>
+            <pubDate>Mon, 19 Oct 2026 16:03:02 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>9</sparkle:version>
+            <sparkle:shortVersionString>1.0.9</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.9
+
+
+### Changed
+
+- Remove Text Softness and its three sliders from Settings. Existing document appearance is preserved.
+- Reduce the Settings content minimum to 500 × 440 points; all remaining controls fit without scrolling.
+
+### 简体中文
+
+- 从设置中移除文字柔和度及其三个滑块，保留现有文档显示效果。
+- 设置内容最小尺寸缩小为 500 × 440 点，剩余控件完整可见，无需滚动。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.9/NeatEditor-1.0.9.zip" length="3513463" type="application/octet-stream" sparkle:edSignature="u6k+V+iQvhw42bnFQ8IcD3kFrlQi6iBiKN5k4Rxr8hKAiQgjnWjHWlxgIXUobuXYVfqi4OWHHA64Qf75KwNqDg=="/>
+        </item>
+        <item>
             <title>1.0.8</title>
             <pubDate>Sun, 18 Oct 2026 19:47:48 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
