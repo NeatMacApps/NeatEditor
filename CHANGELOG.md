@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.9 - 2026-10-19
+
+### Changed
+
+- Remove Text Softness and its three sliders from Settings. Existing document appearance is preserved.
+- Reduce the Settings content minimum to 500 × 440 points; all remaining controls fit without scrolling.
+
+### 简体中文
+
+- 从设置中移除文字柔和度及其三个滑块，保留现有文档显示效果。
+- 设置内容最小尺寸缩小为 500 × 440 点，剩余控件完整可见，无需滚动。
+
 ## 1.0.8 - 2026-10-18
 
 ### Changed

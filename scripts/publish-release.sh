@@ -86,30 +86,6 @@ assert_signed_for_distribution() {
     || die "${label}签名结构校验失败"
 }
 
-resign_sparkle_framework() {
-  local sparkle_framework sparkle_version_dir sparkle_checkout
-  sparkle_framework="${APP_PATH}/Contents/Frameworks/Sparkle.framework"
-  sparkle_version_dir="${sparkle_framework}/Versions/B"
-  sparkle_checkout="${DERIVED_DATA}/SourcePackages/checkouts/Sparkle"
-
-  [[ -d "${sparkle_version_dir}" ]] || die "导出产物未包含 Sparkle.framework"
-  [[ -f "${sparkle_checkout}/Downloader/Downloader.entitlements" ]] \
-    || die "找不到 Sparkle Downloader 权限清单"
-
-  log_step "重签 Sparkle 内嵌更新组件"
-  codesign --force --options runtime --timestamp --sign "${SIGN_IDENTITY}" \
-    --entitlements "${sparkle_checkout}/Downloader/Downloader.entitlements" \
-    "${sparkle_version_dir}/XPCServices/Downloader.xpc"
-  codesign --force --options runtime --timestamp --sign "${SIGN_IDENTITY}" \
-    "${sparkle_version_dir}/XPCServices/Installer.xpc"
-  codesign --force --options runtime --timestamp --sign "${SIGN_IDENTITY}" \
-    "${sparkle_version_dir}/Updater.app"
-  codesign --force --options runtime --timestamp --sign "${SIGN_IDENTITY}" \
-    "${sparkle_version_dir}/Autoupdate"
-  codesign --force --options runtime --timestamp --sign "${SIGN_IDENTITY}" "${sparkle_framework}"
-  codesign --force --options runtime --timestamp --sign "${SIGN_IDENTITY}" "${APP_PATH}"
-}
-
 claim_submission_id() {
   local file_name="$1" started_at="$2" history_json submission_id
   for _ in 1 2 3 4 5; do
@@ -300,8 +276,8 @@ fi
 log_step "归档 Developer ID 版本"
 rm -rf "${ARCHIVE_PATH}" "${EXPORT_DIR}"
 xcodebuild -project "${APP_NAME}.xcodeproj" -scheme "${APP_NAME}" -configuration Release \
-  -destination 'platform=macOS' -derivedDataPath "${DERIVED_DATA}" -archivePath "${ARCHIVE_PATH}" \
-  ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO archive >/dev/null
+  -destination 'generic/platform=macOS' -derivedDataPath "${DERIVED_DATA}" -archivePath "${ARCHIVE_PATH}" \
+  ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO archive
 
 work_dir="$(mktemp -d)"
 trap 'rm -rf "${work_dir}" "${lock_dir}"' EXIT
@@ -318,7 +294,7 @@ cat > "${export_options}" <<EOF
 </dict></plist>
 EOF
 xcodebuild -exportArchive -archivePath "${ARCHIVE_PATH}" -exportOptionsPlist "${export_options}" \
-  -exportPath "${EXPORT_DIR}" >/dev/null
+  -exportPath "${EXPORT_DIR}"
 [[ -d "${APP_PATH}" ]] || die "Developer ID 导出产物不存在"
 # 来源指纹守卫：构建不得漂移或污染工作区，否则产物与标签对不上源提交。
 [[ "$(git rev-parse HEAD)" == "${SOURCE_COMMIT}" ]] || die "构建期间 HEAD 已漂移，停止发布"
@@ -337,7 +313,6 @@ lipo -info "${APP_PATH}/Contents/MacOS/${APP_NAME}" | grep -q -e 'x86_64' \
   || die "产物不是 universal 二进制"
 readonly sparkle_bin_dir="${DERIVED_DATA}/SourcePackages/artifacts/sparkle/Sparkle/bin"
 [[ -x "${sparkle_bin_dir}/generate_appcast" ]] || die "找不到 Sparkle 的 generate_appcast 工具"
-resign_sparkle_framework
 
 sparkle_public_key="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "${APP_PATH}/Contents/Info.plist" 2>/dev/null || true)"
 [[ -n "${sparkle_public_key}" ]] || die "应用缺少 Sparkle 更新公钥"
@@ -346,6 +321,13 @@ sparkle_public_key="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "${APP_P
 
 log_step "校验签名与加固运行时"
 assert_signed_for_distribution "${APP_PATH}" "NeatEditor"
+sparkle_version_dir="${APP_PATH}/Contents/Frameworks/Sparkle.framework/Versions/B"
+for nested in "${sparkle_version_dir}/XPCServices/Downloader.xpc" \
+              "${sparkle_version_dir}/XPCServices/Installer.xpc" \
+              "${sparkle_version_dir}/Updater.app" \
+              "${sparkle_version_dir}/Autoupdate"; do
+  assert_signed_for_distribution "${nested}" "${nested##*/}"
+done
 
 log_step "提交应用本体公证并装订票据"
 notary_zip="${BUILD_DIR}/${APP_NAME}-${version}-notarize.zip"

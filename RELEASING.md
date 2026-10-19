@@ -112,10 +112,12 @@ for other long local jobs.
 2. `xcodegen generate`, then commit-first snapshot (`git add -A` +
    commit when dirty), record `SOURCE_COMMIT`, verify the version tag
    (existing tag must equal `SOURCE_COMMIT`).
-3. Universal Release archive + Developer ID export, bundle
-   marketing/build number assert, Sparkle nested-component re-sign
-   inside-out, EdDSA key match, signature/hardened-runtime/
-   timestamp/`get-task-allow` self-checks.
+3. Universal Release archive + Developer ID export, retaining complete
+   compiler and export diagnostics. Xcode signs the nested Sparkle
+   components during export; do not manually re-sign the exported app.
+   Assert bundle marketing/build numbers, EdDSA key match, and each
+   executable's signature, hardened runtime, timestamp and absence of
+   `get-task-allow`, following [Sparkle's archive/export guidance](https://sparkle-project.org/documentation/).
 4. Notarize app zip → staple → re-zip the **stapled** app for Sparkle →
    `generate_appcast` (EdDSA-signed, embedded bilingual notes, XML +
    signature asserts).

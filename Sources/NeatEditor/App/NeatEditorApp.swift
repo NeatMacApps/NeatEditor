@@ -26,7 +26,7 @@ struct NeatEditorApp: App {
             WorkspaceView()
                 .frame(
                     minWidth: settingsSelected ? max(500, EditorTabStripView.minimumWindowEdge) : EditorTabStripView.minimumWindowEdge,
-                    minHeight: settingsSelected ? max(600, EditorTabStripView.minimumWindowEdge) : EditorTabStripView.minimumWindowEdge
+                    minHeight: settingsSelected ? max(440, EditorTabStripView.minimumWindowEdge) : EditorTabStripView.minimumWindowEdge
                 )
                 .environment(workspaceStore)
         }

@@ -31,11 +31,6 @@ struct SettingsView: View {
                             .foregroundStyle(.orange)
                     }
                 }
-                Section("settings.softness.title") {
-                    softnessRow("settings.softness.light", value: $workspace.preferences.editorTextSoftness.lightModeTextSoftness)
-                    softnessRow("settings.softness.dark", value: $workspace.preferences.editorTextSoftness.darkModeTextSoftness)
-                    softnessRow("settings.softness.contrast", value: $workspace.preferences.editorTextSoftness.highContrastTextSoftness)
-                }
                 Section("Updates") {
                     Toggle("Automatically check for updates", isOn: Binding(
                         get: { updater.automaticallyChecksForUpdates },
@@ -57,24 +52,6 @@ struct SettingsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .focusEffectDisabled()
-    }
-
-    private func softnessRow(_ title: LocalizedStringKey, value: Binding<CGFloat>) -> some View {
-        LabeledContent {
-            HStack(spacing: 10) {
-                Text(Double(value.wrappedValue), format: .percent.precision(.fractionLength(0)))
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .frame(width: 40, alignment: .trailing)
-                Slider(value: value, in: 0...1) {
-                    Text(title)
-                }
-                .labelsHidden()
-                .frame(width: 160)
-            }
-        } label: {
-            Text(title)
-        }
     }
 
     private var aboutRow: some View {
