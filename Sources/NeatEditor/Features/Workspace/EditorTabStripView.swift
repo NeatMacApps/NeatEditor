@@ -1,9 +1,24 @@
 import AppKit
 import SwiftUI
 
-struct EditorTabStripView: NSViewRepresentable {
+/// Written by EditorTabItemView before editing ends, read by
+/// EditorTabStripView's dismiss callback to call onRenameTab.
+@MainActor var tabStripPendingRename: String?
+
+struct EditorTabStripView: View {
     static let titleBarHeight: CGFloat = 38
-    static let minimumWindowEdge: CGFloat = 470
+    static let leadingPadding: CGFloat = 76
+    static let trailingTabScrollPadding: CGFloat = 12
+    static let trailingAccessoryWidth: CGFloat = 52
+    static let overflowFadeWidth: CGFloat = 16
+    static let overflowVisibilityThreshold: CGFloat = 1
+    static let minimumWindowEdge: CGFloat = {
+        // Keep the window large enough for traffic lights, two tabs, and the pin accessory.
+        ceil(
+            leadingPadding + trailingTabScrollPadding + trailingAccessoryWidth
+                + (EditorTabItemView.minimumTabWidth * 2) + 24
+        )
+    }()
 
     @Binding var tabs: [EditorTab]
     let selectedTabID: UUID?
@@ -13,316 +28,613 @@ struct EditorTabStripView: NSViewRepresentable {
     let onCloseTab: (UUID) -> Void
     let onDeleteTab: (UUID) -> Void
     let onCloseOtherTabs: (UUID) -> Void
+    @State private var selectedTabFrame: CGRect = .null
+    @State private var tabFrames: [UUID: CGRect] = [:]
+    @State private var tabScrollViewportFrame: CGRect = .null
+    @State private var editingTabID: UUID? = nil
 
-    func makeNSView(context: Context) -> NativeDocumentTabsView {
-        let view = NativeDocumentTabsView()
-        view.update(configuration: self)
+    var body: some View {
+        HStack(spacing: 0) {
+            ScrollViewReader { scrollProxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 0) {
+                        ForEach($tabs) { $tab in
+                            EditorTabItemView(
+                                tab: $tab,
+                                isSelected: selectedTabID == tab.id,
+                                tabCount: tabs.count,
+                                isEditing: Binding(
+                                    get: { editingTabID == tab.id },
+                                    set: { isEditing in
+                                        if isEditing {
+                                            editingTabID = tab.id
+                                        } else if editingTabID == tab.id {
+                                            editingTabID = nil
+                                        }
+                                    }
+                                )
+                            ) {
+                                if editingTabID != nil && editingTabID != tab.id {
+                                    dismissEditing()
+                                    NSApp.keyWindow?.makeFirstResponder(nil)
+                                }
+                                onSelectTab(tab.id)
+                            } onRename: { newTitle in
+                                onRenameTab(tab.id, newTitle)
+                            } onClose: {
+                                onCloseTab(tab.id)
+                            } onDelete: {
+                                onDeleteTab(tab.id)
+                            } onCloseOthers: {
+                                onCloseOtherTabs(tab.id)
+                            }
+                            .id(tab.id)
+                        }
+                    }
+                    .padding(.trailing, Self.trailingTabScrollPadding)
+                    .padding(.top, 6)
+                }
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear.preference(
+                            key: TabScrollViewportFramePreferenceKey.self,
+                            value: proxy.frame(in: .named(TabBarLayout.coordinateSpaceName))
+                        )
+                    }
+                }
+                .overlay(alignment: .leading) {
+                    if showsLeadingOverflowFade {
+                        TabStripOverflowFade(edge: .leading)
+                    }
+                }
+                .overlay(alignment: .trailing) {
+                    if showsTrailingOverflowFade {
+                        TabStripOverflowFade(edge: .trailing)
+                    }
+                }
+                .overlay {
+                    TabStripScrollInterceptor(
+                        isEditing: editingTabID != nil,
+                        onSelectTabRelative: onSelectTabRelative
+                    )
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .onChange(of: selectedTabID) { _, _ in
+                    scrollSelectedTabIntoView(using: scrollProxy)
+                }
+                .onChange(of: tabFrames) { _, _ in
+                    scrollSelectedTabIntoView(using: scrollProxy)
+                }
+                .onChange(of: tabScrollViewportFrame) { _, _ in
+                    scrollSelectedTabIntoView(using: scrollProxy)
+                }
+                .onAppear {
+                    scrollSelectedTabIntoView(using: scrollProxy)
+                }
+            }
+
+            TitleBarAccessoryBackground()
+                .frame(width: Self.trailingTabScrollPadding)
+        }
+        .coordinateSpace(name: TabBarLayout.coordinateSpaceName)
+        .onPreferenceChange(SelectedTabFramePreferenceKey.self) { frame in
+            Task { @MainActor in
+                selectedTabFrame = frame
+            }
+        }
+        .onPreferenceChange(TabFramesPreferenceKey.self) { frames in
+            Task { @MainActor in
+                tabFrames = frames
+            }
+        }
+        .onPreferenceChange(TabScrollViewportFramePreferenceKey.self) { frame in
+            Task { @MainActor in
+                tabScrollViewportFrame = frame
+            }
+        }
+        .background(EditorChrome.tabBarBackground)
+        .overlay {
+            TabBarOutlineShape(selectedTabFrame: selectedTabFrame)
+                .stroke(Color.primary.opacity(0.22), lineWidth: EditorChrome.lineWidth)
+                .allowsHitTesting(false)
+        }
+        .clipped()
+        .background {
+            TitleBarEventMonitor(
+                isEditing: editingTabID != nil,
+                tabFrames: tabFrames,
+                onDismissEditing: { dismissEditing() },
+                onCloseTab: onCloseTab
+            )
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)
+        ) { _ in
+            dismissEditing()
+        }
+        .frame(height: Self.titleBarHeight)
+    }
+
+    private var showsLeadingOverflowFade: Bool {
+        guard !tabScrollViewportFrame.isNull else {
+            return false
+        }
+
+        return tabFrames.values.contains { frame in
+            !frame.isNull
+                && frame.minX < (
+                    tabScrollViewportFrame.minX - Self.overflowVisibilityThreshold)
+        }
+    }
+
+    private var showsTrailingOverflowFade: Bool {
+        guard !tabScrollViewportFrame.isNull else {
+            return false
+        }
+
+        return tabFrames.values.contains { frame in
+            !frame.isNull
+                && frame.maxX > (
+                    tabScrollViewportFrame.maxX + Self.overflowVisibilityThreshold)
+        }
+    }
+
+    private func dismissEditing() {
+        guard let tabID = editingTabID else { return }
+        // Read the pending rename that EditorTabItemView wrote before we clear editing.
+        if let newTitle = tabStripPendingRename {
+            tabStripPendingRename = nil
+            onRenameTab(tabID, newTitle)
+        }
+        editingTabID = nil
+    }
+
+    private func scrollSelectedTabIntoView(using scrollProxy: ScrollViewProxy) {
+        guard let selectedTabID,
+            let selectedFrame = tabFrames[selectedTabID],
+            !tabScrollViewportFrame.isNull
+        else {
+            return
+        }
+
+        let isLeadingClipped = selectedFrame.minX < tabScrollViewportFrame.minX
+        let isTrailingClipped = selectedFrame.maxX > tabScrollViewportFrame.maxX
+        guard isLeadingClipped || isTrailingClipped else {
+            return
+        }
+
+        DispatchQueue.main.async {
+            withAnimation(.easeInOut(duration: 0.14)) {
+                scrollProxy.scrollTo(selectedTabID, anchor: .center)
+            }
+        }
+    }
+}
+
+private struct TitleBarAccessoryBackground: View {
+    var body: some View {
+        EditorChrome.tabBarBackground
+            .allowsHitTesting(false)
+    }
+}
+
+private struct TabStripOverflowFade: View {
+    enum Edge {
+        case leading
+        case trailing
+    }
+
+    let edge: Edge
+
+    var body: some View {
+        LinearGradient(
+            colors: gradientColors,
+            startPoint: edge == .leading ? .leading : .trailing,
+            endPoint: edge == .leading ? .trailing : .leading
+        )
+        .frame(width: EditorTabStripView.overflowFadeWidth)
+        .allowsHitTesting(false)
+        .transition(.opacity)
+    }
+
+    private var gradientColors: [Color] {
+        [
+            EditorChrome.tabBarBackground,
+            EditorChrome.tabBarBackground.opacity(0)
+        ]
+    }
+}
+
+struct TitleBarControlDragSuppression: ViewModifier {
+    private static let activationDistance: CGFloat = 4
+
+    @Binding var isSuppressingAction: Bool
+
+    func body(content: Content) -> some View {
+        content.simultaneousGesture(
+            DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                .onChanged { value in
+                    guard !isSuppressingAction else {
+                        return
+                    }
+
+                    let translation = value.translation
+                    let distance = max(abs(translation.width), abs(translation.height))
+                    if distance >= Self.activationDistance {
+                        isSuppressingAction = true
+                    }
+                }
+                .onEnded { _ in
+                    DispatchQueue.main.async {
+                        isSuppressingAction = false
+                    }
+                }
+        )
+    }
+}
+
+private struct TabStripScrollInterceptor: NSViewRepresentable {
+    let isEditing: Bool
+    let onSelectTabRelative: (Int) -> Void
+
+    func makeNSView(context: Context) -> TabStripScrollInterceptorView {
+        let view = TabStripScrollInterceptorView()
+        view.isEditing = isEditing
+        view.onSelectTabRelative = onSelectTabRelative
         return view
     }
 
-    func updateNSView(_ view: NativeDocumentTabsView, context: Context) {
-        view.update(configuration: self)
+    func updateNSView(_ nsView: TabStripScrollInterceptorView, context: Context) {
+        nsView.isEditing = isEditing
+        nsView.onSelectTabRelative = onSelectTabRelative
+    }
+
+    final class TabStripScrollInterceptorView: NSView {
+        private enum ScrollTabSwitching {
+            static let resetInterval: TimeInterval = 0.35
+            static let threshold: CGFloat = 1
+            static let mouseWheelSensitivity: CGFloat = 0.005
+            static let trackpadSensitivity: CGFloat = 1 / 36
+        }
+
+        var isEditing = false
+        var onSelectTabRelative: ((Int) -> Void)?
+        private var accumulatedScrollDelta: CGFloat = 0
+        private var lastScrollTimestamp: TimeInterval = 0
+
+        override var isFlipped: Bool {
+            true
+        }
+
+        override func hitTest(_ point: NSPoint) -> NSView? {
+            guard bounds.contains(point),
+                let currentEvent = NSApp.currentEvent
+            else {
+                return nil
+            }
+
+            switch currentEvent.type {
+            case .scrollWheel, .swipe:
+                return self
+            default:
+                return nil
+            }
+        }
+
+        override func scrollWheel(with event: NSEvent) {
+            guard !isEditing else {
+                super.scrollWheel(with: event)
+                return
+            }
+
+            if !event.momentumPhase.isEmpty {
+                resetAccumulatedScrollDelta()
+                return
+            }
+
+            if event.phase.contains(.ended) || event.phase.contains(.cancelled) {
+                resetAccumulatedScrollDelta()
+                return
+            }
+
+            let horizontalDelta = event.hasPreciseScrollingDeltas
+                ? event.scrollingDeltaX
+                : event.deltaX
+            let verticalDelta = event.hasPreciseScrollingDeltas
+                ? event.scrollingDeltaY
+                : event.deltaY
+            let dominantDelta = abs(verticalDelta) >= abs(horizontalDelta) ? verticalDelta : horizontalDelta
+            guard dominantDelta != 0 else {
+                return
+            }
+
+            let usesTrackpadSensitivity =
+                !event.phase.isEmpty
+                || !event.momentumPhase.isEmpty
+            accumulateTabSelectionDelta(
+                dominantDelta,
+                timestamp: event.timestamp,
+                sensitivity: usesTrackpadSensitivity
+                    ? ScrollTabSwitching.trackpadSensitivity
+                    : ScrollTabSwitching.mouseWheelSensitivity
+            )
+        }
+
+        override func swipe(with event: NSEvent) {
+            guard !isEditing else {
+                super.swipe(with: event)
+                return
+            }
+
+            let dominantDelta = abs(event.deltaY) >= abs(event.deltaX) ? event.deltaY : event.deltaX
+            guard dominantDelta != 0 else {
+                return
+            }
+
+            resetAccumulatedScrollDelta()
+            let stepDelta: CGFloat = dominantDelta > 0 ? 1 : -1
+            accumulateTabSelectionDelta(stepDelta, timestamp: event.timestamp, sensitivity: 1)
+        }
+
+        private func accumulateTabSelectionDelta(
+            _ delta: CGFloat,
+            timestamp: TimeInterval,
+            sensitivity: CGFloat
+        ) {
+            if (timestamp - lastScrollTimestamp) > ScrollTabSwitching.resetInterval {
+                accumulatedScrollDelta = 0
+            }
+
+            let scaledDelta = delta * sensitivity
+            if accumulatedScrollDelta != 0,
+                scaledDelta.sign != accumulatedScrollDelta.sign
+            {
+                accumulatedScrollDelta = 0
+            }
+
+            accumulatedScrollDelta += scaledDelta
+            lastScrollTimestamp = timestamp
+
+            while abs(accumulatedScrollDelta) >= ScrollTabSwitching.threshold {
+                let relativeOffset = accumulatedScrollDelta > 0 ? -1 : 1
+                onSelectTabRelative?(relativeOffset)
+                accumulatedScrollDelta += accumulatedScrollDelta > 0 ? -1 : 1
+            }
+        }
+
+        private func resetAccumulatedScrollDelta() {
+            accumulatedScrollDelta = 0
+            lastScrollTimestamp = 0
+        }
     }
 }
 
-/// Native segmented tabs supply all artwork, selection and keyboard behavior.
-/// Only document-specific rename, menus and scroll-to-selection live here.
-final class NativeDocumentTabsView: NSView, NSTextFieldDelegate {
-    private static let segmentWidth: CGFloat = 168
-    private let scrollView = NSScrollView()
-    private let control = DocumentSegmentedControl()
-    private var configuration: EditorTabStripView?
-    private var displayedIDs: [UUID] = []
-    private var displayedTitles: [String] = []
-    private var renameField: NSTextField?
-    private var renamingID: UUID?
-    private var eventMonitor: Any?
-    private var resignObserver: Any?
+private struct TitleBarEventMonitor: NSViewRepresentable {
+    let isEditing: Bool
+    let tabFrames: [UUID: CGRect]
+    let onDismissEditing: () -> Void
+    let onCloseTab: (UUID) -> Void
 
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        scrollView.drawsBackground = false
-        scrollView.hasHorizontalScroller = false
-        scrollView.hasVerticalScroller = false
-        scrollView.horizontalScrollElasticity = .none
-        scrollView.verticalScrollElasticity = .none
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(scrollView)
-        NSLayoutConstraint.activate([
-            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            scrollView.topAnchor.constraint(equalTo: topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
-        ])
-
-        control.trackingMode = .selectOne
-        control.segmentStyle = .automatic
-        control.controlSize = .regular
-        control.focusRingType = .none
-        if #available(macOS 27, *) {
-            control.role = .tabs
-        }
-        control.target = self
-        control.action = #selector(selectSegment(_:))
-        control.onRename = { [weak self] in self?.beginRename() }
-        control.onMiddleClick = { [weak self] index in
-            guard let self, displayedIDs.indices.contains(index) else { return }
-            configuration?.onCloseTab(displayedIDs[index])
-        }
-        control.makeMenu = { [weak self] index in self?.menu(forSegment: index) }
-        control.onStep = { [weak self] offset in self?.configuration?.onSelectTabRelative(offset) }
-        scrollView.documentView = control
+    func makeNSView(context: Context) -> TitleBarEventNSView {
+        let view = TitleBarEventNSView()
+        view.isEditing = isEditing
+        view.tabFrames = tabFrames
+        view.onDismissEditing = onDismissEditing
+        view.onCloseTab = onCloseTab
+        return view
     }
 
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    func updateNSView(_ nsView: TitleBarEventNSView, context: Context) {
+        nsView.isEditing = isEditing
+        nsView.tabFrames = tabFrames
+        nsView.onDismissEditing = onDismissEditing
+        nsView.onCloseTab = onCloseTab
     }
 
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        if window != nil, eventMonitor == nil {
-            eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
-                guard let self, let field = renameField else { return event }
-                if event.window !== window || !field.bounds.contains(field.convert(event.locationInWindow, from: nil)) {
-                    finishRename()
-                }
+    final class TitleBarEventNSView: NSView {
+        var isEditing = false
+        var tabFrames: [UUID: CGRect] = [:]
+        var onDismissEditing: (() -> Void)?
+        var onCloseTab: ((UUID) -> Void)?
+        private var clickMonitor: Any?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            installMonitor()
+        }
+
+        override func viewWillMove(toWindow newWindow: NSWindow?) {
+            if newWindow == nil {
+                removeMonitor()
+            }
+            super.viewWillMove(toWindow: newWindow)
+        }
+
+        private func installMonitor() {
+            removeMonitor()
+            clickMonitor = NSEvent.addLocalMonitorForEvents(
+                matching: [.leftMouseDown, .otherMouseUp]
+            ) { [weak self] event in
+                self?.handleMouseEvent(event)
                 return event
             }
-            resignObserver = NotificationCenter.default.addObserver(
-                forName: NSApplication.didResignActiveNotification,
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                MainActor.assumeIsolated { self?.finishRename() }
+        }
+
+        private func removeMonitor() {
+            if let clickMonitor {
+                NSEvent.removeMonitor(clickMonitor)
+                self.clickMonitor = nil
             }
-        } else if window == nil {
-            if let eventMonitor { NSEvent.removeMonitor(eventMonitor) }
-            if let resignObserver { NotificationCenter.default.removeObserver(resignObserver) }
-            eventMonitor = nil
-            resignObserver = nil
         }
-    }
 
-    override func layout() {
-        super.layout()
-        resizeControl()
-        revealSelection()
-    }
+        private func handleMouseEvent(_ event: NSEvent) {
+            if event.type == .leftMouseDown {
+                // Dismiss editing when clicking outside the title bar area
+                // (where the rename text field lives).
+                if isEditing && !isEventInTitleBarRegion(event) {
+                    DispatchQueue.main.async { [weak self] in
+                        self?.onDismissEditing?()
+                    }
+                }
+            } else if event.type == .otherMouseUp, event.buttonNumber == 2 {
+                guard let tabID = tabID(at: event) else {
+                    return
+                }
 
-    func update(configuration: EditorTabStripView) {
-        self.configuration = configuration
-        let ids = configuration.tabs.map(\.id)
-        let titles = configuration.tabs.map(\.title)
-        if ids != displayedIDs || titles != displayedTitles {
-            if let renamingID, !ids.contains(renamingID) {
-                cancelRename()
+                DispatchQueue.main.async { [weak self] in
+                    if self?.isEditing == true {
+                        self?.onDismissEditing?()
+                    }
+                    self?.onCloseTab?(tabID)
+                }
             }
-            displayedIDs = ids
-            displayedTitles = titles
-            control.segmentCount = ids.count
-            for index in ids.indices {
-                control.setLabel(titles[index], forSegment: index)
-                control.setToolTip(titles[index], forSegment: index)
-                control.setWidth(Self.segmentWidth, forSegment: index)
+        }
+
+        private func tabID(at event: NSEvent) -> UUID? {
+            guard event.window === self.window else {
+                return nil
             }
-            resizeControl()
+
+            let location = convert(event.locationInWindow, from: nil)
+            return tabFrames.first { _, frame in
+                frame.contains(location)
+            }?.key
         }
-        control.selectedSegment = ids.firstIndex { $0 == configuration.selectedTabID } ?? -1
-        revealSelection()
-    }
 
-    private func resizeControl() {
-        control.sizeToFit()
-        control.frame.origin = NSPoint(x: 0, y: max(0, (bounds.height - control.frame.height) / 2))
-    }
-
-    private func revealSelection() {
-        guard displayedIDs.indices.contains(control.selectedSegment), renameField == nil else { return }
-        let rect = segmentRect(control.selectedSegment)
-        // Center only when clipped, keeping selection stable through resizes.
-        if !scrollView.contentView.bounds.contains(rect) {
-            control.scrollToVisible(rect)
+        private func isEventInTitleBarRegion(_ event: NSEvent) -> Bool {
+            guard event.window === window else { return false }
+            // Measure the actual toolbar-hosted tab view, never a fixed
+            // offset from the window's top edge.
+            return bounds.contains(convert(event.locationInWindow, from: nil))
         }
-    }
 
-    private func segmentRect(_ index: Int) -> NSRect {
-        NSRect(
-            x: CGFloat(index) * Self.segmentWidth,
-            y: 0,
-            width: Self.segmentWidth,
-            height: control.bounds.height
-        )
-    }
-
-    @objc private func selectSegment(_ sender: NSSegmentedControl) {
-        guard displayedIDs.indices.contains(sender.selectedSegment) else { return }
-        finishRename()
-        configuration?.onSelectTab(displayedIDs[sender.selectedSegment])
-        revealSelection()
-    }
-
-    private func beginRename() {
-        let index = control.selectedSegment
-        guard displayedIDs.indices.contains(index) else { return }
-        finishRename()
-        renamingID = displayedIDs[index]
-        let field = NSTextField(string: displayedTitles[index])
-        field.focusRingType = .none
-        field.font = .systemFont(ofSize: NSFont.systemFontSize)
-        field.delegate = self
-        field.frame = segmentRect(index).insetBy(dx: 5, dy: 2)
-        control.addSubview(field)
-        renameField = field
-        window?.makeFirstResponder(field)
-        field.selectText(nil)
-    }
-
-    private func finishRename() {
-        guard let id = renamingID, let field = renameField else { return }
-        let title = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        cancelRename()
-        if !title.isEmpty {
-            configuration?.onRenameTab(id, title)
-        }
-    }
-
-    private func cancelRename() {
-        let field = renameField
-        renameField = nil
-        renamingID = nil
-        if let field, window?.firstResponder === field.currentEditor() {
-            window?.makeFirstResponder(nil)
-        }
-        field?.removeFromSuperview()
-    }
-
-    func controlTextDidEndEditing(_ notification: Notification) {
-        finishRename()
-    }
-
-    func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
-        if selector == #selector(NSResponder.cancelOperation(_:)) {
-            cancelRename()
-            return true
-        }
-        if selector == #selector(NSResponder.insertNewline(_:)) {
-            finishRename()
-            return true
-        }
-        return false
-    }
-
-    private func menu(forSegment index: Int) -> NSMenu? {
-        guard let configuration, configuration.tabs.indices.contains(index) else { return nil }
-        let tab = configuration.tabs[index]
-        let menu = NSMenu()
-        func add(_ title: String, _ symbol: String, _ selector: Selector) {
-            let item = NSMenuItem(title: title, action: selector, keyEquivalent: "")
-            item.target = self
-            item.representedObject = tab.id
-            item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
-            menu.addItem(item)
-        }
-        if tab.fileURL != nil {
-            add(String(localized: "Show in Finder"), "folder", #selector(revealDocument(_:)))
-            menu.addItem(.separator())
-        }
-        add(String(localized: "Rename…"), "pencil", #selector(renameDocument(_:)))
-        add(String(localized: "Close Tab"), "xmark", #selector(closeDocument(_:)))
-        if configuration.tabs.count > 1 {
-            add(String(localized: "Close Other Tabs"), "xmark.rectangle.portrait", #selector(closeOthers(_:)))
-        }
-        if tab.fileURL != nil, !tab.isSettings {
-            menu.addItem(.separator())
-            add(String(localized: "Move to Trash"), "trash", #selector(trashDocument(_:)))
-        }
-        return menu
-    }
-
-    @objc private func closeDocument(_ sender: NSMenuItem) {
-        if let id = sender.representedObject as? UUID { configuration?.onCloseTab(id) }
-    }
-
-    @objc private func closeOthers(_ sender: NSMenuItem) {
-        if let id = sender.representedObject as? UUID { configuration?.onCloseOtherTabs(id) }
-    }
-
-    @objc private func trashDocument(_ sender: NSMenuItem) {
-        if let id = sender.representedObject as? UUID { configuration?.onDeleteTab(id) }
-    }
-
-    @objc private func revealDocument(_ sender: NSMenuItem) {
-        guard let id = sender.representedObject as? UUID,
-              let url = configuration?.tabs.first(where: { $0.id == id })?.fileURL else { return }
-        NSWorkspace.shared.activateFileViewerSelecting([url])
-    }
-
-    @objc private func renameDocument(_ sender: NSMenuItem) {
-        guard let id = sender.representedObject as? UUID,
-              let index = displayedIDs.firstIndex(of: id) else { return }
-        configuration?.onSelectTab(id)
-        control.selectedSegment = index
-        beginRename()
     }
 }
 
-private final class DocumentSegmentedControl: NSSegmentedControl {
-    var onRename: (() -> Void)?
-    var onMiddleClick: ((Int) -> Void)?
-    var makeMenu: ((Int) -> NSMenu?)?
-    var onStep: ((Int) -> Void)?
-    private var firstClickWasSelected = false
-    private var accumulatedDelta: CGFloat = 0
-    private var lastScrollTimestamp: TimeInterval = 0
-
-    override func mouseDown(with event: NSEvent) {
-        if event.clickCount == 1 {
-            firstClickWasSelected = segmentIndex(at: event) == selectedSegment
-        }
-        super.mouseDown(with: event)
-        if event.clickCount == 2, firstClickWasSelected {
-            onRename?()
-        }
+/// One geometry builds both the fill and the outline, preserving the existing
+/// rounded stepped silhouette without independently splicing its joins.
+enum ConnectedTabGeometry {
+    static func appendTopEdge(
+        to path: inout Path,
+        in rect: CGRect,
+        topInset: CGFloat = 6,
+        topCornerRadius: CGFloat = 9,
+        bottomJoinRadius: CGFloat = 9
+    ) {
+        let inset = min(topInset, rect.width / 4)
+        let topRadius = min(topCornerRadius, rect.width / 2, rect.height / 2)
+        let bottomRadius = min(bottomJoinRadius, rect.width / 2, rect.height / 2)
+        let bottomY = rect.maxY - 0.5
+        path.addLine(to: CGPoint(x: rect.minX + inset - bottomRadius, y: bottomY))
+        path.addArc(
+            tangent1End: CGPoint(x: rect.minX + inset, y: bottomY),
+            tangent2End: CGPoint(x: rect.minX + inset, y: rect.minY),
+            radius: bottomRadius
+        )
+        path.addLine(to: CGPoint(x: rect.minX + inset, y: rect.minY + topRadius))
+        path.addArc(
+            tangent1End: CGPoint(x: rect.minX + inset, y: rect.minY),
+            tangent2End: CGPoint(x: rect.maxX - inset, y: rect.minY),
+            radius: topRadius
+        )
+        path.addLine(to: CGPoint(x: rect.maxX - inset - topRadius, y: rect.minY))
+        path.addArc(
+            tangent1End: CGPoint(x: rect.maxX - inset, y: rect.minY),
+            tangent2End: CGPoint(x: rect.maxX - inset, y: bottomY),
+            radius: topRadius
+        )
+        path.addLine(to: CGPoint(x: rect.maxX - inset, y: bottomY - bottomRadius))
+        path.addArc(
+            tangent1End: CGPoint(x: rect.maxX - inset, y: bottomY),
+            tangent2End: CGPoint(x: rect.maxX - inset + bottomRadius, y: bottomY),
+            radius: bottomRadius
+        )
     }
+}
 
-    override func otherMouseUp(with event: NSEvent) {
-        if event.buttonNumber == 2, let index = segmentIndex(at: event) {
-            onMiddleClick?(index)
-        } else {
-            super.otherMouseUp(with: event)
-        }
+struct ConnectedTabFillShape: Shape {
+    let topInset: CGFloat
+    let topCornerRadius: CGFloat
+    let bottomJoinRadius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + topInset - bottomJoinRadius, y: rect.maxY - 0.5))
+        ConnectedTabGeometry.appendTopEdge(
+            to: &path,
+            in: rect,
+            topInset: topInset,
+            topCornerRadius: topCornerRadius,
+            bottomJoinRadius: bottomJoinRadius
+        )
+        path.closeSubpath()
+        return path
     }
+}
 
-    override func menu(for event: NSEvent) -> NSMenu? {
-        segmentIndex(at: event).flatMap { makeMenu?($0) }
+struct TabBarOutlineShape: Shape {
+    let selectedTabFrame: CGRect
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let baseline = rect.maxY - 0.5
+        path.move(to: CGPoint(x: rect.minX, y: baseline))
+        if !selectedTabFrame.isNull, selectedTabFrame.intersects(rect) {
+            ConnectedTabGeometry.appendTopEdge(to: &path, in: selectedTabFrame)
+        }
+        path.addLine(to: CGPoint(x: rect.maxX, y: baseline))
+        return path
     }
+}
 
-    private func segmentIndex(at event: NSEvent) -> Int? {
-        let point = convert(event.locationInWindow, from: nil)
-        guard bounds.contains(point) else { return nil }
-        var edge: CGFloat = 0
-        for index in 0..<segmentCount {
-            edge += width(forSegment: index)
-            if point.x < edge { return index }
-        }
-        return nil
+#Preview {
+    @Previewable @State var tabs = [
+        EditorTab(id: UUID(), title: "Untitled 1"),
+        EditorTab(id: UUID(), title: "Config.yml"),
+        EditorTab(id: UUID(), title: "Readme.md"),
+    ]
+    @Previewable @State var selectedTabID: UUID?
+
+    VStack(spacing: 0) {
+        EditorTabStripView(
+            tabs: $tabs,
+            selectedTabID: selectedTabID,
+            onSelectTab: { selectedTabID = $0 },
+            onSelectTabRelative: { offset in
+                guard let currentSelectedTabID = selectedTabID,
+                    let selectedIndex = tabs.firstIndex(where: { $0.id == currentSelectedTabID })
+                else {
+                    return
+                }
+
+                let targetIndex = selectedIndex + offset
+                guard tabs.indices.contains(targetIndex) else {
+                    return
+                }
+
+                selectedTabID = tabs[targetIndex].id
+            },
+            onRenameTab: { id, newTitle in
+                guard let index = tabs.firstIndex(where: { $0.id == id }) else {
+                    return
+                }
+
+                tabs[index].title = newTitle
+            },
+            onCloseTab: { id in
+                tabs.removeAll { $0.id == id }
+                if selectedTabID == id {
+                    selectedTabID = tabs.first?.id
+                }
+            },
+            onDeleteTab: { _ in },
+            onCloseOtherTabs: { _ in }
+        )
+        Spacer()
     }
-
-    override func scrollWheel(with event: NSEvent) {
-        guard event.momentumPhase.isEmpty else { return }
-        if event.timestamp - lastScrollTimestamp > 0.35 {
-            accumulatedDelta = 0
-        }
-        lastScrollTimestamp = event.timestamp
-        let delta = abs(event.scrollingDeltaY) >= abs(event.scrollingDeltaX)
-            ? event.scrollingDeltaY : event.scrollingDeltaX
-        let scaled = delta * (event.hasPreciseScrollingDeltas ? 1 / 36 : 0.005)
-        if accumulatedDelta.sign != scaled.sign { accumulatedDelta = 0 }
-        accumulatedDelta += scaled
-        while abs(accumulatedDelta) >= 1 {
-            onStep?(accumulatedDelta > 0 ? -1 : 1)
-            accumulatedDelta += accumulatedDelta > 0 ? -1 : 1
-        }
+    .frame(width: 400, height: 200)
+    .background(EditorChrome.tabBarBackground)
+    .onAppear {
+        selectedTabID = tabs.first?.id
     }
 }

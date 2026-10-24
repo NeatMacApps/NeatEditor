@@ -15,8 +15,13 @@ Owner corrections (2026-10-24):
 - Sidebar files use descending natural filename order with a path tie-breaker.
   Save/autosave and tab switching do not change their positions. Creating or
   renaming files may change their positions.
-- Use native tab artwork and selection. Do not restore the old connected-tab
-  fill/border shapes, interrupted bottom lines or manual traffic-light placement.
+- Owner correction: preserve the existing rounded, stepped document tabs joined
+  to the editor surface. The owner explicitly rejected replacing this component
+  with `NSSegmentedControl` and instructed continuation of its restoration.
+  This is a scoped exception for the existing document-tab component, not
+  permission to replace native sidebar, toolbar, window controls or other UI.
+  Fix continuous outlines without changing that design. Manual traffic-light
+  placement remains prohibited.
 
 ## Native implementation and reference
 
@@ -29,12 +34,16 @@ unbordered; its minimum and maximum widths use constraints rather than deprecate
 width: the hidden-sidebar layout also needs space for native window controls.
 Tabs have user visibility priority so actions overflow before document selection.
 
-`EditorTabStripView` hosts `NativeDocumentTabsView`: direct
-`NSSegmentedControl` selection inside `NSScrollView`, and native
-`NSTextField` for inline rename. macOS 27 uses the public `.tabs` role;
-older supported versions use the native segmented appearance. No custom tab
-artwork, private framework traversal, global rename buffer or SwiftUI
-multi-click gesture is used. The native toolbar owns the continuous separator.
+`EditorTabStripView` preserves the product's existing `EditorTabItemView`,
+connected fill and inline rename inside the single native toolbar item. The
+inspected restoration reference is this repository's `b213e21` implementation
+of those components and the installed single-row screenshot. The rejected
+segmented-control replacement is not a reference for the document tabs.
+Use one continuous outline for the baseline and raised selected tab, rather
+than separate strokes with clearance gaps or mismatched fill/border curves.
+Native AppKit continues to own the surrounding toolbar and window behavior.
+Restoring an owner-decided design is exempt from new appearance research;
+public API changes still require official documentation and SDK checks.
 
 Inspected component references:
 
@@ -43,9 +52,10 @@ Inspected component references:
 - [CotEditor](https://github.com/coteditor/CotEditor):
   `CotEditor/Sources/Document Window/WindowContentViewController.swift` and
   `DocumentWindowController.swift` for native split items and toolbar tracking;
-  `Packages/MacUI/Sources/ControlUI/InspectorTabView.swift` for direct segmented
-  selection and the availability-guarded tabs role. Only public component
-  mechanisms are reused, not its domain logic, dependencies or private workarounds.
+  its split and toolbar mechanisms remain applicable. Its inspector segmented
+  tabs do not match the owner's required document-tab appearance and must not
+  replace the existing stepped component. No domain logic, dependencies or
+  private workarounds are copied.
 
 Official applicability and installed Xcode 27.2 SDK checked:
 
