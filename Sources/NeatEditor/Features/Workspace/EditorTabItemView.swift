@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 
 struct EditorTabItemView: View {
+    static let height: CGFloat = 32
     private static let titleFontSize: CGFloat = 13
     private static let invalidTitleSeparators = CharacterSet(charactersIn: "/:")
     private static let minimumHorizontalPadding: CGFloat = textWidth(for: "untit")
@@ -82,7 +83,7 @@ struct EditorTabItemView: View {
                 .padding(.bottom, 8)
             }
             .frame(minWidth: Self.minimumTabWidth)
-            .frame(height: 32, alignment: .bottom)
+            .frame(height: Self.height, alignment: .bottom)
             .contentShape(TabItemHitShape(isSelected: isSelected))
         }
         .accessibilityIdentifier("document-tab-\(tab.id)")

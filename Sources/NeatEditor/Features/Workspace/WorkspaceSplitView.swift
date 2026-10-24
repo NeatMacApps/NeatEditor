@@ -85,7 +85,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
 
         workspaceToolbar.delegate = self
         workspaceToolbar.displayMode = .iconOnly
-        workspaceToolbar.sizeMode = .small
+        workspaceToolbar.sizeMode = .regular
         workspaceToolbar.allowsUserCustomization = false
     }
 
@@ -143,7 +143,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         guard window.toolbar !== workspaceToolbar else { return }
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
-        window.toolbarStyle = .unifiedCompact
+        window.toolbarStyle = .unified
         // The connected tab outline owns this boundary; a native full-width
         // separator would draw a second line through the selected tab's join.
         window.titlebarSeparatorStyle = .none

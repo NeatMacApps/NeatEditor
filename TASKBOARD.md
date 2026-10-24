@@ -4,3 +4,4 @@
 
 | 任务 | 状态 | 影响范围 | 开始 | 最近更新 | 备注 |
 |---|---|---|---|---|---|
+| Fix broken tab-bar outline and release 1.0.13 | 验证中 | EditorTabStripView, EditorTabItemView, WorkspaceView, SharedUI window-frame reader, changelog/version, release | 10-25 00:00 | 2026-10-25 00:04 | 对齐标签轮廓与顶线；69 测试通过；发布 1.0.13 |

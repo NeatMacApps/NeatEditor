@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.13 - 2026-10-25
+
+### Fixed
+
+- The selected tab's outline now meets the editor's top rule on the same line, so the tab bar border stays continuous instead of breaking at the tab's bottom corners.
+- The tab join is measured from AppKit window frames, so the line stays aligned when the sidebar is shown, hidden, or resized.
+
+### 简体中文
+
+- 选中标签的轮廓与编辑区顶线落在同一条线上，标签栏边框不再在标签底部两角断开。
+- 标签开口改用 AppKit 窗口坐标换算，侧边栏显示、隐藏或拖动宽度时仍保持对齐。
+
 ## 1.0.12 - 2026-10-24
 
 ### Changed
