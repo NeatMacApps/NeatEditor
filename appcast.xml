@@ -3,6 +3,37 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.12</title>
+            <pubDate>Sat, 24 Oct 2026 22:22:59 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>12</sparkle:version>
+            <sparkle:shortVersionString>1.0.12</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.12
+
+
+### Changed
+
+- The sidebar lists your `~/Documents` folder by default and can switch to another folder from its header. New documents save to the current folder, and the choice is remembered across launches.
+- Files without an extension are listed when their head looks like plain UTF-8 text, so extensionless notes appear while binaries are still skipped.
+- Sidebar rows no longer draw a file icon, giving filenames and previews the full width of the narrow sidebar.
+- The toolbar's tab strip and the editor share one continuous top rule that opens under the selected tab, keeping the tab attached to the page.
+
+### Fixed
+
+- Documents left in the previous app library (`~/.config/neateditor/documents`) are copied into the current folder once, without overwriting or deleting anything.
+
+### 简体中文
+
+- 侧边栏默认列出你的 `~/Documents`，可在头部切换到其它文件夹；新文档保存到当前文件夹，选择会在重启后保留。
+- 无扩展名文件在开头内容像 UTF-8 纯文本时会显示，因此无扩展名笔记也能列出，二进制文件仍然跳过。
+- 侧边栏行不再显示文件图标，文件名和摘要可使用窄栏的全部宽度。
+- 工具栏下的标签栏与编辑区共用一条连续顶线，并在选中标签处留出开口，让标签与页面保持相连。
+- 旧应用目录（`~/.config/neateditor/documents`）中的文档会一次性复制到当前文件夹，不覆盖、不删除任何文件。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.12/NeatEditor-1.0.12.zip" length="3651435" type="application/octet-stream" sparkle:edSignature="NYgp84abxNIOUs34qsq6hjMmstkuVXvBp1HeEw/rp0UybASh0ScAbWImWTY81YipY2qEq4PElWAZ5M2W0MZIAg=="/>
+        </item>
+        <item>
             <title>1.0.9</title>
             <pubDate>Mon, 19 Oct 2026 16:03:02 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
