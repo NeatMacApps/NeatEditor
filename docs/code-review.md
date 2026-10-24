@@ -24,6 +24,38 @@ release tooling. Behavior requirements are recorded before implementation in
 | P2 | A standalone View command menu duplicated the system View menu. | Fixed: add zoom commands to the existing menu through `CommandGroup(after: .toolbar)`. Installed-menu verification is pending. |
 | P2 | Release artifacts preceded the source commit; detached execution, notes and checksum documentation were inconsistent. | Tooling fixed; final acceptance pending worker corrections and account preflight. |
 
+## Sidebar review (2026-10-24)
+
+The layout requirement and inspected native reference are recorded in
+[TabStripGestures.md](../TabStripGestures.md#workspace-sidebar-layout).
+The sidebar uses `NavigationSplitView`, `List(selection:)` and native toolbar
+items. Tabs and search are confined to the detail column; native window
+controls are no longer manually repositioned. Detail minimum widths protect
+the editor and existing Settings form when the sidebar is visible.
+
+Fixed refresh-time snapshots overwriting newer edits, live-preview cache
+contamination, silent folder enumeration failures, disk-only duplication of
+open buffers, duplicated rename rules and missing closed-file font migration.
+Preview reads are unconditionally bounded, CRLF is one line break, duplicate
+normalized URLs cannot crash cache reconstruction, and rename handoff is
+MainActor-isolated rather than using `nonisolated(unsafe)`. Failed trash
+operations on open files now present the same native error as closed files.
+
+Debug build, the full 65-test suite and static analysis passed on Xcode 27.2 /
+macOS, arm64. Added regressions cover refresh ordering, cache isolation,
+unsaved duplication, folder failure retention and CRLF. Complete diagnostics
+are retained under `build/sidebar-review/`. One test-only unused binding
+warning was fixed and the full suite rerun.
+
+Retained diagnostic: `appintentsmetadataprocessor: Metadata extraction skipped,
+no AppIntents.framework dependency found`, app/test-host build steps. The app
+does not import AppIntents or declare intents, so there is no metadata to
+extract; this is an Xcode metadata-step diagnostic, not a sidebar or Swift
+compiler defect. No suppression or artificial framework dependency was added.
+Residual limit: no Shortcuts metadata is produced. Reassess if App Intents
+are adopted. Installed visual and universal Release acceptance are recorded
+below after verification.
+
 ## Verification
 
 The primary's final full test run passed 39 tests in five suites, including

@@ -42,6 +42,7 @@ extension WorkspaceStore {
             applyEditorFontPreferenceForSelectedTab()
         }
         saveState()
+        refreshSidebarFiles()
     }
 
     func selectTab(_ id: UUID) {

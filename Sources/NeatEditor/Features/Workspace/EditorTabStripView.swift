@@ -3,14 +3,13 @@ import SwiftUI
 
 /// Written by EditorTabItemView before editing ends, read by
 /// EditorTabStripView's dismiss callback to call onRenameTab.
-nonisolated(unsafe) var tabStripPendingRename: String?
+@MainActor var tabStripPendingRename: String?
 
 struct EditorTabStripView: View {
     static let titleBarHeight: CGFloat = 38
     static let leadingPadding: CGFloat = 76
     static let trailingTabScrollPadding: CGFloat = 12
     static let trailingAccessoryWidth: CGFloat = 52
-    static let pinButtonInset = (titleBarHeight - PinWindowButton.diameter) / 2
     static let overflowFadeWidth: CGFloat = 16
     static let overflowVisibilityThreshold: CGFloat = 1
     static let minimumWindowEdge: CGFloat = {
@@ -32,15 +31,10 @@ struct EditorTabStripView: View {
     @State private var selectedTabFrame: CGRect = .null
     @State private var tabFrames: [UUID: CGRect] = [:]
     @State private var tabScrollViewportFrame: CGRect = .null
-    @State private var isWindowPinned = false
     @State private var editingTabID: UUID? = nil
 
     var body: some View {
         HStack(spacing: 0) {
-            TitleBarAccessoryBackground()
-                .frame(width: Self.leadingPadding)
-                .allowsHitTesting(false)
-
             ScrollViewReader { scrollProxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 0) {
@@ -120,11 +114,7 @@ struct EditorTabStripView: View {
             }
 
             TitleBarAccessoryBackground()
-                .overlay(alignment: .topTrailing) {
-                    PinWindowButton(isWindowPinned: $isWindowPinned)
-                        .padding([.top, .trailing], Self.pinButtonInset)
-                }
-                .frame(width: Self.trailingAccessoryWidth)
+                .frame(width: Self.trailingTabScrollPadding)
         }
         .coordinateSpace(name: TabBarLayout.coordinateSpaceName)
         .onPreferenceChange(SelectedTabFramePreferenceKey.self) { frame in
@@ -147,12 +137,6 @@ struct EditorTabStripView: View {
                 EditorChrome.tabBarBackground
                 TabBarDividerOverlay(selectedTabFrame: selectedTabFrame)
             }
-        }
-        .background {
-            TitleBarTrafficLightAlignmentView(
-                titleBarHeight: Self.titleBarHeight,
-                isWindowPinned: isWindowPinned
-            )
         }
         .background {
             TitleBarEventMonitor(
@@ -429,43 +413,6 @@ private struct TabStripScrollInterceptor: NSViewRepresentable {
     }
 }
 
-private struct PinWindowButton: View {
-    static let diameter: CGFloat = 28
-
-    @Binding var isWindowPinned: Bool
-    @State private var isHovering = false
-    @State private var suppressActionAfterDrag = false
-
-    var body: some View {
-        Button {
-            guard !suppressActionAfterDrag else {
-                return
-            }
-            isWindowPinned.toggle()
-        } label: {
-            Image(systemName: "pin.fill")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(isWindowPinned ? Color.accentColor : Color.secondary)
-                .frame(width: Self.diameter, height: Self.diameter)
-                .background {
-                    Circle()
-                        .fill(isHovering || isWindowPinned ? EditorChrome.hoverFill : .clear)
-                }
-        }
-        .buttonStyle(.plain)
-        .focusEffectDisabled()
-        .contentShape(Circle())
-        .help(isWindowPinned ? "Disable Always on Top" : "Enable Always on Top")
-        .accessibilityLabel(isWindowPinned ? "Disable Always on Top" : "Enable Always on Top")
-        .modifier(
-            TitleBarControlDragSuppression(isSuppressingAction: $suppressActionAfterDrag)
-        )
-        .onHover { hovering in
-            isHovering = hovering
-        }
-    }
-}
-
 private struct TitleBarEventMonitor: NSViewRepresentable {
     let isEditing: Bool
     let tabFrames: [UUID: CGRect]
@@ -558,15 +505,11 @@ private struct TitleBarEventMonitor: NSViewRepresentable {
             }?.key
         }
 
-        /// Check if the click is within the title bar / tab strip region
-        /// (the top portion of the window).
         private func isEventInTitleBarRegion(_ event: NSEvent) -> Bool {
-            guard let window = event.window else { return false }
-            // With .hiddenTitleBar, the content fills the entire window.
-            // The tab strip occupies the top titleBarHeight points.
-            let titleBarHeight = EditorTabStripView.titleBarHeight
-            let windowHeight = window.frame.height
-            return event.locationInWindow.y >= (windowHeight - titleBarHeight)
+            guard event.window === window else { return false }
+            // The tab strip now lives in the detail column below the native
+            // toolbar, not at a fixed offset from the window's top edge.
+            return bounds.contains(convert(event.locationInWindow, from: nil))
         }
 
     }

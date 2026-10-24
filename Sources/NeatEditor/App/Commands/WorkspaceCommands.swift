@@ -70,6 +70,13 @@ struct WorkspaceCommands: Commands {
             }
             .keyboardShortcut("-", modifiers: .command)
         }
+
+        CommandGroup(after: .sidebar) {
+            Button("Toggle Sidebar") {
+                workspaceStore.toggleSidebar()
+            }
+            .keyboardShortcut("s", modifiers: [.command, .option])
+        }
     }
 
     @MainActor

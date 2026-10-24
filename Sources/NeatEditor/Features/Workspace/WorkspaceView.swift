@@ -11,8 +11,82 @@ struct WorkspaceView: View {
     private var hasShownCloseTabShortcutHint = false
     @FocusState private var isSearchFieldFocused: Bool
     @State private var isCloseTabShortcutHintVisible = false
+    @State private var isWindowPinned = false
 
     var body: some View {
+        NavigationSplitView(columnVisibility: sidebarVisibility) {
+            WorkspaceSidebarView()
+                .navigationSplitViewColumnWidth(min: 200, ideal: 260, max: 360)
+        } detail: {
+            editorColumn
+                .frame(minWidth: isSettingsSelected ? 500 : 300)
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button(action: workspaceStore.createNewDocument) {
+                            Label("New Document", systemImage: "square.and.pencil")
+                        }
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        Toggle(isOn: $isWindowPinned) {
+                            Label("Always on Top", systemImage: "pin")
+                        }
+                        .toggleStyle(.button)
+                        .help(isWindowPinned ? "Disable Always on Top" : "Enable Always on Top")
+                    }
+                }
+        }
+        .navigationSplitViewStyle(.balanced)
+        .background {
+            WindowPinningView(isWindowPinned: isWindowPinned)
+        }
+        .focusEffectDisabled()
+        .alert(
+            workspaceStore.documentFailureAlert?.title ?? String(localized: "Save Failed"),
+            isPresented: documentFailureAlertIsPresented,
+            presenting: workspaceStore.documentFailureAlert
+        ) { _ in
+            Button("OK", role: .cancel) {
+                workspaceStore.dismissDocumentFailureAlert()
+            }
+        } message: { alert in
+            Text(alert.message)
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                workspaceStore.refreshSidebarFiles()
+            }
+            if newPhase == .inactive || newPhase == .background {
+                workspaceStore.saveAllDocuments()
+            }
+        }
+        .onChange(of: workspaceStore.searchState.focusRequestID) { _, _ in
+            isSearchFieldFocused = workspaceStore.searchState.isPresented
+        }
+        .onChange(of: workspaceStore.tabs.count) { _, newCount in
+            presentCloseTabShortcutHintIfNeeded(for: newCount)
+        }
+        .dropDestination(for: URL.self) { items, _ in
+            workspaceStore.openFiles(at: items)
+            return true
+        }
+        .task {
+            workspaceStore.refreshSidebarFiles()
+            presentCloseTabShortcutHintIfNeeded(for: workspaceStore.tabs.count)
+        }
+    }
+
+    private var isSettingsSelected: Bool {
+        workspaceStore.tabs.contains { $0.id == workspaceStore.selectedTabID && $0.isSettings }
+    }
+
+    private var sidebarVisibility: Binding<NavigationSplitViewVisibility> {
+        Binding(
+            get: { workspaceStore.preferences.isSidebarVisible ? .all : .detailOnly },
+            set: { workspaceStore.preferences.isSidebarVisible = $0 != .detailOnly }
+        )
+    }
+
+    private var editorColumn: some View {
         VStack(spacing: 0) {
             @Bindable var bindableWorkspace = workspaceStore
             EditorTabStripView(
@@ -35,98 +109,66 @@ struct WorkspaceView: View {
 
             if let selectedTabID = workspaceStore.selectedTabID,
                let index = workspaceStore.tabs.firstIndex(where: { $0.id == selectedTabID }) {
-                let tab = workspaceStore.tabs[index]
-                if tab.isSettings {
-                    SettingsView()
-                } else {
-                    EditorTextView(
-                        tabID: tab.id,
-                          text: Self.textBinding(for: tab.id, in: workspaceStore),
-                        fontSize: workspaceStore.preferences.editorFontSize,
-                        isEditable: tab.isContentLoaded,
-                        tabBehavior: workspaceStore.preferences.tabBehavior,
-                        textSoftness: workspaceStore.preferences.editorTextSoftness,
-                        searchState: workspaceStore.searchState,
-                        onTextChange: { isComposing in
-                            if isComposing {
-                                workspaceStore.cancelAutoSave(for: selectedTabID)
-                            } else {
-                                workspaceStore.queueAutoSave(for: selectedTabID)
-                            }
-                        },
-                        onCompositionEnd: {
-                            workspaceStore.queueAutoSave(for: selectedTabID)
-                        },
-                        onIncreaseFontSize: {
-                            workspaceStore.increaseEditorFontSize()
-                        },
-                        onDecreaseFontSize: {
-                            workspaceStore.decreaseEditorFontSize()
-                        },
-                          onOpenFiles: { urls in
-                              workspaceStore.openFiles(at: urls)
-                          },
-                          onRegisterCommitHandler: { handler in
-                              workspaceStore.commitEditorChanges = handler
-                          }
-                    )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipped()
-                        .background(EditorChrome.editorSurface)
-                        .overlay {
-                            EditorSurfaceBorderShape()
-                                .stroke(EditorChrome.border, lineWidth: EditorChrome.lineWidth)
-                        }
-                }
+                editorBody(for: workspaceStore.tabs[index], selectedTabID: selectedTabID)
             } else {
                 Text("No Document Selected")
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(EditorChrome.editorSurface)
-                    .overlay {
-                        EditorSurfaceBorderShape()
-                            .stroke(EditorChrome.border, lineWidth: EditorChrome.lineWidth)
-                    }
             }
 
             if workspaceStore.searchState.isPresented {
                 searchBar
             }
         }
-        .focusEffectDisabled()
-        .ignoresSafeArea(.all, edges: .top)
-        .alert(
-            workspaceStore.documentFailureAlert?.title ?? String(localized: "Save Failed"),
-            isPresented: documentFailureAlertIsPresented,
-            presenting: workspaceStore.documentFailureAlert
-        ) { _ in
-            Button("OK", role: .cancel) {
-                workspaceStore.dismissDocumentFailureAlert()
-            }
-        } message: { alert in
-            Text(alert.message)
-        }
-        .onChange(of: scenePhase) { oldPhase, newPhase in
-            if newPhase == .inactive || newPhase == .background {
-                workspaceStore.saveAllDocuments()
-            }
-        }
-        .onChange(of: workspaceStore.searchState.focusRequestID) { _, _ in
-            isSearchFieldFocused = workspaceStore.searchState.isPresented
-        }
-        .onChange(of: workspaceStore.tabs.count) { _, newCount in
-            presentCloseTabShortcutHintIfNeeded(for: newCount)
-        }
-        .dropDestination(for: URL.self) { items, _ in
-            Task { @MainActor in
-                workspaceStore.openFiles(at: items)
-            }
+    }
 
-            return true
+    private func editorBody(for tab: EditorTab, selectedTabID: UUID) -> some View {
+        Group {
+            if tab.isSettings {
+                SettingsView()
+            } else {
+                EditorTextView(
+                    tabID: tab.id,
+                    text: Self.textBinding(for: tab.id, in: workspaceStore),
+                    fontSize: workspaceStore.preferences.editorFontSize,
+                    isEditable: tab.isContentLoaded,
+                    tabBehavior: workspaceStore.preferences.tabBehavior,
+                    textSoftness: workspaceStore.preferences.editorTextSoftness,
+                    searchState: workspaceStore.searchState,
+                    onTextChange: { isComposing in
+                        if isComposing {
+                            workspaceStore.cancelAutoSave(for: selectedTabID)
+                        } else {
+                            workspaceStore.queueAutoSave(for: selectedTabID)
+                        }
+                    },
+                    onCompositionEnd: {
+                        workspaceStore.queueAutoSave(for: selectedTabID)
+                    },
+                    onIncreaseFontSize: {
+                        workspaceStore.increaseEditorFontSize()
+                    },
+                    onDecreaseFontSize: {
+                        workspaceStore.decreaseEditorFontSize()
+                    },
+                    onOpenFiles: { urls in
+                        workspaceStore.openFiles(at: urls)
+                    },
+                    onRegisterCommitHandler: { handler in
+                        workspaceStore.commitEditorChanges = handler
+                    }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+                .background(EditorChrome.editorSurface)
+                .overlay {
+                    EditorSurfaceBorderShape()
+                        .stroke(EditorChrome.border, lineWidth: EditorChrome.lineWidth)
+                }
+            }
         }
-        .task {
-            presentCloseTabShortcutHintIfNeeded(for: workspaceStore.tabs.count)
-        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var searchBar: some View {

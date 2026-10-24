@@ -20,7 +20,9 @@
 		2F0D92985DE89AFB1227039E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CC4981C6B05519CD1877B4D5 /* Assets.xcassets */; };
 		30257E6B79239E28AD1DFF2A /* EditorTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEE07E7303361F05267B1085 /* EditorTab.swift */; };
 		348B695F38A92793385342D0 /* WorkspaceStore+Preferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034DD46D84F8B203A8D6476F /* WorkspaceStore+Preferences.swift */; };
+		34C2AC68775F3BA373AC7357 /* WorkspaceSidebarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C50807406F37393832E921EC /* WorkspaceSidebarTests.swift */; };
 		39BD2850BB05C043F8377344 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = EEC6A22F39D1E5EC9B13E1CB /* Localizable.strings */; };
+		3DF802EA09B2D431EB933049 /* WorkspaceStore+Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C04ABF5739CF2D974AA14F /* WorkspaceStore+Sidebar.swift */; };
 		40E4B08329E49913ADF40EFC /* EditorTextContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B3C22F933FC00FD61B5DAF0 /* EditorTextContainerView.swift */; };
 		4167662901A455448BDCB6DE /* WorkspaceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04E92B1CA43CA429B446891A /* WorkspaceStoreTests.swift */; };
 		44208CD4C131FC71C34946E1 /* EditorTabStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60AEF291D6C5985830C89ABF /* EditorTabStripView.swift */; };
@@ -33,6 +35,7 @@
 		4FCF5DB5C7FC0F1E1FC740D4 /* WorkspaceStore+StateRestoration.swift in Sources */ = {isa = PBXBuildFile; fileRef = E32406E8C86E9797FA92149D /* WorkspaceStore+StateRestoration.swift */; };
 		6C4A4EF55D4E956B1CB30509 /* DocumentPersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A960C8B24796C5DB2C6589 /* DocumentPersistenceService.swift */; };
 		7538ECC920EF461816EFFBF7 /* HoverFocusTopmostCheckTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B6594887CEEA1D1B0EF81A6 /* HoverFocusTopmostCheckTests.swift */; };
+		833161AD0662EF0AA75851C0 /* WorkspaceSidebarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A6D6237DD372EDEF3850424 /* WorkspaceSidebarItem.swift */; };
 		83AA4C1985409273788FD141 /* EditorTabItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98813FD87C11733B55049246 /* EditorTabItemView.swift */; };
 		85E7BB7174B4D000CEFDE8A6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4EDF9A6AA28B3E0BB1ED45 /* SettingsView.swift */; };
 		92AE87B6A8CBD6148076B130 /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F0D88DC1A7D3B01D9DBBD6 /* AppUpdater.swift */; };
@@ -42,6 +45,7 @@
 		A5CD4E4CA843E095AEF9E4F4 /* WorkspaceStore+Documents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE02D7D1B8648861CEB95405 /* WorkspaceStore+Documents.swift */; };
 		AB52501F00EC0F86E18D6C3C /* AutoSaveScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14452BE9113FCDDB6CE97192 /* AutoSaveScheduler.swift */; };
 		B94CDB60C07A6AB1960668D4 /* ExternalFileOpenCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C74314E17C1CDECDF2EDB4 /* ExternalFileOpenCoordinator.swift */; };
+		BD9F954901E066BF3EC44DD4 /* WorkspaceSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE6C7B02FE5A439B3DE095 /* WorkspaceSidebarView.swift */; };
 		CC0213689BC7EBC733DEE876 /* EditorTabPreferenceKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1666943FD2B1A70363D36B4C /* EditorTabPreferenceKeys.swift */; };
 		DCDC8B0D5BE86A4D3B12A9E1 /* WorkspaceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63FEBB9D3DE2E196F6FABC88 /* WorkspaceStore.swift */; };
 		EE8FDF1E46F208FEEE81F43F /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56530C158F57A8758BF0D6FF /* AppLanguage.swift */; };
@@ -67,6 +71,7 @@
 		14452BE9113FCDDB6CE97192 /* AutoSaveScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoSaveScheduler.swift; sourceTree = "<group>"; };
 		1666943FD2B1A70363D36B4C /* EditorTabPreferenceKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTabPreferenceKeys.swift; sourceTree = "<group>"; };
 		239A9A4637B76518C6187B38 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		31C04ABF5739CF2D974AA14F /* WorkspaceStore+Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Sidebar.swift"; sourceTree = "<group>"; };
 		32C74314E17C1CDECDF2EDB4 /* ExternalFileOpenCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalFileOpenCoordinator.swift; sourceTree = "<group>"; };
 		3DB9D86BBC9C10E24C2579C1 /* TitleBarTrafficLightAlignmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleBarTrafficLightAlignmentView.swift; sourceTree = "<group>"; };
 		41100292C0909F81989C8A6B /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
@@ -77,11 +82,13 @@
 		60AEF291D6C5985830C89ABF /* EditorTabStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTabStripView.swift; sourceTree = "<group>"; };
 		63FEBB9D3DE2E196F6FABC88 /* WorkspaceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceStore.swift; sourceTree = "<group>"; };
 		64C1E4F1C5E0852265B8A3A4 /* WorkspaceCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceCommands.swift; sourceTree = "<group>"; };
+		67DE6C7B02FE5A439B3DE095 /* WorkspaceSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSidebarView.swift; sourceTree = "<group>"; };
 		6B6594887CEEA1D1B0EF81A6 /* HoverFocusTopmostCheckTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverFocusTopmostCheckTests.swift; sourceTree = "<group>"; };
 		7AE177253A6D16097E143352 /* NeatEditorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeatEditorApp.swift; sourceTree = "<group>"; };
 		7E545B076D7BD325F2B4EF46 /* AutoSaveSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoSaveSchedulerTests.swift; sourceTree = "<group>"; };
 		7FC9CB3A37D479100CB1B9D6 /* EditorTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextView.swift; sourceTree = "<group>"; };
 		86A7D19FDA6561AA648AA9B9 /* NeatEditorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeatEditorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8A6D6237DD372EDEF3850424 /* WorkspaceSidebarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSidebarItem.swift; sourceTree = "<group>"; };
 		98813FD87C11733B55049246 /* EditorTabItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTabItemView.swift; sourceTree = "<group>"; };
 		9B3C22F933FC00FD61B5DAF0 /* EditorTextContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextContainerView.swift; sourceTree = "<group>"; };
 		9E4EDF9A6AA28B3E0BB1ED45 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -90,6 +97,7 @@
 		A8918469298602DC5C5D7047 /* WorkspaceSearchState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSearchState.swift; sourceTree = "<group>"; };
 		A8E8818FBAFDC00F396FB2C0 /* WorkspaceStore+Tabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Tabs.swift"; sourceTree = "<group>"; };
 		BF4FFD7351F34190C76B4C7D /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
+		C50807406F37393832E921EC /* WorkspaceSidebarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSidebarTests.swift; sourceTree = "<group>"; };
 		C59982890BA0049E8CC31E4F /* NeatEditor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeatEditor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CC4981C6B05519CD1877B4D5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CE02D7D1B8648861CEB95405 /* WorkspaceStore+Documents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Documents.swift"; sourceTree = "<group>"; };
@@ -127,10 +135,13 @@
 				9E4EDF9A6AA28B3E0BB1ED45 /* SettingsView.swift */,
 				E1674FE73DFD3A99700320E6 /* WorkspacePreferences.swift */,
 				A8918469298602DC5C5D7047 /* WorkspaceSearchState.swift */,
+				8A6D6237DD372EDEF3850424 /* WorkspaceSidebarItem.swift */,
+				67DE6C7B02FE5A439B3DE095 /* WorkspaceSidebarView.swift */,
 				63FEBB9D3DE2E196F6FABC88 /* WorkspaceStore.swift */,
 				CE02D7D1B8648861CEB95405 /* WorkspaceStore+Documents.swift */,
 				034DD46D84F8B203A8D6476F /* WorkspaceStore+Preferences.swift */,
 				A08FFD0C3BD5FFC0B4C04B01 /* WorkspaceStore+Search.swift */,
+				31C04ABF5739CF2D974AA14F /* WorkspaceStore+Sidebar.swift */,
 				E32406E8C86E9797FA92149D /* WorkspaceStore+StateRestoration.swift */,
 				A8E8818FBAFDC00F396FB2C0 /* WorkspaceStore+Tabs.swift */,
 				BF4FFD7351F34190C76B4C7D /* WorkspaceView.swift */,
@@ -193,6 +204,7 @@
 				5A3812B102B3FA8E24D10FEE /* EditorTextSyncStateTests.swift */,
 				6B6594887CEEA1D1B0EF81A6 /* HoverFocusTopmostCheckTests.swift */,
 				F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */,
+				C50807406F37393832E921EC /* WorkspaceSidebarTests.swift */,
 				04E92B1CA43CA429B446891A /* WorkspaceStoreTests.swift */,
 			);
 			path = NeatEditorTests;
@@ -399,6 +411,7 @@
 				49CA09DC3AAEE99AB71E569E /* EditorTextSyncStateTests.swift in Sources */,
 				7538ECC920EF461816EFFBF7 /* HoverFocusTopmostCheckTests.swift in Sources */,
 				97DF5482D6F249403D615719 /* WorkspacePreferencesTests.swift in Sources */,
+				34C2AC68775F3BA373AC7357 /* WorkspaceSidebarTests.swift in Sources */,
 				4167662901A455448BDCB6DE /* WorkspaceStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -430,9 +443,12 @@
 				16EC1F059C67919FE7417ECA /* WorkspaceCommands.swift in Sources */,
 				247B4DD44E7B8560AA53E2D1 /* WorkspacePreferences.swift in Sources */,
 				4C28ACC82CF6ADE661F5C511 /* WorkspaceSearchState.swift in Sources */,
+				833161AD0662EF0AA75851C0 /* WorkspaceSidebarItem.swift in Sources */,
+				BD9F954901E066BF3EC44DD4 /* WorkspaceSidebarView.swift in Sources */,
 				A5CD4E4CA843E095AEF9E4F4 /* WorkspaceStore+Documents.swift in Sources */,
 				348B695F38A92793385342D0 /* WorkspaceStore+Preferences.swift in Sources */,
 				47254445FBCCB7AD560ED455 /* WorkspaceStore+Search.swift in Sources */,
+				3DF802EA09B2D431EB933049 /* WorkspaceStore+Sidebar.swift in Sources */,
 				4FCF5DB5C7FC0F1E1FC740D4 /* WorkspaceStore+StateRestoration.swift in Sources */,
 				29DDA9044DD7A7AA65F009B5 /* WorkspaceStore+Tabs.swift in Sources */,
 				DCDC8B0D5BE86A4D3B12A9E1 /* WorkspaceStore.swift in Sources */,
@@ -538,7 +554,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -553,7 +569,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0.9;
+				MARKETING_VERSION = 1.0.10;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";
@@ -640,7 +656,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -661,7 +677,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0.9;
+				MARKETING_VERSION = 1.0.10;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

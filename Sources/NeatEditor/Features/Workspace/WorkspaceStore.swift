@@ -72,6 +72,18 @@ final class WorkspaceStore {
 
     var closedTabs: [ClosedTabSnapshot] = []
 
+    var sidebarFiles: [WorkspaceSidebarItem] = []
+
+    var isRefreshingSidebar = false
+    var sidebarFailureMessage: String?
+
+    @ObservationIgnored
+    var sidebarRefreshRequested = false
+
+    /// Disk previews must not be contaminated by unsaved editor text.
+    @ObservationIgnored
+    var sidebarDiskFiles: [WorkspaceSidebarItem] = []
+
     init(
         persistenceService: DocumentPersistenceService = DocumentPersistenceService(),
         autoSaveScheduler: AutoSaveScheduler = AutoSaveScheduler(),

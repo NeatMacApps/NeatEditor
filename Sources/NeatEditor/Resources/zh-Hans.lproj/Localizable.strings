@@ -61,5 +61,25 @@
 "4 Spaces" = "4 个空格";
 "Save Failed" = "保存失败";
 "Open Failed" = "打开失败";
+"Move to Trash Failed" = "移至废纸篓失败";
+"Duplicate Failed" = "创建副本失败";
 
 "settings.quit" = "退出";
+
+"Documents" = "文档";
+"Toggle Sidebar" = "切换侧边栏";
+"Hide Sidebar" = "隐藏侧边栏";
+"Show Sidebar" = "显示侧边栏";
+"New Document" = "新建文档";
+"Refresh" = "刷新";
+"No Documents" = "暂无文档";
+"Open" = "打开";
+"Rename" = "重命名";
+"Rename…" = "重命名…";
+"New Name" = "新名称";
+"Duplicate" = "创建副本";
+"Copy Path" = "拷贝路径";
+"No additional text" = "没有其他文字";
+"Always on Top" = "窗口置顶";
+"Retry" = "重试";
+"Couldn’t Load Documents" = "无法加载文档";

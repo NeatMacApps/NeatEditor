@@ -4,6 +4,14 @@ This document describes the gesture requirements, pin accessory alignment, and i
 
 ---
 
+## Workspace sidebar layout
+
+Owner correction (2026-10-24): the sidebar occupies the entire leading side of the window, from the native window controls to the bottom edge. The document tab strip belongs only to the editor column; it must never span above the sidebar. Search and document-local notices also stay inside the editor column. Collapsing the sidebar must not leave a separate empty vertical rail. Use a public native split container and native sidebar selection, resizing and keyboard behavior, rather than hand-painted rows.
+
+Use `NavigationSplitView(columnVisibility:sidebar:detail:)`, `List(selection:)` with `.sidebar`, and native `ToolbarItem`s. Inspected reference: Apple's [MacLandmarks `LandmarkList`](https://developer.apple.com/tutorials/swiftui/creating-a-macos-app), including its native list selection and per-column toolbar. Reuse the native split, sidebar toggle, resizing and selection; retain NeatEditor's document-specific tab content in the detail column. These APIs are present in the installed Xcode 27.2 SDK and support the macOS 15 deployment target. The native toolbar owns window controls and the pin action; the old hand-positioned pin geometry below describes the previous full-width titlebar, not this split layout.
+
+Preserve immediate tab selection, rename and pin behavior. Sidebar refresh must apply current loaded-tab previews only after background disk work completes, keep a separate disk cache, coalesce repeat requests, and present enumeration failures rather than pretending the directory is empty. Duplicating an open document includes current committed editor text, including unsaved changes; marked IME text is not forcibly committed. Renaming closed files shares the document rename implementation and migrates remembered font preferences. These are defect fixes, not changes to blank autosave or first-save collision policy.
+
 ## Requirements Overview
 
 1. **Single-click a tab**

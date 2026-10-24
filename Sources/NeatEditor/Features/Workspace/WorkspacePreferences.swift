@@ -12,7 +12,6 @@ struct WorkspacePreferences: Codable, Equatable {
         var size: CGFloat
         var lastAccessSequence: UInt64
     }
-
     struct EditorTextSoftnessConfiguration: Codable, Equatable {
         var lightModeTextSoftness: CGFloat = 0.16
         var darkModeTextSoftness: CGFloat = 0.22
@@ -133,6 +132,7 @@ struct WorkspacePreferences: Codable, Equatable {
         case tabBehavior
         case appLanguage
         case editorTextSoftness
+        case isSidebarVisible
     }
 
     var editorFontSize: CGFloat = EditorFontMetrics.defaultSize
@@ -140,6 +140,7 @@ struct WorkspacePreferences: Codable, Equatable {
     var tabBehavior: TabBehavior = .spaces2
     var appLanguage: AppLanguage = .system
     var editorTextSoftness = EditorTextSoftnessConfiguration()
+    var isSidebarVisible = true
     private var nextEditorFontAccessSequence: UInt64 = 0
 
     init(
@@ -147,13 +148,15 @@ struct WorkspacePreferences: Codable, Equatable {
         rememberedEditorFontSizes: [String: RememberedEditorFontSize] = [:],
         tabBehavior: TabBehavior = .spaces2,
         appLanguage: AppLanguage = .system,
-        editorTextSoftness: EditorTextSoftnessConfiguration = EditorTextSoftnessConfiguration()
+        editorTextSoftness: EditorTextSoftnessConfiguration = EditorTextSoftnessConfiguration(),
+        isSidebarVisible: Bool = true
     ) {
         self.editorFontSize = Self.clampedEditorFontSize(editorFontSize)
         self.rememberedEditorFontSizes = rememberedEditorFontSizes
         self.tabBehavior = tabBehavior
         self.appLanguage = appLanguage
         self.editorTextSoftness = editorTextSoftness.sanitized()
+        self.isSidebarVisible = isSidebarVisible
         normalizeRememberedEditorFontSizes()
     }
 
@@ -184,6 +187,10 @@ struct WorkspacePreferences: Codable, Equatable {
             EditorTextSoftnessConfiguration.self,
             forKey: .editorTextSoftness
         )?.sanitized() ?? defaults.editorTextSoftness
+        isSidebarVisible = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .isSidebarVisible
+        ) ?? defaults.isSidebarVisible
         normalizeRememberedEditorFontSizes()
     }
 
@@ -195,6 +202,7 @@ struct WorkspacePreferences: Codable, Equatable {
         try container.encode(tabBehavior, forKey: .tabBehavior)
         try container.encode(appLanguage, forKey: .appLanguage)
         try container.encode(editorTextSoftness.sanitized(), forKey: .editorTextSoftness)
+        try container.encode(isSidebarVisible, forKey: .isSidebarVisible)
     }
 
     static var defaultEditorFontSize: CGFloat {

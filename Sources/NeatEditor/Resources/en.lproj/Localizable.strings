@@ -61,5 +61,25 @@
 "4 Spaces" = "4 Spaces";
 "Save Failed" = "Save Failed";
 "Open Failed" = "Open Failed";
+"Move to Trash Failed" = "Move to Trash Failed";
+"Duplicate Failed" = "Duplicate Failed";
 
 "settings.quit" = "Quit";
+
+"Documents" = "Documents";
+"Toggle Sidebar" = "Toggle Sidebar";
+"Hide Sidebar" = "Hide Sidebar";
+"Show Sidebar" = "Show Sidebar";
+"New Document" = "New Document";
+"Refresh" = "Refresh";
+"No Documents" = "No Documents";
+"Open" = "Open";
+"Rename" = "Rename";
+"Rename…" = "Rename…";
+"New Name" = "New Name";
+"Duplicate" = "Duplicate";
+"Copy Path" = "Copy Path";
+"No additional text" = "No additional text";
+"Always on Top" = "Always on Top";
+"Retry" = "Retry";
+"Couldn’t Load Documents" = "Couldn’t Load Documents";

@@ -27,6 +27,7 @@ extension WorkspaceStore {
         do {
             try FileManager.default.trashItem(at: fileURL, resultingItemURL: nil)
         } catch {
+            presentDocumentFailure(title: String(localized: "Move to Trash Failed"), message: error.localizedDescription)
             Self.logger.error("Failed to trash file at \(fileURL.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
             return
         }
@@ -48,6 +49,7 @@ extension WorkspaceStore {
         }
 
         saveState()
+        refreshSidebarFiles()
     }
 
     func renameDocument(id: UUID, to newTitle: String) {
@@ -70,6 +72,7 @@ extension WorkspaceStore {
                 )
             }
             saveState()
+            refreshSidebarFiles()
         } catch {
             if case let DocumentPersistenceService.PersistenceError.destinationAlreadyExists(url) = error {
                 let messageFormat = String(
@@ -90,7 +93,7 @@ extension WorkspaceStore {
         documentFailureAlert = nil
     }
 
-    private func presentDocumentFailure(title: String, message: String) {
+    func presentDocumentFailure(title: String, message: String) {
         guard documentFailureAlert == nil else { return }
         documentFailureAlert = DocumentFailureAlert(title: title, message: message)
     }
@@ -98,6 +101,9 @@ extension WorkspaceStore {
     func updateDocumentContent(_ content: String, for id: UUID) {
         guard let index = tabs.firstIndex(where: { $0.id == id }) else { return }
         tabs[index].content = content
+        if let fileURL = tabs[index].fileURL {
+            updateSidebarPreview(for: fileURL, content: content)
+        }
     }
 
     @discardableResult
@@ -117,6 +123,7 @@ extension WorkspaceStore {
                 )
             }
             saveState()
+            refreshSidebarFiles()
             return true
         } catch {
             presentDocumentFailure(title: String(localized: "Save Failed"), message: error.localizedDescription)
@@ -193,6 +200,9 @@ extension WorkspaceStore {
                     Self.logger.error("Discarding stale lazy load for \(normalizedURL.lastPathComponent, privacy: .public): buffer changed while loading.")
                 }
                 self.tabs[currentIndex].isContentLoaded = true
+                if let loadedURL = self.tabs[currentIndex].fileURL {
+                    self.updateSidebarPreview(for: loadedURL, content: self.tabs[currentIndex].content)
+                }
             } catch {
                 loadingTabIDs.remove(id)
                 Self.logger.error("Failed to load document content lazily at \(fileURL.path, privacy: .public): \(error.localizedDescription, privacy: .public)")

@@ -1,6 +1,22 @@
 import Foundation
 
 struct DocumentPersistenceService {
+    struct SidebarFileInfo: Hashable, Sendable {
+        let fileURL: URL
+        let modificationDate: Date
+        let fileSize: Int
+    }
+
+    /// File types shown in the workspace sidebar. Lowercased path extensions.
+    static let sidebarSupportedExtensions: Set<String> = ["md", "markdown", "txt", "text"]
+
+    private enum SidebarPreview {
+        static let maxLines = 3
+        static let maxBytes = 64 * 1024
+        static let maxCharacters = 1000
+        static let headCharacters = 4096
+    }
+
     enum PersistenceError: LocalizedError {
         case destinationAlreadyExists(URL)
 
@@ -192,16 +208,17 @@ struct DocumentPersistenceService {
     /// with an exclusive hard-link publication reusing that same inode; a
     /// name taken in the meantime yields the next numbered sibling, leaving
     /// both contents intact. Pre-existing files are never modified.
-    private func exclusivePublish(data: Data, named fileName: String) throws -> URL {
+    private func exclusivePublish(data: Data, named fileName: String, in directory: URL? = nil) throws -> URL {
+        let directory = directory ?? defaultDirectory
         try fileManager.createDirectory(
-            at: defaultDirectory,
+            at: directory,
             withIntermediateDirectories: true,
             attributes: [.posixPermissions: 0o700]
         )
 
         // .withoutOverwriting guards the staging name itself; it is never
         // combined with .atomic — NSData.h forbids that pair.
-        let stagingURL = defaultDirectory.appendingPathComponent(
+        let stagingURL = directory.appendingPathComponent(
             ".neateditor-staging-\(UUID().uuidString)"
         )
         defer { try? fileManager.removeItem(at: stagingURL) }
@@ -229,12 +246,12 @@ struct DocumentPersistenceService {
             do {
                 try fileManager.linkItem(
                     at: stagingURL,
-                    to: defaultDirectory.appendingPathComponent(candidate)
+                    to: directory.appendingPathComponent(candidate)
                 )
                 // The candidate now links the complete staged inode and keeps
                 // its 600 mode; the staging alias is dropped by the defer.
                 return normalizedFileURL(
-                    for: defaultDirectory.appendingPathComponent(candidate)
+                    for: directory.appendingPathComponent(candidate)
                 )
             } catch where isFileExistsError(error) {
                 continue
@@ -242,7 +259,7 @@ struct DocumentPersistenceService {
         }
 
         throw PersistenceError.destinationAlreadyExists(
-            defaultDirectory.appendingPathComponent(lastCandidate)
+            directory.appendingPathComponent(lastCandidate)
         )
     }
 
@@ -257,6 +274,135 @@ struct DocumentPersistenceService {
         let nsError = error as NSError
         return nsError.domain == NSCocoaErrorDomain
             && nsError.code == NSFileWriteFileExistsError
+    }
+
+    /// Missing app-owned directories are normal before the first save.
+    /// Other enumeration errors must remain distinguishable from an empty list.
+    func sidebarTextFiles() throws -> [SidebarFileInfo] {
+        let keys: Set<URLResourceKey> = [.isRegularFileKey, .contentModificationDateKey, .fileSizeKey]
+        let urls: [URL]
+        do {
+            urls = try fileManager.contentsOfDirectory(
+                at: defaultDirectory,
+                includingPropertiesForKeys: Array(keys),
+                options: [.skipsHiddenFiles]
+            )
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            return []
+        }
+
+        var infos: [SidebarFileInfo] = []
+        infos.reserveCapacity(urls.count)
+        var seen = Set<URL>()
+        for url in urls {
+            if url.lastPathComponent.hasPrefix(".neateditor-staging-") {
+                continue
+            }
+            guard Self.sidebarSupportedExtensions.contains(url.pathExtension.lowercased()) else {
+                continue
+            }
+            let values = try url.resourceValues(forKeys: keys)
+            let fileURL = normalizedFileURL(for: url)
+            guard values.isRegularFile == true, seen.insert(fileURL).inserted else {
+                continue
+            }
+            infos.append(SidebarFileInfo(
+                fileURL: fileURL,
+                modificationDate: values.contentModificationDate ?? .distantPast,
+                fileSize: values.fileSize ?? 0
+            ))
+        }
+        return infos.sorted { lhs, rhs in
+            if lhs.modificationDate != rhs.modificationDate {
+                return lhs.modificationDate > rhs.modificationDate
+            }
+            return lhs.fileURL.lastPathComponent.localizedStandardCompare(
+                rhs.fileURL.lastPathComponent
+            ) == .orderedAscending
+        }
+    }
+
+    /// Short preview excerpt for a sidebar row: the first lines of content.
+    /// Pure string transform so rows stay live while typing without disk I/O.
+    /// Only scans a small head of the buffer so per-keystroke updates stay cheap.
+    static func sidebarPreviewExcerpt(from content: String, maxLines: Int = SidebarPreview.maxLines) -> String {
+        let excerpt = String(content.prefix(SidebarPreview.headCharacters))
+            .split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
+            .prefix(max(1, maxLines))
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard excerpt.count > SidebarPreview.maxCharacters else {
+            return excerpt
+        }
+        return String(excerpt.prefix(SidebarPreview.maxCharacters))
+    }
+
+    /// Reads only a small prefix of the file for preview purposes. Never
+    /// throws: missing/unreadable files yield an empty preview and the row
+    /// falls back to its placeholder.
+    func sidebarPreview(
+        for fileURL: URL,
+        maxLines: Int = SidebarPreview.maxLines
+    ) -> String {
+        guard let data = sidebarPrefixData(for: fileURL) else {
+            return ""
+        }
+        let content: String
+        if let strict = String(data: data, encoding: .utf8) {
+            content = strict
+        } else {
+            content = String(decoding: data, as: UTF8.self)
+        }
+        return Self.sidebarPreviewExcerpt(from: content, maxLines: maxLines)
+    }
+
+    private func sidebarPrefixData(for fileURL: URL) -> Data? {
+        guard let handle = try? FileHandle(forReadingFrom: fileURL) else {
+            return nil
+        }
+        defer { try? handle.close() }
+        return try? handle.read(upToCount: SidebarPreview.maxBytes)
+    }
+
+    /// Closed files use exactly the same validation and collision policy as tabs.
+    func renameSidebarFile(at fileURL: URL, to newTitle: String) throws -> URL {
+        let sourceURL = normalizedFileURL(for: fileURL)
+        let tab = EditorTab(title: sourceURL.lastPathComponent, fileURL: sourceURL)
+        return try rename(tab: tab, to: newTitle).fileURL ?? sourceURL
+    }
+
+    /// Live text is staged completely before exclusive publication. Unopened
+    /// files use FileManager copying so their full content isn't read into memory.
+    func duplicateSidebarFile(at fileURL: URL, content: String? = nil) throws -> URL {
+        let sourceURL = normalizedFileURL(for: fileURL)
+        let pathExtension = sourceURL.pathExtension
+        let baseName = (sourceURL.lastPathComponent as NSString).deletingPathExtension
+        let copyName = pathExtension.isEmpty
+            ? "\(baseName) copy"
+            : "\(baseName) copy.\(pathExtension)"
+        if let content {
+            return try exclusivePublish(
+                data: Data(content.utf8),
+                named: copyName,
+                in: sourceURL.deletingLastPathComponent()
+            )
+        }
+        for attempt in 0..<1000 {
+            let suffix = attempt == 0 ? "" : " \(attempt + 1)"
+            let candidateName = pathExtension.isEmpty
+                ? "\(baseName) copy\(suffix)"
+                : "\(baseName) copy\(suffix).\(pathExtension)"
+            let destinationURL = sourceURL
+                .deletingLastPathComponent()
+                .appendingPathComponent(candidateName)
+            do {
+                try fileManager.copyItem(at: sourceURL, to: destinationURL)
+                return normalizedFileURL(for: destinationURL)
+            } catch where isFileExistsError(error) {
+                continue
+            }
+        }
+        throw PersistenceError.destinationAlreadyExists(sourceURL)
     }
 
     /// Names a new tab from its local creation time and in-memory tabs only. Deliberately
