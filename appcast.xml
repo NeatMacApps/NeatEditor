@@ -3,6 +3,28 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.13</title>
+            <pubDate>Sun, 25 Oct 2026 00:08:42 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>13</sparkle:version>
+            <sparkle:shortVersionString>1.0.13</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.13
+
+
+### Fixed
+
+- The selected tab's outline now meets the editor's top rule on the same line, so the tab bar border stays continuous instead of breaking at the tab's bottom corners.
+- The tab join is measured from AppKit window frames, so the line stays aligned when the sidebar is shown, hidden, or resized.
+
+### 简体中文
+
+- 选中标签的轮廓与编辑区顶线落在同一条线上，标签栏边框不再在标签底部两角断开。
+- 标签开口改用 AppKit 窗口坐标换算，侧边栏显示、隐藏或拖动宽度时仍保持对齐。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.13/NeatEditor-1.0.13.zip" length="3655589" type="application/octet-stream" sparkle:edSignature="1ne7GHJX7qdKvGYdpnjljrbHFQ5REXNYh+693nHqd+UFhjJy78QQFJQlcS6jAEnGG/ohXnIJSJnXXzbHSXw9BQ=="/>
+        </item>
+        <item>
             <title>1.0.12</title>
             <pubDate>Sat, 24 Oct 2026 22:22:59 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
