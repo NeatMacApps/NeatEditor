@@ -16,6 +16,7 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 ### Fixed
 
 - Documents left in the previous app library (`~/.config/neateditor/documents`) are copied into the current folder once, without overwriting or deleting anything.
+- Dragging from a document tab or the empty tab-strip area moves the window again; a click still selects and double-click still renames.
 
 ### 简体中文
 
@@ -24,6 +25,7 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 - 侧边栏行不再显示文件图标，文件名和摘要可使用窄栏的全部宽度。
 - 工具栏下的标签栏与编辑区共用一条连续顶线，并在选中标签处留出开口，让标签与页面保持相连。
 - 旧应用目录（`~/.config/neateditor/documents`）中的文档会一次性复制到当前文件夹，不覆盖、不删除任何文件。
+- 从文档标签或标签栏空白处拖动可以重新移动窗口；单击仍选择标签，双击仍重命名。
 
 ## 1.0.11 - 2026-10-24
 
