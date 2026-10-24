@@ -13,6 +13,8 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ### Fixed
 
+- Saving and switching tabs no longer reorder the sidebar; filenames use a stable natural descending order.
+- Replace hand-drawn tab outlines with a native tab selection control, and keep it visible when the sidebar collapses.
 - Background refresh no longer replaces newer live previews or mixes unsaved text into the disk cache.
 - Duplicate includes current committed editor text, including unsaved edits. Folder errors remain visible without discarding the previous file list.
 - Share rename validation across open and closed documents, preserve remembered font settings, handle Windows line endings, and cap preview reads.
@@ -21,6 +23,8 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 - 使用贯穿窗口左侧的原生侧边栏，支持系统分栏拖动和列表选中；标签栏与搜索只位于右侧编辑区，收起后不残留空白竖条。
 - 窗口按钮、文档标签、新建与置顶共用一行原生工具栏，不再在标签栏上方额外占用一行。
+- 保存和切换标签不再改变侧边栏顺序，文件名使用稳定的自然降序。
+- 用原生标签选择控件替换手绘轮廓，收起侧边栏后标签仍保持可见。
 - 后台刷新不再覆盖较新的实时摘要，未保存文字不再混入磁盘缓存。
 - 复制包含当前已上屏但尚未保存的文字；目录读取失败会保留原列表并显示错误。
 - 打开与关闭的文件共用重命名校验并保留字号记忆，修复 Windows 换行摘要，限制预览读取量。

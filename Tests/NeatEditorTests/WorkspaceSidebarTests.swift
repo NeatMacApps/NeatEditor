@@ -18,7 +18,7 @@ struct WorkspaceSidebarTests {
         )
     }
 
-    @Test("sidebar lists only supported text files newest-first")
+    @Test("sidebar lists supported files in stable descending filename order")
     func sidebarListsSupportedFilesNewestFirst() throws {
         let (service, directory) = try makeService()
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -50,7 +50,9 @@ struct WorkspaceSidebarTests {
         let files = try service.sidebarTextFiles()
         let names = files.map(\.fileURL.lastPathComponent)
 
-        #expect(names == ["newer.md", "note.markdown", "upper.MD", "plain.text", "older.txt"])
+        #expect(names == ["upper.MD", "plain.text", "older.txt", "note.markdown", "newer.md"])
+        try touch(directory.appendingPathComponent("newer.md"), date: .now)
+        #expect(try service.sidebarTextFiles().map(\.fileURL.lastPathComponent) == names)
     }
 
     @Test("sidebar preview excerpt keeps the first three lines")

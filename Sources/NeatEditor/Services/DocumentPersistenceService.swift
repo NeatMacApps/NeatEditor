@@ -313,12 +313,13 @@ struct DocumentPersistenceService {
             ))
         }
         return infos.sorted { lhs, rhs in
-            if lhs.modificationDate != rhs.modificationDate {
-                return lhs.modificationDate > rhs.modificationDate
-            }
-            return lhs.fileURL.lastPathComponent.localizedStandardCompare(
+            let comparison = lhs.fileURL.lastPathComponent.localizedStandardCompare(
                 rhs.fileURL.lastPathComponent
-            ) == .orderedAscending
+            )
+            if comparison != .orderedSame {
+                return comparison == .orderedDescending
+            }
+            return lhs.fileURL.path > rhs.fileURL.path
         }
     }
 

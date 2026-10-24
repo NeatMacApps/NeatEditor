@@ -153,10 +153,6 @@ struct WorkspaceView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()
                 .background(EditorChrome.editorSurface)
-                .overlay {
-                    EditorSurfaceBorderShape()
-                        .stroke(EditorChrome.border, lineWidth: EditorChrome.lineWidth)
-                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

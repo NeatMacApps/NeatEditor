@@ -1,171 +1,99 @@
-# Tab Strip Gestures
+# Workspace Sidebar and Tabs
 
-This document describes the gesture requirements, pin accessory alignment, and implementation details for `EditorTabStripView.swift` and its child views.
+## Product requirements
 
----
+Owner corrections (2026-10-24):
 
-## Workspace sidebar layout
+- The native sidebar occupies the entire leading window area, including the
+  background behind the native traffic lights, and reaches the bottom.
+- Window controls, sidebar toggle, document tabs, New Document and pin share
+  **one top row**. No separate toolbar row above the tabs.
+- Tabs begin in the editor column, not above the sidebar. Search and document
+  notices remain in the editor column.
+- Closing the sidebar leaves no rail and never removes the tab control.
+  Repeated collapse/expand and minimum-window resizing must keep tabs clickable.
+- Sidebar files use descending natural filename order with a path tie-breaker.
+  Save/autosave and tab switching do not change their positions. Creating or
+  renaming files may change their positions.
+- Use native tab artwork and selection. Do not restore the old connected-tab
+  fill/border shapes, interrupted bottom lines or manual traffic-light placement.
 
-Owner correction (2026-10-24): the sidebar occupies the entire leading side of the window, from the native window controls to the bottom edge. The document tab strip belongs only to the editor column; it must never span above the sidebar. Owner correction with installed screenshot (2026-10-24): window controls, sidebar toggle, document tabs and pin must occupy one top row. A native toolbar followed by a second tab row is explicitly rejected; do not ship that arrangement. Search and document-local notices also stay inside the editor column. Collapsing the sidebar must not leave a separate empty vertical rail. Use a public native split container and native sidebar selection, resizing and keyboard behavior, rather than hand-painted rows.
+## Native implementation and reference
 
-Use `NSSplitViewController`, a full-height `NSSplitViewItem(sidebarWithViewController:)`, `List(selection:)` with `.sidebar`, and one real `NSToolbar`. Host NeatEditor's existing document tab strip as an unbordered custom `NSToolbarItem`, not as another content row. Align the toolbar split using `NSTrackingSeparatorToolbarItem`; use native toolbar items for sidebar, new document and pin. The old hand-positioned pin geometry below describes the previous full-width titlebar, not this split layout.
+`WorkspaceSplitViewController` uses `NSSplitViewController`, a full-height
+`NSSplitViewItem(sidebarWithViewController:)`, and one `NSToolbar`.
+`NSTrackingSeparatorToolbarItem` aligns toolbar and sidebar. Native items own
+sidebar toggling, new-document and pin actions. The tab toolbar item is
+unbordered; its minimum and maximum widths use constraints rather than deprecated
+`NSToolbarItem.minSize/maxSize`. The width is **not** a required detail-column
+width: the hidden-sidebar layout also needs space for native window controls.
+Tabs have user visibility priority so actions overflow before document selection.
 
-Inspected references: Apple's [MacLandmarks `LandmarkList`](https://developer.apple.com/tutorials/swiftui/creating-a-macos-app) for native selection, and [CotEditor's `WindowContentViewController` and `DocumentWindowController`](https://github.com/coteditor/CotEditor/tree/main/CotEditor/Sources/Document%20Window) for sidebar split items and tracking separators. Reuse only those public native mechanisms, not CotEditor's domain logic, dependencies or private workarounds. [AppKit split controllers](https://developer.apple.com/documentation/appkit/nssplitviewcontroller), [toolbar custom views](https://developer.apple.com/documentation/appkit/nstoolbaritem) and [tracking separators](https://developer.apple.com/documentation/appkit/nstrackingseparatortoolbaritem) are present in the installed Xcode 27.2 SDK and support the macOS 15 deployment target. Use constraints rather than deprecated toolbar minSize/maxSize. The rejected SwiftUI toolbar-plus-content-tabs artifact remains an unpublished 1.0.10 draft; the corrected design uses a new immutable release version.
+`EditorTabStripView` hosts `NativeDocumentTabsView`: direct
+`NSSegmentedControl` selection inside `NSScrollView`, and native
+`NSTextField` for inline rename. macOS 27 uses the public `.tabs` role;
+older supported versions use the native segmented appearance. No custom tab
+artwork, private framework traversal, global rename buffer or SwiftUI
+multi-click gesture is used. The native toolbar owns the continuous separator.
 
-Preserve immediate tab selection, rename and pin behavior. Sidebar refresh must apply current loaded-tab previews only after background disk work completes, keep a separate disk cache, coalesce repeat requests, and present enumeration failures rather than pretending the directory is empty. Duplicating an open document includes current committed editor text, including unsaved changes; marked IME text is not forcibly committed. Renaming closed files shares the document rename implementation and migrates remembered font preferences. These are defect fixes, not changes to blank autosave or first-save collision policy.
+Inspected component references:
 
-## Requirements Overview
+- [Apple MacLandmarks LandmarkList](https://developer.apple.com/tutorials/swiftui/creating-a-macos-app):
+  native sidebar `List(selection:)`; adapted to NeatEditor's file list.
+- [CotEditor](https://github.com/coteditor/CotEditor):
+  `CotEditor/Sources/Document Window/WindowContentViewController.swift` and
+  `DocumentWindowController.swift` for native split items and toolbar tracking;
+  `Packages/MacUI/Sources/ControlUI/InspectorTabView.swift` for direct segmented
+  selection and the availability-guarded tabs role. Only public component
+  mechanisms are reused, not its domain logic, dependencies or private workarounds.
 
-1. **Single-click a tab**
-   * **Behavior**: Switch to the selected tab immediately.
-   * **Performance requirement**: **No delay**. Single-clicks must not feel slower because the system is waiting to see whether the user double-clicks.
+Official applicability and installed Xcode 27.2 SDK checked:
 
-2. **Double-click the active tab**
-   * **Behavior**: Enter inline rename mode for the current tab title.
+- [NSSplitViewController](https://developer.apple.com/documentation/appkit/nssplitviewcontroller)
+- [NSToolbarItem](https://developer.apple.com/documentation/appkit/nstoolbaritem)
+- [Constraint-based toolbar sizing](https://developer.apple.com/documentation/macos-release-notes/appkit-release-notes-for-macos-10_14)
+- [NSSegmentedControl](https://developer.apple.com/documentation/appkit/nssegmentedcontrol)
 
-3. **Double-click an inactive tab**
-   * **Behavior**: Select the tab only. It must not enter rename mode.
+## Interaction contract
 
-4. **Double-click empty title bar space**
-   * **Behavior**: Let AppKit perform the system-configured title bar action exactly once. The window must retain its resulting size until the next user action.
+- Single click selects immediately; no multi-click recognition delay.
+- Double-click a tab that was already selected on the first click to rename
+  inline. Double-clicking an inactive tab selects it without starting rename.
+- Enter, clicking outside or switching apps commits rename. Escape cancels it.
+- Context menus preserve Show in Finder, Rename, Close, Close Other Tabs and
+  Move to Trash where applicable. Middle-click closes the hit tab.
+- Scroll-wheel/trackpad tab stepping keeps the existing sensitivity and ignores
+  momentum. Selection is revealed when clipped, including after a resize.
+- Native AppKit owns empty-titlebar double-click and window dragging. Never
+  separately call zoom/miniaturize for the same event: that caused the earlier
+  enlarge-then-immediately-restore regression.
+- Pin changes the native window level. Existing topmost hover-focus protection
+  and debounce remain in `WindowPinningView`.
 
-5. **Click inside the rename field while editing**
-   * **Behavior**: Move the insertion point normally without leaving edit mode.
+## File correctness
 
-6. **Click outside the title bar while editing**
-   * **Behavior**: Save the edited title and leave edit mode.
+`WorkspaceStore+Sidebar` coalesces background refresh requests, applies current
+loaded buffers only after disk work finishes, and keeps disk cache separate from
+unsaved previews. It retains the usable list and reports enumeration failures.
+Previews have bounded reads and recognize CRLF as one line break.
 
-7. **Switch to another app while editing**
-   * **Behavior**: Save the edited title and leave edit mode.
+Duplicate includes the current committed editor buffer, including unsaved changes,
+without committing marked IME text. Closed-file rename shares document validation
+and migrates remembered font preferences. Blank autosave and collision protection
+remain unchanged.
 
-8. **Top-right pin alignment**
-   * **Behavior**: Center the circular pin control equally from the window's top and right edges, following the top-right corner's concentric placement. Derive both insets from the title bar height and button diameter. The space reserved for tab overflow must not shift the pin inward.
-   * **Acceptance**: Inspect the installed window at normal and minimum widths, both unpinned and pinned. Clicking the pin must still toggle Always on Top.
+## Acceptance
 
-   The original accessory frame put the center 28 pt from the right edge but 18 pt from the top. Use the native SwiftUI `Button` with the public [frame and padding APIs](https://developer.apple.com/documentation/swiftui/layout-adjustments), verified in the Xcode 27 SDK. Installed Release verification on 2026-10-01 measured 19 pt on both axes at 901 × 538 and the actual minimum 470 × 502; screenshots confirmed both states, and clicking switched the window between normal layer 0 and floating layer 3. The screenshot skill's default window list filters floating layers; use its raw window enumeration and capture helper for the pinned window rather than treating the missing list entry as a hidden app.
+Use the installed `/Applications/NeatEditor.app`, not just a build/test result.
 
----
+1. Inspect a screenshot against the owner's rejected two-row capture.
+2. Click the actual sidebar toolbar control repeatedly; inspect expanded and
+   collapsed screenshots and select a tab in both states.
+3. Repeat at normal/minimum width; resize the native divider.
+4. Save, switch documents and refresh; sidebar filename order must remain stable.
+5. Exercise active/inactive double-click, rename commit/cancel, close/reopen,
+   pin/unpin and search; verify no content changes cross document identities.
+6. Check light/dark appearances, Settings minimum size and keyboard selection.
 
-## Core Constraint: Why SwiftUI Gestures Are Not Allowed
-
-**Do not add `.onTapGesture` or `.simultaneousGesture(TapGesture(...))` to `EditorTabStripView` or any of its ancestors.**
-
-Reason: SwiftUI multi-click gestures (`TapGesture(count: 2)` and `.onTapGesture(count: 2)`) inject click recognition delay into the entire view tree. Even if the double-click handler lives on a parent, child views with single-click interactions, including `Button` actions, are forced to wait for the double-click window (about 250 ms). That directly violates the no-delay requirement above.
-
-**Conclusion**: All click and double-click handling must bypass the SwiftUI gesture system and use the following mechanisms instead:
-- **Tab click and double-click**: SwiftUI `Button` action for immediate response plus manual timestamp-based double-click detection
-- **Empty title bar double-click**: Native AppKit dispatch through SwiftUI `.windowStyle(.hiddenTitleBar)`
-- **Edit dismissal and middle-click close**: AppKit `NSEvent.addLocalMonitorForEvents`
-
----
-
-## Architecture
-
-### Participating Components
-
-| Component | Responsibility |
-|------|------|
-| `EditorTabStripView` | Parent container that owns `editingTabID` state and provides `dismissEditing()` |
-| `EditorTabItemView` | Per-tab view with a SwiftUI `Button` that handles click, double-click, and rename |
-| `TitleBarEventMonitor` | `NSViewRepresentable` event monitor at the AppKit layer |
-| `tabStripPendingRename` | File-scoped flag that stores the pending renamed title for external dismiss paths |
-
-### Data Flow
-
-```text
-User input
-  |
-  |- mouseDown --> TitleBarEventMonitor
-  |                 `- Outside title bar + editing in progress -> dismissEditing()
-  |
-  |- empty title bar double-click --> native AppKit window action
-  |
-  |- middle mouseUp --> TitleBarEventMonitor -> close the hit tab
-  |
-  `- tab mouseUp --> SwiftUI Button (EditorTabItemView.handleClick)
-                    |- Selected tab + timestamp double-click check -> begin editing
-                    `- Otherwise -> onSelectTab
-```
-
----
-
-## Detailed Implementation Notes
-
-### 1. Single-click tab switching with no delay
-
-`EditorTabItemView` uses a SwiftUI `Button` with `.buttonStyle(.plain)`, and the action directly calls `handleClick()`. `Button` fires immediately on `mouseUp` without gesture recognition delay.
-
-### 2. Double-click rename via manual timestamp detection
-
-Inside `handleClick()`, double-clicks are detected manually with `lastSelectedClickTime` and `NSEvent.doubleClickInterval`:
-
-```swift
-if isSelected {
-    let now = Date()
-    if now.timeIntervalSince(lastSelectedClickTime) < NSEvent.doubleClickInterval {
-        // Double-clicking the selected tab enters rename mode.
-        isEditing = true
-        return
-    }
-    lastSelectedClickTime = now
-}
-```
-
-Key details:
-- Record timestamps and check for double-clicks only when `isSelected == true`.
-- A double-click on an inactive tab never renames it: the first click only selects the tab and resets `lastSelectedClickTime` to `.distantPast`, so the second click is treated as the first eligible click for rename timing.
-
-### 3. Native title bar double-click ownership
-
-The main scene uses the public SwiftUI `.windowStyle(.hiddenTitleBar)` API. It hides the title and title bar backing while retaining native window behavior. Empty title bar double-clicks pass through normal AppKit dispatch; the monitor must not call `zoom`, `performZoom` or `performMiniaturize` for the same event. Tab buttons retain immediate selection and inline rename behavior.
-
-Confirmed regression (2026-10-01): the installed app expanded from 901 × 538 to approximately 2228 × 1266, then returned to 901 × 538 within one second. The local monitor forwarded the event and separately queued `window.zoom(nil)`, leaving two handlers for one double-click. Removing the extra window action restores one native action and avoids duplicating the system preference mapping.
-
-Public API verified in the installed Xcode 27 SDK:
-- [SwiftUI hiddenTitleBar](https://developer.apple.com/documentation/swiftui/windowstyle/hiddentitlebar)
-- [AppKit local event monitoring](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/EventOverview/MonitoringEvents/MonitoringEvents.html)
-- [macOS title bar double-click settings](https://support.apple.com/en-gb/guide/mac-help/mchlp1119/mac)
-
-Acceptance: use the installed app, double-click empty title bar space to enlarge, wait beyond the animation, then double-click again to restore. Inspect sequential window bounds and screenshots. Verify active-tab rename, inactive-tab selection, dragging and pinning without unwanted resizing. Build/test success alone does not establish this behavior.
-
-### 4. Leaving edit mode and saving the title
-
-Edit mode has multiple exit paths with slightly different commit behavior:
-
-#### Path A: Press Enter (`onSubmit`)
-`commitTitleEditing()` calls `onRename(sanitizedTitle)` directly and then sets `isEditing = false`.
-
-#### Path B: Click outside (`monitor` dismiss)
-1. The monitor sees a `mouseDown` outside the title bar region (`!isClickInTitleBarRegion`).
-2. It asynchronously calls `EditorTabStripView.dismissEditing()`.
-3. `dismissEditing()` reads the pending title from `tabStripPendingRename` and calls `onRenameTab`.
-4. It sets `editingTabID = nil`, which makes `isEditing` false and removes the `TextField`.
-
-**Why `tabStripPendingRename` is used instead of `onDisappear`**:
-- `onDisappear` fires while the view is being torn down. Writing back to bindings at that point, such as `isEditing = false`, or calling `onRename` can trigger a render cascade and spike CPU usage.
-- `tabStripPendingRename` is kept in sync through `onChange(of: draftTitle)`, so `dismissEditing()` can read the current draft title before the field disappears.
-
-#### Path C: Switch to another app
-`NSApplication.didResignActiveNotification` follows the same path as Path B.
-
-### 5. Clicking inside the rename field does not dismiss edit mode
-
-The monitor only dismisses editing on `mouseDown` when `!isClickInTitleBarRegion(event)` is true. The rename `TextField` lives inside the title bar region, so clicking it does not dismiss editing and caret movement works as expected.
-
----
-
-## Pitfalls and Maintenance Notes
-
-### Do Not Do These Things
-
-1. **Do not add `.onTapGesture` or `.simultaneousGesture(TapGesture(...))` to `EditorTabStripView` or its ancestors.** This introduces roughly 250 ms of click delay to child views.
-
-2. **Do not write to bindings or mutate the model from `onDisappear`.** During view teardown, that can trigger render cascades. With rapid double-clicks, repeated `TextField` creation and destruction can spike CPU usage dramatically.
-
-3. **Do not manually trigger a window action from the local monitor.** Native AppKit owns empty title bar double-clicks; an extra deferred zoom toggles the window back.
-
-4. **Do not trigger commits from `onChange(of: isEditing)`.** `commitTitleEditing()` sets `isEditing = false` through the `editingTabID` binding, which can create a write-notify-write loop.
-
-5. **Do not use `view is NSText` to decide whether the click happened inside the rename field.** The editor itself is also an `NSTextView` subclass, so type checks misclassify clicks. The current implementation uses title bar region checks instead.
-
-6. **Do not consume tab mouse events to prevent a duplicate custom zoom.** Remove the duplicate zoom; keep native button dispatch and rename behavior intact.
+The rejected two-row 1.0.10 draft has no assets and remains unpublished.
+The corrected release uses a new immutable version, never a moved tag.

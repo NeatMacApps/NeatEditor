@@ -75,8 +75,9 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
 
         tabHost.sizingOptions = []
         tabHost.translatesAutoresizingMaskIntoConstraints = false
-        let width = tabHost.widthAnchor.constraint(equalToConstant: 400)
+        let width = tabHost.widthAnchor.constraint(lessThanOrEqualToConstant: 400)
         NSLayoutConstraint.activate([
+            tabHost.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
             width,
             tabHost.heightAnchor.constraint(equalToConstant: EditorTabStripView.titleBarHeight),
         ])
@@ -143,12 +144,15 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.toolbarStyle = .unifiedCompact
+        window.titlebarSeparatorStyle = .line
         window.toolbar = workspaceToolbar
     }
 
     private func updateTabWidth() {
         guard isViewLoaded, let tabWidth else { return }
-        // Leave room for the two native trailing actions and toolbar margins.
+        // This is a maximum, not a required width. AppKit must also reserve
+        // native traffic lights and sidebar controls when the sidebar is hidden.
+        // A required detail-derived width pushed the entire tab item into overflow.
         let width = max(80, detailController.view.bounds.width - 112)
         if abs(tabWidth.constant - width) > 0.5 {
             tabWidth.constant = width
@@ -199,7 +203,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
             item.label = String(localized: "Documents")
             item.view = tabHost
             item.isBordered = false
-            item.visibilityPriority = .high
+            item.visibilityPriority = .user
             return item
         case Item.newDocument:
             let item = NSToolbarItem(itemIdentifier: identifier)
