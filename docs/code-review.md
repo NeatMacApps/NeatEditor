@@ -28,9 +28,12 @@ release tooling. Behavior requirements are recorded before implementation in
 
 The layout requirement and inspected native reference are recorded in
 [TabStripGestures.md](../TabStripGestures.md#workspace-sidebar-layout).
-The sidebar uses `NavigationSplitView`, `List(selection:)` and native toolbar
-items. Tabs and search are confined to the detail column; native window
-controls are no longer manually repositioned. Detail minimum widths protect
+The sidebar uses `NSSplitViewController`, `List(selection:)` and a real
+`NSToolbar` with a tracking separator. Tabs are custom content of that same
+native toolbar row above the detail column, not a second content row; search
+stays inside the detail column. Native window controls are no longer manually
+repositioned. An installed two-row NavigationSplitView attempt was rejected
+by the owner and its assetless release draft was stopped before publication. Detail minimum widths protect
 the editor and existing Settings form when the sidebar is visible.
 
 Fixed refresh-time snapshots overwriting newer edits, live-preview cache
@@ -53,7 +56,9 @@ does not import AppIntents or declare intents, so there is no metadata to
 extract; this is an Xcode metadata-step diagnostic, not a sidebar or Swift
 compiler defect. No suppression or artificial framework dependency was added.
 Residual limit: no Shortcuts metadata is produced. Reassess if App Intents
-are adopted. Installed visual and universal Release acceptance are recorded
+are adopted. Universal archive also exposed a missing application category;
+set the existing editor's category to Productivity instead of suppressing
+that diagnostic. Installed visual and universal Release acceptance are recorded
 below after verification.
 
 ## Verification

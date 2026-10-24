@@ -14,28 +14,22 @@ struct WorkspaceView: View {
     @State private var isWindowPinned = false
 
     var body: some View {
-        NavigationSplitView(columnVisibility: sidebarVisibility) {
-            WorkspaceSidebarView()
-                .navigationSplitViewColumnWidth(min: 200, ideal: 260, max: 360)
-        } detail: {
-            editorColumn
-                .frame(minWidth: isSettingsSelected ? 500 : 300)
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button(action: workspaceStore.createNewDocument) {
-                            Label("New Document", systemImage: "square.and.pencil")
-                        }
-                    }
-                    ToolbarItem(placement: .primaryAction) {
-                        Toggle(isOn: $isWindowPinned) {
-                            Label("Always on Top", systemImage: "pin")
-                        }
-                        .toggleStyle(.button)
-                        .help(isWindowPinned ? "Disable Always on Top" : "Enable Always on Top")
-                    }
+        WorkspaceSplitView(
+            sidebar: AnyView(WorkspaceSidebarView().environment(workspaceStore)),
+            detail: AnyView(editorColumn.environment(workspaceStore)),
+            tabs: AnyView(tabStrip.environment(workspaceStore)),
+            isSidebarVisible: workspaceStore.preferences.isSidebarVisible,
+            isSettingsSelected: isSettingsSelected,
+            isWindowPinned: isWindowPinned,
+            onSidebarVisibilityChange: { visible in
+                if workspaceStore.preferences.isSidebarVisible != visible {
+                    workspaceStore.preferences.isSidebarVisible = visible
                 }
-        }
-        .navigationSplitViewStyle(.balanced)
+            },
+            onNewDocument: workspaceStore.createNewDocument,
+            onTogglePin: { isWindowPinned.toggle() }
+        )
+        .ignoresSafeArea(.container, edges: .top)
         .background {
             WindowPinningView(isWindowPinned: isWindowPinned)
         }
@@ -79,26 +73,23 @@ struct WorkspaceView: View {
         workspaceStore.tabs.contains { $0.id == workspaceStore.selectedTabID && $0.isSettings }
     }
 
-    private var sidebarVisibility: Binding<NavigationSplitViewVisibility> {
-        Binding(
-            get: { workspaceStore.preferences.isSidebarVisible ? .all : .detailOnly },
-            set: { workspaceStore.preferences.isSidebarVisible = $0 != .detailOnly }
+    private var tabStrip: some View {
+        @Bindable var bindableWorkspace = workspaceStore
+        return EditorTabStripView(
+            tabs: $bindableWorkspace.tabs,
+            selectedTabID: workspaceStore.selectedTabID,
+            onSelectTab: workspaceStore.selectTab,
+            onSelectTabRelative: workspaceStore.selectTab(relativeOffset:),
+            onRenameTab: workspaceStore.renameDocument,
+            onCloseTab: workspaceStore.closeDocument,
+            onDeleteTab: workspaceStore.moveToTrash,
+            onCloseOtherTabs: workspaceStore.closeOtherDocuments(keeping:)
         )
     }
 
     private var editorColumn: some View {
         VStack(spacing: 0) {
-            @Bindable var bindableWorkspace = workspaceStore
-            EditorTabStripView(
-                tabs: $bindableWorkspace.tabs,
-                selectedTabID: workspaceStore.selectedTabID,
-                onSelectTab: workspaceStore.selectTab,
-                onSelectTabRelative: workspaceStore.selectTab(relativeOffset:),
-                onRenameTab: workspaceStore.renameDocument,
-                onCloseTab: workspaceStore.closeDocument,
-                onDeleteTab: workspaceStore.moveToTrash,
-                onCloseOtherTabs: workspaceStore.closeOtherDocuments(keeping:)
-            )
+
 
             if isCloseTabShortcutHintVisible {
                 CloseTabShortcutHint {

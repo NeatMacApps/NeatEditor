@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		030A8ED4826D9B5EE2EC12FA /* HoverFocusTopmostCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57FAD87A0EF0C4B4C56F66BB /* HoverFocusTopmostCheck.swift */; };
+		065BA2D19DAC9F177DF51000 /* WorkspaceSplitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC3D0698104CA17378999F0 /* WorkspaceSplitView.swift */; };
 		0A0C6C11839EF1CD4EA83AC3 /* EditorScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72DD6097751EF581EA256A3 /* EditorScrollView.swift */; };
 		1647932DE3AFF5096BA1A56C /* AutoSaveSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E545B076D7BD325F2B4EF46 /* AutoSaveSchedulerTests.swift */; };
 		16EC1F059C67919FE7417ECA /* WorkspaceCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C1E4F1C5E0852265B8A3A4 /* WorkspaceCommands.swift */; };
@@ -90,6 +91,7 @@
 		86A7D19FDA6561AA648AA9B9 /* NeatEditorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeatEditorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8A6D6237DD372EDEF3850424 /* WorkspaceSidebarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSidebarItem.swift; sourceTree = "<group>"; };
 		98813FD87C11733B55049246 /* EditorTabItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTabItemView.swift; sourceTree = "<group>"; };
+		9AC3D0698104CA17378999F0 /* WorkspaceSplitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSplitView.swift; sourceTree = "<group>"; };
 		9B3C22F933FC00FD61B5DAF0 /* EditorTextContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextContainerView.swift; sourceTree = "<group>"; };
 		9E4EDF9A6AA28B3E0BB1ED45 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A08FFD0C3BD5FFC0B4C04B01 /* WorkspaceStore+Search.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Search.swift"; sourceTree = "<group>"; };
@@ -137,6 +139,7 @@
 				A8918469298602DC5C5D7047 /* WorkspaceSearchState.swift */,
 				8A6D6237DD372EDEF3850424 /* WorkspaceSidebarItem.swift */,
 				67DE6C7B02FE5A439B3DE095 /* WorkspaceSidebarView.swift */,
+				9AC3D0698104CA17378999F0 /* WorkspaceSplitView.swift */,
 				63FEBB9D3DE2E196F6FABC88 /* WorkspaceStore.swift */,
 				CE02D7D1B8648861CEB95405 /* WorkspaceStore+Documents.swift */,
 				034DD46D84F8B203A8D6476F /* WorkspaceStore+Preferences.swift */,
@@ -445,6 +448,7 @@
 				4C28ACC82CF6ADE661F5C511 /* WorkspaceSearchState.swift in Sources */,
 				833161AD0662EF0AA75851C0 /* WorkspaceSidebarItem.swift in Sources */,
 				BD9F954901E066BF3EC44DD4 /* WorkspaceSidebarView.swift in Sources */,
+				065BA2D19DAC9F177DF51000 /* WorkspaceSplitView.swift in Sources */,
 				A5CD4E4CA843E095AEF9E4F4 /* WorkspaceStore+Documents.swift in Sources */,
 				348B695F38A92793385342D0 /* WorkspaceStore+Preferences.swift in Sources */,
 				47254445FBCCB7AD560ED455 /* WorkspaceStore+Search.swift in Sources */,
@@ -554,7 +558,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -569,7 +573,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0.10;
+				MARKETING_VERSION = 1.0.11;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";
@@ -656,7 +660,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -677,7 +681,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0.10;
+				MARKETING_VERSION = 1.0.11;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
