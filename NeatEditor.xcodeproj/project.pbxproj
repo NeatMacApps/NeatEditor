@@ -47,6 +47,7 @@
 		AB52501F00EC0F86E18D6C3C /* AutoSaveScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14452BE9113FCDDB6CE97192 /* AutoSaveScheduler.swift */; };
 		B94CDB60C07A6AB1960668D4 /* ExternalFileOpenCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C74314E17C1CDECDF2EDB4 /* ExternalFileOpenCoordinator.swift */; };
 		BD9F954901E066BF3EC44DD4 /* WorkspaceSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE6C7B02FE5A439B3DE095 /* WorkspaceSidebarView.swift */; };
+		C156A65D699468D69DC0AC41 /* TabStripLayoutModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB3020F5F688B0279A74579A /* TabStripLayoutModel.swift */; };
 		CC0213689BC7EBC733DEE876 /* EditorTabPreferenceKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1666943FD2B1A70363D36B4C /* EditorTabPreferenceKeys.swift */; };
 		DCDC8B0D5BE86A4D3B12A9E1 /* WorkspaceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63FEBB9D3DE2E196F6FABC88 /* WorkspaceStore.swift */; };
 		EE8FDF1E46F208FEEE81F43F /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56530C158F57A8758BF0D6FF /* AppLanguage.swift */; };
@@ -110,6 +111,7 @@
 		D72DD6097751EF581EA256A3 /* EditorScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorScrollView.swift; sourceTree = "<group>"; };
 		E1674FE73DFD3A99700320E6 /* WorkspacePreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacePreferences.swift; sourceTree = "<group>"; };
 		E32406E8C86E9797FA92149D /* WorkspaceStore+StateRestoration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+StateRestoration.swift"; sourceTree = "<group>"; };
+		EB3020F5F688B0279A74579A /* TabStripLayoutModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabStripLayoutModel.swift; sourceTree = "<group>"; };
 		F4F0D88DC1A7D3B01D9DBBD6 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
 		F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacePreferencesTests.swift; sourceTree = "<group>"; };
 		FF4DB92AF9B1A147AEED3F20 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -294,6 +296,7 @@
 			isa = PBXGroup;
 			children = (
 				57FAD87A0EF0C4B4C56F66BB /* HoverFocusTopmostCheck.swift */,
+				EB3020F5F688B0279A74579A /* TabStripLayoutModel.swift */,
 				3DB9D86BBC9C10E24C2579C1 /* TitleBarTrafficLightAlignmentView.swift */,
 			);
 			path = TitleBar;
@@ -442,6 +445,7 @@
 				28C0A08E8F3EA4403F48347A /* NeatEditorApp.swift in Sources */,
 				85E7BB7174B4D000CEFDE8A6 /* SettingsView.swift in Sources */,
 				F294F12E2A20AE8FFE734E66 /* TabBehavior.swift in Sources */,
+				C156A65D699468D69DC0AC41 /* TabStripLayoutModel.swift in Sources */,
 				A344426D812AD628E5414D35 /* TitleBarTrafficLightAlignmentView.swift in Sources */,
 				16EC1F059C67919FE7417ECA /* WorkspaceCommands.swift in Sources */,
 				247B4DD44E7B8560AA53E2D1 /* WorkspacePreferences.swift in Sources */,

@@ -12,6 +12,7 @@ struct WorkspaceView: View {
     @FocusState private var isSearchFieldFocused: Bool
     @State private var isCloseTabShortcutHintVisible = false
     @State private var isWindowPinned = false
+    @State private var tabStripLayout = TabStripLayoutModel()
 
     var body: some View {
         WorkspaceSplitView(
@@ -83,7 +84,10 @@ struct WorkspaceView: View {
             onRenameTab: workspaceStore.renameDocument,
             onCloseTab: workspaceStore.closeDocument,
             onDeleteTab: workspaceStore.moveToTrash,
-            onCloseOtherTabs: workspaceStore.closeOtherDocuments(keeping:)
+            onCloseOtherTabs: workspaceStore.closeOtherDocuments(keeping:),
+            onLayoutChange: { state in
+                tabStripLayout.state = state
+            }
         )
     }
 
@@ -112,6 +116,30 @@ struct WorkspaceView: View {
                 searchBar
             }
         }
+        .overlay(alignment: .top) {
+            if tabStripLayout.state.hasTabs {
+                editorTopRule
+            }
+        }
+    }
+
+    /// The editor column owns the full-width rule below the toolbar. It leaves
+    /// the selected tab's join open so the tab stays attached to the page.
+    private var editorTopRule: some View {
+        GeometryReader { proxy in
+            let originX = proxy.frame(in: .global).minX
+            EditorTopRuleShape(gap: localSelectedTabGap(originX: originX))
+                .fill(EditorChrome.tabOutline)
+        }
+        .frame(height: EditorChrome.lineWidth)
+        .allowsHitTesting(false)
+    }
+
+    private func localSelectedTabGap(originX: CGFloat) -> ClosedRange<CGFloat>? {
+        guard let gap = tabStripLayout.state.selectedTabGap else {
+            return nil
+        }
+        return (gap.lowerBound - originX)...(gap.upperBound - originX)
     }
 
     private func editorBody(for tab: EditorTab, selectedTabID: UUID) -> some View {

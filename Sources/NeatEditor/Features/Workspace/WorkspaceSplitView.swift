@@ -37,7 +37,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     private var configuration: WorkspaceSplitView
     private let sidebarController: NSHostingController<AnyView>
     private let detailController: NSHostingController<AnyView>
-    private let tabHost: NSHostingView<AnyView>
+    private let tabHost: WorkspaceTabHostingView
     private let workspaceToolbar = NSToolbar(identifier: "WorkspaceToolbar")
     private var tabWidth: NSLayoutConstraint?
     private var pinItem: NSToolbarItem?
@@ -48,7 +48,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         self.configuration = configuration
         sidebarController = NSHostingController(rootView: configuration.sidebar)
         detailController = NSHostingController(rootView: configuration.detail)
-        tabHost = NSHostingView(rootView: configuration.tabs)
+        tabHost = WorkspaceTabHostingView(rootView: configuration.tabs)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -226,6 +226,14 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         default:
             return nil
         }
+    }
+}
+
+/// The tab strip lives in the titlebar, so its first click must reach both the
+/// window-activation path and the tab monitor even when another app is active.
+final class WorkspaceTabHostingView: NSHostingView<AnyView> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
     }
 }
 

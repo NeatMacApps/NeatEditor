@@ -23,6 +23,7 @@ release tooling. Behavior requirements are recorded before implementation in
 | P2 | Search/Settings drew custom control-outline frames and Settings pickers lacked useful accessibility labels. | Fixed: remove those frames and label the native controls. |
 | P2 | A standalone View command menu duplicated the system View menu. | Fixed: add zoom commands to the existing menu through `CommandGroup(after: .toolbar)`. Installed-menu verification is pending. |
 | P2 | Release artifacts preceded the source commit; detached execution, notes and checksum documentation were inconsistent. | Tooling fixed; final acceptance pending worker corrections and account preflight. |
+| P2 | Hosting document tabs in an `NSToolbarItem` removed the old title-bar drag: dragging a tab no longer moved the window. | Fixed: the tab-strip monitor tracks the press, moves the window after 4 points, clamps it on screen, and leaves clicks to SwiftUI. Installed drag verified from a tab (window origin 100,100 → 280,200). |
 
 ## Sidebar review (2026-10-24)
 

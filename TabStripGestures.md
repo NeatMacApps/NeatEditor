@@ -6,6 +6,10 @@ Owner corrections (2026-10-24):
 
 - The native sidebar occupies the entire leading window area, including the
   background behind the native traffic lights, and reaches the bottom.
+- Dragging anywhere in the tab strip, including on a tab or its empty
+  background, moves the window, matching the old title-bar behavior. A press
+  below the drag threshold remains a normal click; a drag must not select or
+  rename the tab where it started.
 - Window controls, sidebar toggle, document tabs, New Document and pin share
   **one top row**. No separate toolbar row above the tabs.
 - Tabs begin in the editor column, not above the sidebar. Search and document
@@ -33,6 +37,15 @@ unbordered; its minimum and maximum widths use constraints rather than deprecate
 `NSToolbarItem.minSize/maxSize`. The width is **not** a required detail-column
 width: the hidden-sidebar layout also needs space for native window controls.
 Tabs have user visibility priority so actions overflow before document selection.
+
+`TitleBarEventNSView` owns the tab-strip drag because a custom view hosted in an
+`NSToolbarItem` does not get the window drag automatically, and
+`NSWindow.performDrag(with:)` is ignored in that context. The monitor records
+the initial window origin and pointer location, then moves the window directly
+once the pointer crosses the threshold, clamping the frame so part of the
+window remains on screen. Clicks are left untouched for SwiftUI; no event is
+replayed or delayed. This replaces the old native title-bar drag path only for
+the tab strip.
 
 `EditorTabStripView` preserves the product's existing `EditorTabItemView`,
 connected fill and inline rename inside the single native toolbar item. The
@@ -67,6 +80,11 @@ Official applicability and installed Xcode 27.2 SDK checked:
 ## Interaction contract
 
 - Single click selects immediately; no multi-click recognition delay.
+- A left drag beginning anywhere in the tab strip moves the window after a
+  4-point threshold. SwiftUI still receives the press, so a click without
+  movement selects or renames normally; only a completed drag suppresses the
+  tab action. The inline rename field remains a text field and is not turned
+  into a window-drag surface.
 - Double-click a tab that was already selected on the first click to rename
   inline. Double-clicking an inactive tab selects it without starting rename.
 - Enter, clicking outside or switching apps commits rename. Escape cancels it.
@@ -101,9 +119,12 @@ Use the installed `/Applications/NeatEditor.app`, not just a build/test result.
    collapsed screenshots and select a tab in both states.
 3. Repeat at normal/minimum width; resize the native divider.
 4. Save, switch documents and refresh; sidebar filename order must remain stable.
-5. Exercise active/inactive double-click, rename commit/cancel, close/reopen,
+5. Drag from a tab and from empty tab-strip space; the window must follow the
+   pointer, and releasing must not select or rename the starting tab. Then click
+   the same tab and double-click it to confirm click and rename still work.
+6. Exercise active/inactive double-click, rename commit/cancel, close/reopen,
    pin/unpin and search; verify no content changes cross document identities.
-6. Check light/dark appearances, Settings minimum size and keyboard selection.
+7. Check light/dark appearances, Settings minimum size and keyboard selection.
 
 The rejected two-row 1.0.10 draft has no assets and remains unpublished.
 The corrected release uses a new immutable version, never a moved tag.

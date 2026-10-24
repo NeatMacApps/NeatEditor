@@ -6,7 +6,7 @@ import SwiftUI
 @MainActor var tabStripPendingRename: String?
 
 struct EditorTabStripView: View {
-    static let titleBarHeight: CGFloat = 38
+    static let titleBarHeight: CGFloat = 40
     static let leadingPadding: CGFloat = 76
     static let trailingTabScrollPadding: CGFloat = 12
     static let trailingAccessoryWidth: CGFloat = 52
@@ -28,9 +28,14 @@ struct EditorTabStripView: View {
     let onCloseTab: (UUID) -> Void
     let onDeleteTab: (UUID) -> Void
     let onCloseOtherTabs: (UUID) -> Void
+    /// Reports the selected tab's window-space join range so the editor column
+    /// can keep its top rule continuous without crossing that join.
+    let onLayoutChange: (TabStripLayoutState) -> Void
     @State private var selectedTabFrame: CGRect = .null
     @State private var tabFrames: [UUID: CGRect] = [:]
     @State private var tabScrollViewportFrame: CGRect = .null
+    @State private var stripGlobalFrame: CGRect = .null
+    @State private var publishedLayout = TabStripLayoutState()
     @State private var editingTabID: UUID? = nil
 
     var body: some View {
@@ -72,7 +77,7 @@ struct EditorTabStripView: View {
                         }
                     }
                     .padding(.trailing, Self.trailingTabScrollPadding)
-                    .padding(.top, 6)
+                    .padding(.top, 8)
                 }
                 .background {
                     GeometryReader { proxy in
@@ -132,10 +137,22 @@ struct EditorTabStripView: View {
                 tabScrollViewportFrame = frame
             }
         }
+        .onGeometryChange(for: CGRect.self) { proxy in
+            proxy.frame(in: .global)
+        } action: { frame in
+            stripGlobalFrame = frame
+        }
+        .onChange(of: layoutState, initial: true) { _, newState in
+            guard newState != publishedLayout else {
+                return
+            }
+            publishedLayout = newState
+            onLayoutChange(newState)
+        }
         .background(EditorChrome.tabBarBackground)
         .overlay {
             TabBarOutlineShape(selectedTabFrame: selectedTabFrame)
-                .stroke(Color.primary.opacity(0.22), lineWidth: EditorChrome.lineWidth)
+                .stroke(EditorChrome.tabOutline, lineWidth: EditorChrome.lineWidth)
                 .allowsHitTesting(false)
         }
         .clipped()
@@ -177,6 +194,39 @@ struct EditorTabStripView: View {
                 && frame.maxX > (
                     tabScrollViewportFrame.maxX + Self.overflowVisibilityThreshold)
         }
+    }
+
+    private var layoutState: TabStripLayoutState {
+        guard !tabs.isEmpty else {
+            return TabStripLayoutState(hasTabs: false, selectedTabGap: nil)
+        }
+        return TabStripLayoutState(hasTabs: true, selectedTabGap: selectedTabGapInWindow)
+    }
+
+    /// The window-space range the selected tab's bottom join occupies. The
+    /// editor column leaves this span open so its top rule does not cut the tab
+    /// off from the page. A tab scrolled out of the viewport contributes no gap.
+    private var selectedTabGapInWindow: ClosedRange<CGFloat>? {
+        guard !selectedTabFrame.isNull, !stripGlobalFrame.isNull else {
+            return nil
+        }
+
+        var lower = stripGlobalFrame.minX + selectedTabFrame.minX
+            - ConnectedTabGeometry.baselineOutset
+        var upper = stripGlobalFrame.minX + selectedTabFrame.maxX
+            + ConnectedTabGeometry.baselineOutset
+
+        if !tabScrollViewportFrame.isNull {
+            let viewportMin = stripGlobalFrame.minX + tabScrollViewportFrame.minX
+            let viewportMax = stripGlobalFrame.minX + tabScrollViewportFrame.maxX
+            lower = max(lower, viewportMin)
+            upper = min(upper, viewportMax)
+        }
+
+        guard lower < upper else {
+            return nil
+        }
+        return lower...upper
     }
 
     private func dismissEditing() {
@@ -584,12 +634,19 @@ private struct TitleBarEventMonitor: NSViewRepresentable {
 /// One geometry builds both the fill and the outline, preserving the existing
 /// rounded stepped silhouette without independently splicing its joins.
 enum ConnectedTabGeometry {
+    static let topInset: CGFloat = 6
+    static let topCornerRadius: CGFloat = 9
+    static let bottomJoinRadius: CGFloat = 9
+    /// How far the bottom join reaches past the tab's frame before it meets the
+    /// horizontal rule. Keep in sync with the shape below.
+    static let baselineOutset: CGFloat = bottomJoinRadius - topInset
+
     static func appendTopEdge(
         to path: inout Path,
         in rect: CGRect,
-        topInset: CGFloat = 6,
-        topCornerRadius: CGFloat = 9,
-        bottomJoinRadius: CGFloat = 9
+        topInset: CGFloat = ConnectedTabGeometry.topInset,
+        topCornerRadius: CGFloat = ConnectedTabGeometry.topCornerRadius,
+        bottomJoinRadius: CGFloat = ConnectedTabGeometry.bottomJoinRadius
     ) {
         let inset = min(topInset, rect.width / 4)
         let topRadius = min(topCornerRadius, rect.width / 2, rect.height / 2)
@@ -645,14 +702,19 @@ struct ConnectedTabFillShape: Shape {
 struct TabBarOutlineShape: Shape {
     let selectedTabFrame: CGRect
 
+    /// Only the raised selected tab. The horizontal rule belongs to the editor
+    /// column, which can span the full window width and leave the tab's join
+    /// open; drawing it here would stop at this toolbar item's edges.
     func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let baseline = rect.maxY - 0.5
-        path.move(to: CGPoint(x: rect.minX, y: baseline))
-        if !selectedTabFrame.isNull, selectedTabFrame.intersects(rect) {
-            ConnectedTabGeometry.appendTopEdge(to: &path, in: selectedTabFrame)
+        guard !selectedTabFrame.isNull, selectedTabFrame.intersects(rect) else {
+            return Path()
         }
-        path.addLine(to: CGPoint(x: rect.maxX, y: baseline))
+
+        var path = Path()
+        let startX = selectedTabFrame.minX + ConnectedTabGeometry.topInset
+            - ConnectedTabGeometry.bottomJoinRadius
+        path.move(to: CGPoint(x: startX, y: selectedTabFrame.maxY - 0.5))
+        ConnectedTabGeometry.appendTopEdge(to: &path, in: selectedTabFrame)
         return path
     }
 }
@@ -698,7 +760,8 @@ struct TabBarOutlineShape: Shape {
                 }
             },
             onDeleteTab: { _ in },
-            onCloseOtherTabs: { _ in }
+            onCloseOtherTabs: { _ in },
+            onLayoutChange: { _ in }
         )
         Spacer()
     }
