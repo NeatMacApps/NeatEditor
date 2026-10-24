@@ -39,7 +39,7 @@ NeatEditor is built around a simple goal: reduce interface noise and keep your a
 - Pin-to-top window support and native title bar double-click zoom behavior.
 - Disk-backed rename behavior that preserves editable file extensions.
 - Blank content never overwrites existing files by design.
-- App-created documents live under `~/.config/neateditor/documents/` (or the `XDG_CONFIG_HOME` equivalent), created on first save.
+- App-created documents live in your `~/Documents` folder by default; switch folders from the sidebar header. New documents save to the current folder, and documents left in the older app library are copied over on first launch.
 
 ## Main Shortcuts
 

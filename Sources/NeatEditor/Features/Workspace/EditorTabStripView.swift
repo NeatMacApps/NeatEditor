@@ -437,6 +437,12 @@ private struct TitleBarEventMonitor: NSViewRepresentable {
         var onDismissEditing: (() -> Void)?
         var onCloseTab: ((UUID) -> Void)?
         private var clickMonitor: Any?
+        private var pendingWindowDragEvent: NSEvent?
+        private var pendingDragStartOrigin: NSPoint?
+        private var pendingDragStartMouse: NSPoint?
+        private var isWindowDragInProgress = false
+
+        private static let windowDragThreshold: CGFloat = 4
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
@@ -453,7 +459,7 @@ private struct TitleBarEventMonitor: NSViewRepresentable {
         private func installMonitor() {
             removeMonitor()
             clickMonitor = NSEvent.addLocalMonitorForEvents(
-                matching: [.leftMouseDown, .otherMouseUp]
+                matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp, .otherMouseUp]
             ) { [weak self] event in
                 self?.handleMouseEvent(event)
                 return event
@@ -465,10 +471,14 @@ private struct TitleBarEventMonitor: NSViewRepresentable {
                 NSEvent.removeMonitor(clickMonitor)
                 self.clickMonitor = nil
             }
+            resetWindowDrag()
         }
 
         private func handleMouseEvent(_ event: NSEvent) {
-            if event.type == .leftMouseDown {
+            switch event.type {
+            case .leftMouseDown:
+                resetWindowDrag()
+
                 // Dismiss editing when clicking outside the title bar area
                 // (where the rename text field lives).
                 if isEditing && !isEventInTitleBarRegion(event) {
@@ -476,7 +486,46 @@ private struct TitleBarEventMonitor: NSViewRepresentable {
                         self?.onDismissEditing?()
                     }
                 }
-            } else if event.type == .otherMouseUp, event.buttonNumber == 2 {
+
+                guard !isEditing,
+                    isEventInTitleBarRegion(event),
+                    let window
+                else {
+                    return
+                }
+                pendingWindowDragEvent = event
+                pendingDragStartOrigin = window.frame.origin
+                pendingDragStartMouse = NSEvent.mouseLocation
+            case .leftMouseDragged:
+                guard let mouseDownEvent = pendingWindowDragEvent,
+                    let startOrigin = pendingDragStartOrigin,
+                    let startMouse = pendingDragStartMouse,
+                    let window,
+                    !isEditing,
+                    event.window === window
+                else {
+                    return
+                }
+
+                let start = mouseDownEvent.locationInWindow
+                let point = event.locationInWindow
+                let distance = max(abs(point.x - start.x), abs(point.y - start.y))
+                if !isWindowDragInProgress, distance >= Self.windowDragThreshold {
+                    isWindowDragInProgress = true
+                }
+                guard isWindowDragInProgress else {
+                    return
+                }
+
+                let currentMouse = NSEvent.mouseLocation
+                let origin = NSPoint(
+                    x: startOrigin.x + currentMouse.x - startMouse.x,
+                    y: startOrigin.y + currentMouse.y - startMouse.y
+                )
+                window.setFrameOrigin(clampedWindowOrigin(origin, for: window))
+            case .leftMouseUp:
+                resetWindowDrag()
+            case .otherMouseUp where event.buttonNumber == 2:
                 guard let tabID = tabID(at: event) else {
                     return
                 }
@@ -487,7 +536,28 @@ private struct TitleBarEventMonitor: NSViewRepresentable {
                     }
                     self?.onCloseTab?(tabID)
                 }
+            default:
+                break
             }
+        }
+
+        private func resetWindowDrag() {
+            pendingWindowDragEvent = nil
+            pendingDragStartOrigin = nil
+            pendingDragStartMouse = nil
+            isWindowDragInProgress = false
+        }
+
+        private func clampedWindowOrigin(_ origin: NSPoint, for window: NSWindow) -> NSPoint {
+            guard let visibleFrame = (window.screen ?? NSScreen.main)?.visibleFrame else {
+                return origin
+            }
+            let width = window.frame.width
+            let height = window.frame.height
+            return NSPoint(
+                x: min(max(origin.x, visibleFrame.minX - width + 80), visibleFrame.maxX - 80),
+                y: min(max(origin.y, visibleFrame.minY - height + 40), visibleFrame.maxY - 40)
+            )
         }
 
         private func tabID(at event: NSEvent) -> UUID? {

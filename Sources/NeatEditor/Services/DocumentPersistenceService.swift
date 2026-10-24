@@ -17,6 +17,10 @@ struct DocumentPersistenceService {
         static let headCharacters = 4096
     }
 
+    /// Extensionless files are only listed when their head looks like plain
+    /// UTF-8 text. The bound keeps the probe cheap for large binaries.
+    private static let textSniffByteCount = 4 * 1024
+
     enum PersistenceError: LocalizedError {
         case destinationAlreadyExists(URL)
 
@@ -30,20 +34,26 @@ struct DocumentPersistenceService {
     }
 
     let defaultDirectory: URL
+    /// Pre-folder location used by older builds. Kept as the migration source
+    /// and as the fallback when the user's Documents folder is unavailable.
+    let appLibraryDirectory: URL
     private let fileManager: FileManager
 
     init(
         fileManager: FileManager = .default,
         defaultDirectory: URL? = nil,
+        appLibraryDirectory: URL? = nil,
         environment: [String: String]? = nil
     ) {
         self.fileManager = fileManager
         let environment = environment ?? ProcessInfo.processInfo.environment
         self.defaultDirectory = defaultDirectory
-            ?? Self.resolveDefaultDirectory(using: fileManager, environment: environment)
+            ?? Self.resolveDefaultDirectory(using: fileManager)
+        self.appLibraryDirectory = appLibraryDirectory
+            ?? Self.resolveAppLibraryDirectory(using: fileManager, environment: environment)
     }
 
-    func save(tab: EditorTab) throws -> EditorTab {
+    func save(tab: EditorTab, in directory: URL? = nil) throws -> EditorTab {
         guard !tab.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return tab
         }
@@ -74,7 +84,7 @@ struct DocumentPersistenceService {
 
         // Deferred until the first non-blank save so merely opening the app or
         // creating empty tabs never touches the filesystem.
-        let fileURL = try exclusivePublish(data: data, named: fileName)
+        let fileURL = try exclusivePublish(data: data, named: fileName, in: directory)
         savedTab.fileURL = fileURL
         savedTab.title = fileURL.lastPathComponent
 
@@ -154,14 +164,27 @@ struct DocumentPersistenceService {
     }
 
     static func resolveDefaultDirectory(
+        using fileManager: FileManager
+    ) -> URL {
+        // New notes are user content, so the default destination is the
+        // user's Documents folder. The sidebar can switch to another folder;
+        // the old app library remains only as a migration source.
+        fileManager.homeDirectoryForCurrentUser.appendingPathComponent(
+            "Documents",
+            isDirectory: true
+        )
+    }
+
+    /// Pre-folder app-owned library (`~/.config/neateditor/documents` or the
+    /// XDG equivalent). Existing documents there are copied into the current
+    /// documents folder on first launch; new documents never use it unless
+    /// the user explicitly chooses it.
+    static func resolveAppLibraryDirectory(
         using fileManager: FileManager,
         environment: [String: String] = ProcessInfo.processInfo.environment
     ) -> URL {
-        // App-owned documents live under the XDG config home so they stay out
-        // of the user's Documents folder. Existing fileURLs are never
-        // rewritten, so this only affects newly saved documents. Relative
-        // XDG values are ignored per the base directory specification, which
-        // requires an absolute path.
+        // Relative XDG values are ignored per the base directory
+        // specification, which requires an absolute path.
         if let xdgConfigHome = environment["XDG_CONFIG_HOME"],
            !xdgConfigHome.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         {
@@ -176,6 +199,18 @@ struct DocumentPersistenceService {
             ".config/neateditor/documents",
             isDirectory: true
         )
+    }
+
+    static func isUserDocumentsDirectory(
+        _ url: URL,
+        fileManager: FileManager = .default
+    ) -> Bool {
+        let documentsPath = fileManager.homeDirectoryForCurrentUser
+            .appendingPathComponent("Documents", isDirectory: true)
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
+            .path
+        return url.standardizedFileURL.resolvingSymlinksInPath().path == documentsPath
     }
 
     private func renamedFileURL(for fileURL: URL, title: String) -> URL {
@@ -279,11 +314,19 @@ struct DocumentPersistenceService {
     /// Missing app-owned directories are normal before the first save.
     /// Other enumeration errors must remain distinguishable from an empty list.
     func sidebarTextFiles() throws -> [SidebarFileInfo] {
+        try sidebarTextFiles(in: defaultDirectory)
+    }
+
+    /// Lists regular text files in `directory`: the supported extensions plus
+    /// extensionless files whose head looks like plain UTF-8 text. Hidden
+    /// entries, directories, binaries and unpublished staging files are
+    /// skipped so a sidebar row always opens as editable text.
+    func sidebarTextFiles(in directory: URL) throws -> [SidebarFileInfo] {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .contentModificationDateKey, .fileSizeKey]
         let urls: [URL]
         do {
             urls = try fileManager.contentsOfDirectory(
-                at: defaultDirectory,
+                at: directory,
                 includingPropertiesForKeys: Array(keys),
                 options: [.skipsHiddenFiles]
             )
@@ -298,12 +341,20 @@ struct DocumentPersistenceService {
             if url.lastPathComponent.hasPrefix(".neateditor-staging-") {
                 continue
             }
-            guard Self.sidebarSupportedExtensions.contains(url.pathExtension.lowercased()) else {
+            let pathExtension = url.pathExtension
+            let hasSupportedExtension = Self.sidebarSupportedExtensions.contains(
+                pathExtension.lowercased()
+            )
+            guard hasSupportedExtension || pathExtension.isEmpty else {
                 continue
             }
             let values = try url.resourceValues(forKeys: keys)
             let fileURL = normalizedFileURL(for: url)
             guard values.isRegularFile == true, seen.insert(fileURL).inserted else {
+                continue
+            }
+            if !hasSupportedExtension,
+               !Self.isLikelyTextFile(at: fileURL, fileManager: fileManager) {
                 continue
             }
             infos.append(SidebarFileInfo(
@@ -321,6 +372,103 @@ struct DocumentPersistenceService {
             }
             return lhs.fileURL.path > rhs.fileURL.path
         }
+    }
+
+    /// Copies documents left in the pre-folder app library into `directory`.
+    /// Existing names are never overwritten and the originals are never
+    /// moved or deleted, so a failed migration can only leave files behind.
+    /// Returns the copy count, or `nil` when the legacy folder could not be
+    /// read and the caller should retry later.
+    func migrateLegacyAppDocumentsIfNeeded(into directory: URL) -> Int? {
+        let destination = normalizedFileURL(for: directory)
+        guard normalizedFileURL(for: appLibraryDirectory) != destination else {
+            return 0
+        }
+        let legacyFiles: [SidebarFileInfo]
+        do {
+            legacyFiles = try sidebarTextFiles(in: appLibraryDirectory)
+        } catch {
+            return nil
+        }
+        guard !legacyFiles.isEmpty else {
+            return 0
+        }
+
+        var copiedCount = 0
+        for info in legacyFiles {
+            let destinationURL = destination.appendingPathComponent(
+                info.fileURL.lastPathComponent
+            )
+            guard !fileManager.fileExists(atPath: destinationURL.path) else {
+                continue
+            }
+            do {
+                try fileManager.copyItem(at: info.fileURL, to: destinationURL)
+                copiedCount += 1
+            } catch {
+                // One unreadable legacy document must not block the rest.
+                continue
+            }
+        }
+        return copiedCount
+    }
+
+    /// Extensionless candidates get a bounded probe: NUL bytes and invalid
+    /// UTF-8 sequences mark a binary. A truncated sequence at the 4 KiB
+    /// boundary is accepted because the read may split a character.
+    static func isLikelyTextFile(
+        at fileURL: URL,
+        fileManager: FileManager = .default
+    ) -> Bool {
+        guard let handle = try? FileHandle(forReadingFrom: fileURL) else {
+            return false
+        }
+        defer { try? handle.close() }
+        guard let data = try? handle.read(upToCount: textSniffByteCount) else {
+            return false
+        }
+        guard !data.isEmpty else {
+            return true
+        }
+        guard !data.contains(0) else {
+            return false
+        }
+        return isUTF8Prefix(data)
+    }
+
+    private static func isUTF8Prefix(_ data: Data) -> Bool {
+        let bytes = [UInt8](data)
+        var index = 0
+        while index < bytes.count {
+            let byte = bytes[index]
+            let length: Int
+            switch byte {
+            case 0x00...0x7F:
+                length = 1
+            case 0xC2...0xDF:
+                length = 2
+            case 0xE0...0xEF:
+                length = 3
+            case 0xF0...0xF4:
+                length = 4
+            default:
+                return false
+            }
+
+            if index + length > bytes.count {
+                // A character split by the sniff boundary is still text.
+                return true
+            }
+            var offset = 1
+            while offset < length {
+                if bytes[index + offset] & 0xC0 != 0x80 {
+                    return false
+                }
+                offset += 1
+            }
+            index += length
+        }
+        return true
     }
 
     /// Short preview excerpt for a sidebar row: the first lines of content.

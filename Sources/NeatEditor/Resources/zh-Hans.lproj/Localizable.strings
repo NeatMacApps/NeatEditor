@@ -83,3 +83,9 @@
 "Always on Top" = "窗口置顶";
 "Retry" = "重试";
 "Couldn’t Load Documents" = "无法加载文档";
+"Choose Folder…" = "选择文件夹…";
+"Choose" = "选择";
+"Choose the folder to list in the sidebar." = "选择要在侧边栏中显示的文件夹。";
+"Folder Actions" = "文件夹操作";
+"Folder Unavailable" = "文件夹不可用";
+"The selected folder no longer exists." = "所选文件夹已不存在。";

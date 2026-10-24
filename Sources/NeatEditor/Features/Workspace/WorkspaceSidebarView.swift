@@ -7,30 +7,28 @@ struct WorkspaceSidebarView: View {
 
     var body: some View {
         List(selection: selection) {
-            Section("Documents") {
+            Section {
                 ForEach(workspaceStore.sidebarFiles) { item in
-                    Label {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(item.title)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(item.title)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
 
-                            if !item.preview.isEmpty {
-                                Text(item.preview)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(2)
-                            }
+                        if !item.preview.isEmpty {
+                            Text(item.preview)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
                         }
-                        .padding(.vertical, 3)
-                    } icon: {
-                        Image(systemName: "doc.text")
                     }
+                    .padding(.vertical, 3)
                     .tag(item.fileURL)
                     .contextMenu {
                         sidebarItemMenu(for: item)
                     }
                 }
+            } header: {
+                folderHeader
             }
         }
         .listStyle(.sidebar)
@@ -55,6 +53,9 @@ struct WorkspaceSidebarView: View {
         .contextMenu {
             Button(action: workspaceStore.createNewDocument) {
                 Label("New Document", systemImage: "plus")
+            }
+            Button(action: workspaceStore.chooseDocumentsFolder) {
+                Label("Choose Folder…", systemImage: "folder")
             }
             Button(action: workspaceStore.refreshSidebarFiles) {
                 Label("Refresh", systemImage: "arrow.clockwise")
@@ -87,6 +88,38 @@ struct WorkspaceSidebarView: View {
         )
     }
 
+    private var folderHeader: some View {
+        HStack(spacing: 6) {
+            Text(workspaceStore.documentsFolderName)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .help(workspaceStore.documentsFolder.path)
+
+            Spacer(minLength: 0)
+
+            Menu {
+                Button(action: workspaceStore.chooseDocumentsFolder) {
+                    Label("Choose Folder…", systemImage: "folder")
+                }
+                Button(action: workspaceStore.revealDocumentsFolderInFinder) {
+                    Label("Show in Finder", systemImage: "folder")
+                }
+                Divider()
+                Button(action: workspaceStore.refreshSidebarFiles) {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .accessibilityLabel("Folder Actions")
+        }
+    }
+
     @ViewBuilder
     private var emptyState: some View {
         if workspaceStore.isRefreshingSidebar {
@@ -99,12 +132,14 @@ struct WorkspaceSidebarView: View {
                 Text(message)
             } actions: {
                 Button("Retry", action: workspaceStore.refreshSidebarFiles)
+                Button("Choose Folder…", action: workspaceStore.chooseDocumentsFolder)
             }
         } else {
             ContentUnavailableView {
                 Label("No Documents", systemImage: "doc.text")
             } actions: {
                 Button("New Document", action: workspaceStore.createNewDocument)
+                Button("Choose Folder…", action: workspaceStore.chooseDocumentsFolder)
             }
         }
     }

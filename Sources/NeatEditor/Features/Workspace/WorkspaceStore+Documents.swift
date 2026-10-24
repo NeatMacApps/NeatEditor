@@ -115,7 +115,7 @@ extension WorkspaceStore {
         autoSaveScheduler.cancel(for: id)
 
         do {
-            tabs[index] = try persistenceService.save(tab: tabs[index])
+            tabs[index] = try persistenceService.save(tab: tabs[index], in: documentsFolder)
 
             if selectedTabID == id {
                 preferences.rememberCurrentEditorFontSize(

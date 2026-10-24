@@ -13,6 +13,7 @@ extension WorkspaceStore {
         let selectedFileURL: URL?
         let isSettingsSelected: Bool
         let preferences: WorkspacePreferences
+        let documentsFolderPath: String?
 
         private enum CodingKeys: String, CodingKey {
             case tabs
@@ -22,18 +23,21 @@ extension WorkspaceStore {
             case editorFontSize
             case tabBehavior
             case appLanguage
+            case documentsFolderPath
         }
 
         init(
             tabs: [TabState],
             selectedFileURL: URL?,
             isSettingsSelected: Bool,
-            preferences: WorkspacePreferences
+            preferences: WorkspacePreferences,
+            documentsFolderPath: String? = nil
         ) {
             self.tabs = tabs
             self.selectedFileURL = selectedFileURL
             self.isSettingsSelected = isSettingsSelected
             self.preferences = preferences
+            self.documentsFolderPath = documentsFolderPath
         }
 
         init(from decoder: Decoder) throws {
@@ -41,6 +45,10 @@ extension WorkspaceStore {
             tabs = try container.decode([TabState].self, forKey: .tabs)
             selectedFileURL = try container.decodeIfPresent(URL.self, forKey: .selectedFileURL)
             isSettingsSelected = try container.decode(Bool.self, forKey: .isSettingsSelected)
+            documentsFolderPath = try container.decodeIfPresent(
+                String.self,
+                forKey: .documentsFolderPath
+            )
 
             if let preferences = try container.decodeIfPresent(
                 WorkspacePreferences.self,
@@ -73,6 +81,7 @@ extension WorkspaceStore {
             try container.encodeIfPresent(selectedFileURL, forKey: .selectedFileURL)
             try container.encode(isSettingsSelected, forKey: .isSettingsSelected)
             try container.encode(preferences, forKey: .preferences)
+            try container.encodeIfPresent(documentsFolderPath, forKey: .documentsFolderPath)
         }
     }
 
@@ -120,7 +129,8 @@ extension WorkspaceStore {
             tabs: stateTabs,
             selectedFileURL: selectedFileURL,
             isSettingsSelected: isSettingsSelected,
-            preferences: preferences
+            preferences: preferences,
+            documentsFolderPath: documentsFolder.path
         )
 
         do {
@@ -151,6 +161,15 @@ extension WorkspaceStore {
         var restoredSelectedTabID: UUID?
 
         preferences = state.preferences
+        if let folderPath = state.documentsFolderPath {
+            var isDirectory: ObjCBool = false
+            if FileManager.default.fileExists(atPath: folderPath, isDirectory: &isDirectory),
+               isDirectory.boolValue {
+                documentsFolder = persistenceService.normalizedFileURL(
+                    for: URL(fileURLWithPath: folderPath, isDirectory: true)
+                )
+            }
+        }
 
         for tabState in state.tabs {
             if tabState.isSettings {

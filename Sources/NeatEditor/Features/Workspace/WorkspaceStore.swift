@@ -9,6 +9,7 @@ final class WorkspaceStore {
     enum UserDefaultsKey {
         static let workspaceState = "WorkspaceState"
         static let appleLanguages = "AppleLanguages"
+        static let didMigrateLegacyAppDocuments = "didMigrateLegacyAppDocuments"
     }
 
     struct ClosedTabSnapshot {
@@ -74,6 +75,11 @@ final class WorkspaceStore {
 
     var sidebarFiles: [WorkspaceSidebarItem] = []
 
+    /// Folder the sidebar lists and where new documents are first saved. The
+    /// user can switch it from the sidebar header; the choice is persisted
+    /// with the rest of the workspace state.
+    var documentsFolder: URL
+
     var isRefreshingSidebar = false
     var sidebarFailureMessage: String?
 
@@ -92,6 +98,9 @@ final class WorkspaceStore {
         self.persistenceService = persistenceService
         self.autoSaveScheduler = autoSaveScheduler
         self.userDefaults = userDefaults
+        self.documentsFolder = persistenceService.normalizedFileURL(
+            for: persistenceService.defaultDirectory
+        )
         
         if let state = loadState() {
             restoreState(state)

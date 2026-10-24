@@ -28,8 +28,15 @@ struct WorkspaceSidebarTests {
         try "c".write(to: directory.appendingPathComponent("upper.MD"), atomically: true, encoding: .utf8)
         try "d".write(to: directory.appendingPathComponent("note.markdown"), atomically: true, encoding: .utf8)
         try "e".write(to: directory.appendingPathComponent("plain.text"), atomically: true, encoding: .utf8)
+        try "extensionless note".write(
+            to: directory.appendingPathComponent("noext"),
+            atomically: true,
+            encoding: .utf8
+        )
+        try Data([0x00, 0xFF, 0x10, 0x80]).write(
+            to: directory.appendingPathComponent("binary")
+        )
         try "skip".write(to: directory.appendingPathComponent("image.png"), atomically: true, encoding: .utf8)
-        try "skip".write(to: directory.appendingPathComponent("noext"), atomically: true, encoding: .utf8)
         try "skip".write(to: directory.appendingPathComponent(".hidden.txt"), atomically: true, encoding: .utf8)
         try "skip".write(
             to: directory.appendingPathComponent(".neateditor-staging-123"),
@@ -50,7 +57,9 @@ struct WorkspaceSidebarTests {
         let files = try service.sidebarTextFiles()
         let names = files.map(\.fileURL.lastPathComponent)
 
-        #expect(names == ["upper.MD", "plain.text", "older.txt", "note.markdown", "newer.md"])
+        #expect(
+            names == ["upper.MD", "plain.text", "older.txt", "note.markdown", "noext", "newer.md"]
+        )
         try touch(directory.appendingPathComponent("newer.md"), date: .now)
         #expect(try service.sidebarTextFiles().map(\.fileURL.lastPathComponent) == names)
     }
@@ -141,9 +150,59 @@ struct WorkspaceSidebarTests {
         #expect(second.lastPathComponent == "note copy 2.md")
     }
 
+    @Test("legacy app library documents copy over without overwriting or deleting")
+    func legacyAppDocumentsMigrateWithoutOverwriting() throws {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeatEditorMigration-\(UUID().uuidString)", isDirectory: true)
+        let destination = base.appendingPathComponent("current", isDirectory: true)
+        let legacy = base.appendingPathComponent("legacy", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: legacy, withIntermediateDirectories: true)
+        try "legacy note".write(
+            to: legacy.appendingPathComponent("old.txt"),
+            atomically: true,
+            encoding: .utf8
+        )
+        try "legacy version".write(
+            to: legacy.appendingPathComponent("shared.txt"),
+            atomically: true,
+            encoding: .utf8
+        )
+        try "current version".write(
+            to: destination.appendingPathComponent("shared.txt"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let service = DocumentPersistenceService(
+            defaultDirectory: destination,
+            appLibraryDirectory: legacy
+        )
+
+        #expect(service.migrateLegacyAppDocumentsIfNeeded(into: destination) == 1)
+        #expect(
+            try String(
+                contentsOf: destination.appendingPathComponent("old.txt"),
+                encoding: .utf8
+            ) == "legacy note"
+        )
+        #expect(
+            try String(
+                contentsOf: destination.appendingPathComponent("shared.txt"),
+                encoding: .utf8
+            ) == "current version"
+        )
+        #expect(
+            FileManager.default.fileExists(
+                atPath: legacy.appendingPathComponent("old.txt").path
+            )
+        )
+        #expect(service.migrateLegacyAppDocumentsIfNeeded(into: destination) == 0)
+    }
+
     @Test("sidebar visibility defaults to visible and survives encoding")
-    func sidebarVisibilityPersists() throws {
-        #expect(WorkspacePreferences().isSidebarVisible)
+    func sidebarVisibilityPersists() throws {        #expect(WorkspacePreferences().isSidebarVisible)
 
         var hidden = WorkspacePreferences()
         hidden.isSidebarVisible = false
@@ -316,5 +375,82 @@ struct WorkspaceSidebarRefreshTests {
         }
 
         #expect(preview == "first line\nsecond line\nthird line")
+    }
+}
+
+@MainActor
+struct WorkspaceDocumentsFolderTests {
+    private func waitForRefresh(_ store: WorkspaceStore) async throws {
+        for _ in 0..<200 {
+            if !store.isRefreshingSidebar { return }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        Issue.record("Sidebar refresh did not finish")
+    }
+
+    @Test("a chosen documents folder persists in workspace state")
+    func chosenFolderPersists() async throws {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeatEditorFolderTests-\(UUID().uuidString)", isDirectory: true)
+        let first = base.appendingPathComponent("first", isDirectory: true)
+        let second = base.appendingPathComponent("second", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+        try FileManager.default.createDirectory(at: first, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: second, withIntermediateDirectories: true)
+        try "note".write(
+            to: first.appendingPathComponent("note.txt"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let suite = "NeatEditorFolderTests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let service = DocumentPersistenceService(defaultDirectory: first)
+
+        let store = WorkspaceStore(persistenceService: service, userDefaults: defaults)
+        defer { store.pendingSaveStateTask?.cancel() }
+        #expect(store.documentsFolder == service.normalizedFileURL(for: first))
+
+        store.setDocumentsFolder(second)
+        try await waitForRefresh(store)
+        #expect(store.documentsFolder == service.normalizedFileURL(for: second))
+        store.flushPendingSaveState()
+
+        let restored = WorkspaceStore(persistenceService: service, userDefaults: defaults)
+        defer { restored.pendingSaveStateTask?.cancel() }
+        #expect(restored.documentsFolder == service.normalizedFileURL(for: second))
+    }
+
+    @Test("new documents save into the current documents folder")
+    func newDocumentsSaveIntoCurrentFolder() async throws {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeatEditorFolderSave-\(UUID().uuidString)", isDirectory: true)
+        let first = base.appendingPathComponent("first", isDirectory: true)
+        let second = base.appendingPathComponent("second", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+        try FileManager.default.createDirectory(at: first, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: second, withIntermediateDirectories: true)
+
+        let suite = "NeatEditorFolderSave-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let service = DocumentPersistenceService(defaultDirectory: first)
+
+        let store = WorkspaceStore(persistenceService: service, userDefaults: defaults)
+        defer { store.pendingSaveStateTask?.cancel() }
+        store.setDocumentsFolder(second)
+        try await waitForRefresh(store)
+
+        store.createNewDocument()
+        let id = try #require(store.selectedTabID)
+        store.updateDocumentContent("hello", for: id)
+        #expect(store.saveDocument(id: id))
+
+        let fileURL = try #require(store.tabs.first { $0.id == id }?.fileURL)
+        #expect(
+            fileURL.deletingLastPathComponent()
+                == service.normalizedFileURL(for: second)
+        )
     }
 }

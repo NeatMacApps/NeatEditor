@@ -82,8 +82,7 @@ struct WorkspaceCommands: Commands {
     @MainActor
     private func openDocumentsFromUserHome() {
         let panel = NSOpenPanel()
-        panel.directoryURL = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Documents", isDirectory: true)
+        panel.directoryURL = workspaceStore.documentsFolder
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = true

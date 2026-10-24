@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.12 - 2026-10-24
+
+### Changed
+
+- The sidebar lists your `~/Documents` folder by default and can switch to another folder from its header. New documents save to the current folder, and the choice is remembered across launches.
+- Files without an extension are listed when their head looks like plain UTF-8 text, so extensionless notes appear while binaries are still skipped.
+- Sidebar rows no longer draw a file icon, giving filenames and previews the full width of the narrow sidebar.
+
+### Fixed
+
+- Documents left in the previous app library (`~/.config/neateditor/documents`) are copied into the current folder once, without overwriting or deleting anything.
+
+### 简体中文
+
+- 侧边栏默认列出你的 `~/Documents`，可在头部切换到其它文件夹；新文档保存到当前文件夹，选择会在重启后保留。
+- 无扩展名文件在开头内容像 UTF-8 纯文本时会显示，因此无扩展名笔记也能列出，二进制文件仍然跳过。
+- 侧边栏行不再显示文件图标，文件名和摘要可使用窄栏的全部宽度。
+- 旧应用目录（`~/.config/neateditor/documents`）中的文档会一次性复制到当前文件夹，不覆盖、不删除任何文件。
+
 ## 1.0.11 - 2026-10-24
 
 ### Changed
@@ -14,7 +33,7 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 ### Fixed
 
 - Saving and switching tabs no longer reorder the sidebar; filenames use a stable natural descending order.
-- Replace hand-drawn tab outlines with a native tab selection control, and keep it visible when the sidebar collapses.
+- Keep the existing rounded, stepped document tabs joined to the editor surface, draw one continuous outline, and keep the tabs visible when the sidebar collapses.
 - Background refresh no longer replaces newer live previews or mixes unsaved text into the disk cache.
 - Duplicate includes current committed editor text, including unsaved edits. Folder errors remain visible without discarding the previous file list.
 - Share rename validation across open and closed documents, preserve remembered font settings, handle Windows line endings, and cap preview reads.
@@ -24,7 +43,7 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 - 使用贯穿窗口左侧的原生侧边栏，支持系统分栏拖动和列表选中；标签栏与搜索只位于右侧编辑区，收起后不残留空白竖条。
 - 窗口按钮、文档标签、新建与置顶共用一行原生工具栏，不再在标签栏上方额外占用一行。
 - 保存和切换标签不再改变侧边栏顺序，文件名使用稳定的自然降序。
-- 用原生标签选择控件替换手绘轮廓，收起侧边栏后标签仍保持可见。
+- 保留与编辑区连成一体的圆角台阶式文档标签，使用一条连续轮廓，并在收起侧边栏后保持标签可见。
 - 后台刷新不再覆盖较新的实时摘要，未保存文字不再混入磁盘缓存。
 - 复制包含当前已上屏但尚未保存的文字；目录读取失败会保留原列表并显示错误。
 - 打开与关闭的文件共用重命名校验并保留字号记忆，修复 Windows 换行摘要，限制预览读取量。

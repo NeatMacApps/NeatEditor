@@ -21,6 +21,58 @@ extension WorkspaceStore {
         }
     }
 
+    var documentsFolderName: String {
+        let name = documentsFolder.lastPathComponent
+        return name.isEmpty ? documentsFolder.path : name
+    }
+
+    /// Lets the user point the sidebar (and new-document destination) at
+    /// another folder. The panel starts at the current folder.
+    func chooseDocumentsFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
+        panel.directoryURL = documentsFolder
+        panel.prompt = String(localized: "Choose")
+        panel.message = String(localized: "Choose the folder to list in the sidebar.")
+        guard panel.runModal() == .OK, let folderURL = panel.url else {
+            return
+        }
+        setDocumentsFolder(folderURL)
+    }
+
+    func setDocumentsFolder(_ folderURL: URL) {
+        let normalizedURL = persistenceService.normalizedFileURL(for: folderURL)
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(
+            atPath: normalizedURL.path,
+            isDirectory: &isDirectory
+        ), isDirectory.boolValue else {
+            presentDocumentFailure(
+                title: String(localized: "Folder Unavailable"),
+                message: String(localized: "The selected folder no longer exists.")
+            )
+            return
+        }
+        guard normalizedURL != documentsFolder else {
+            refreshSidebarFiles()
+            return
+        }
+
+        documentsFolder = normalizedURL
+        sidebarDiskFiles = []
+        sidebarFiles = []
+        sidebarFailureMessage = nil
+        saveState()
+        refreshSidebarFiles()
+    }
+
+    func revealDocumentsFolderInFinder() {
+        NSWorkspace.shared.activateFileViewerSelecting([documentsFolder])
+    }
+
     /// Coalesces requests while enumerating and reading bounded prefixes off
     /// the main actor. Resolve live buffers after the await, never before it.
     func refreshSidebarFiles() {
@@ -29,18 +81,26 @@ extension WorkspaceStore {
             return
         }
         isRefreshingSidebar = true
-        let directory = persistenceService.defaultDirectory
+        let directory = documentsFolder
         let cachedItems = sidebarDiskFiles
+        let shouldMigrateLegacyDocuments = !userDefaults.bool(
+            forKey: UserDefaultsKey.didMigrateLegacyAppDocuments
+        ) && DocumentPersistenceService.isUserDocumentsDirectory(directory)
 
         Task {
             do {
-                let diskItems = try await Task.detached(priority: .utility) {
+                let (diskItems, migrationCompleted) = try await Task.detached(priority: .utility) {
                     let service = DocumentPersistenceService(defaultDirectory: directory)
+                    var migrationCompleted = false
+                    if shouldMigrateLegacyDocuments {
+                        migrationCompleted = service
+                            .migrateLegacyAppDocumentsIfNeeded(into: directory) != nil
+                    }
                     let cachedByURL = Dictionary(
                         cachedItems.map { ($0.fileURL, $0) },
                         uniquingKeysWith: { _, latest in latest }
                     )
-                    return try service.sidebarTextFiles().map { info in
+                    let items = try service.sidebarTextFiles().map { info in
                         let cached = cachedByURL[info.fileURL]
                         let canReuse = cached?.modificationDate == info.modificationDate
                             && cached?.fileSize == info.fileSize
@@ -51,7 +111,15 @@ extension WorkspaceStore {
                             fileSize: info.fileSize
                         )
                     }
+                    return (items, migrationCompleted)
                 }.value
+
+                if migrationCompleted {
+                    userDefaults.set(
+                        true,
+                        forKey: UserDefaultsKey.didMigrateLegacyAppDocuments
+                    )
+                }
 
                 sidebarDiskFiles = diskItems
                 sidebarFiles = diskItems

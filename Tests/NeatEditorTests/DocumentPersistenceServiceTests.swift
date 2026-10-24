@@ -273,25 +273,32 @@ struct DocumentPersistenceServiceTests {
         #expect(filePermissions == 0o600)
     }
 
-    @Test("default directory follows XDG_CONFIG_HOME")
-    func defaultDirectoryRespectsXDG() throws {
+    @Test("default documents folder is the user's Documents directory")
+    func defaultDirectoryIsUserDocuments() {
+        let expected = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Documents", isDirectory: true)
+        #expect(DocumentPersistenceService().defaultDirectory.path == expected.path)
+    }
+
+    @Test("legacy app library follows XDG_CONFIG_HOME")
+    func appLibraryRespectsXDG() throws {
         let xdgHome = FileManager.default.temporaryDirectory
             .appendingPathComponent("NeatEditorXDG-\(UUID().uuidString)", isDirectory: true)
 
         #expect(
             DocumentPersistenceService(environment: ["XDG_CONFIG_HOME": xdgHome.path])
-                .defaultDirectory.path
+                .appLibraryDirectory.path
                 == xdgHome.appendingPathComponent("neateditor/documents", isDirectory: true).path
         )
 
         #expect(
-            DocumentPersistenceService(environment: [:]).defaultDirectory.path
+            DocumentPersistenceService(environment: [:]).appLibraryDirectory.path
                 .hasSuffix(".config/neateditor/documents")
         )
 
         #expect(
             DocumentPersistenceService(environment: ["XDG_CONFIG_HOME": "relative/path"])
-                .defaultDirectory.path.hasSuffix(".config/neateditor/documents")
+                .appLibraryDirectory.path.hasSuffix(".config/neateditor/documents")
         )
     }
 }
