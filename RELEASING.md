@@ -149,6 +149,29 @@ xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" \
   -configuration Debug -destination 'platform=macOS' test                   # unit tests: text sync, persistence, autosave, failure paths, composition, preferences
 ```
 
+## Publication-only recovery
+
+When Git transport fails **after** accepted/stapled artifacts exist, preserve the
+source commit, immutable tag, app, DMG, ZIP and SHA256SUMS. Re-validate signatures,
+tickets, hashes and the tag's source identity; do not re-archive, re-sign or
+resubmit notarization just to retry GitHub publication.
+
+The 1.0.14 SSH push failed before remote publication. A per-command HTTPS push
+using `git -c credential.helper= -c 'credential.helper=!gh auth git-credential'`
+and the public repository URL preserved existing hooks and required no secret in
+arguments or files. It changed no global Git or network configuration. Only the
+publication stage was resumed: push branch/tag, reuse the existing R4 helpers,
+upload to a draft, download/compare all three assets, then publish and push the
+appcast. The original temporary appcast had been cleaned on exit, so its metadata
+was regenerated from the **unchanged** signed ZIP and bilingual CHANGELOG notes;
+DMG/ZIP bytes were not rebuilt. Anonymous full downloads and the live build-14
+feed were independently checked afterward.
+
+Follow-up (not implemented here): provide a maintained publish-only resume mode
+with persistent source/asset fingerprints and generated appcast. The workaround
+above is evidence-backed recovery, not an instruction to silently rerun the
+whole archive/notarization pipeline after a transport failure.
+
 ## References
 
 - Apple: [Notarizing macOS software before distribution](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)

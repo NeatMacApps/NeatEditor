@@ -16,19 +16,19 @@ release tooling. Behavior requirements are recorded before implementation in
 | P1 | An old same-tab snapshot could overwrite rapid edits; the regression passed the new text instead of the old one. | Fixed: AppKit edits own the live buffer until a tab switch; regression now supplies old text. |
 | P1 | Composition was committed during a later view update, after the old tab had already been saved or closed. | Fixed: weak native-editor commit hook runs before the save snapshot. |
 | P1 | Cancelled or reentrant autosave tasks could discard a replacement's cancellation handle. | Fixed: unique pending-operation identity, weak lifetime, and bounded bookkeeping. |
-| P1 | Tag CI published unsigned install packages and could race the local signed release. | Release correction in progress: CI must not publish unsigned public assets. |
+| P1 | Tag CI published unsigned install packages and could race the local signed release. | Fixed: tag CI is validation-only with read-only contents permission; public DMG/ZIP come from the local signed/notarized release. |
 | P2 | New-tab construction synchronously scanned a user directory. | Fixed: in-memory naming; collision safety belongs to first save. |
-| P2 | App-created documents used Documents without user selection. | Fixed for new documents: app-owned config root; existing URLs are preserved. |
+| P2 | Document default location changed during the review. | Superseded by the owner's 2026-10-24 decision: use Documents by default with a remembered folder picker; legacy app-library files are copied without overwrite or deletion. See the persistence KB. |
 | P2 | Restoring a selected Settings tab foregrounded a secondary surface. | Fixed: restore documents and leave Settings to an explicit user action. |
 | P2 | Search/Settings drew custom control-outline frames and Settings pickers lacked useful accessibility labels. | Fixed: remove those frames and label the native controls. |
 | P2 | A standalone View command menu duplicated the system View menu. | Fixed: add zoom commands to the existing menu through `CommandGroup(after: .toolbar)`. Installed-menu verification is pending. |
-| P2 | Release artifacts preceded the source commit; detached execution, notes and checksum documentation were inconsistent. | Tooling fixed; final acceptance pending worker corrections and account preflight. |
+| P2 | Release artifacts preceded the source commit; detached execution, notes and checksum documentation were inconsistent. | Fixed and exercised for 1.0.14: commit-first universal archive/export, app/DMG notarization, draft-only uploads, downloaded-byte verification and signed appcast. |
 | P2 | Hosting document tabs in an `NSToolbarItem` removed the old title-bar drag: dragging a tab no longer moved the window. | Fixed: the tab-strip monitor tracks the press, moves the window after 4 points, clamps it on screen, and leaves clicks to SwiftUI. Installed drag verified from a tab (window origin 100,100 → 280,200). |
 
 ## Sidebar review (2026-10-24)
 
 The layout requirement and inspected native reference are recorded in
-[TabStripGestures.md](../TabStripGestures.md#workspace-sidebar-layout).
+[TabStripGestures.md](../TabStripGestures.md#product-requirements).
 The sidebar uses `NSSplitViewController`, `List(selection:)` and a real
 `NSToolbar` with a tracking separator. Tabs are custom content of that same
 native toolbar row above the detail column, not a second content row; search
@@ -64,19 +64,51 @@ below after verification.
 
 ## Verification
 
-The primary's final full test run passed 39 tests in five suites, including
-a real `NSTextView.setMarkedText`/`unmarkText` composition followed by
-close/save, a captured binding after tab removal, multiple first-save name
-collisions, private file modes, and cancelled-predecessor cleanup. Tests use
-disposable files and isolated preference suites.
+Final integration acceptance (2026-10-25): source `275a50a`, release 1.0.14,
+installed at `/Applications/NeatEditor.app`. All intervening 1.0.12/1.0.13
+folder, window-drag and stepped-tab join changes were preserved; the only
+production-code change for 1.0.14 configures native toolbar item focus rings.
 
-Shell syntax and Python compilation pass for release tooling. Whole-tree
-release acceptance, installed-app screenshots and final delivery are pending; these
-statements do not claim installed or publicly notarized acceptance.
+- Clean Debug build/test/analyze: **72 tests in 11 suites passed**, arm64,
+  Xcode 27.2. Full diagnostics: `build/sidebar-review/integration-1.0.14-clean-checks.log`.
+  Three native-toolbar regressions cover the built-in Sidebar action, shared
+  item-view policy and incomplete notifications. Existing persistence, IME
+  commit, identity, first-save, folder and autosave regressions remain green.
+- Universal Release archive/export compiled arm64 and x86_64. Both configurations
+  retain only the AppIntents metadata diagnostic assessed above; no Swift
+  compiler or static-analysis warning/error was found.
+- Native Sidebar accessibility press reproduced a blue focus ring in 1.0.13.
+  The same path in installed Debug and signed Release 1.0.14 has no ring.
+  Native `.toggleSidebar` and its original action remain in use; only its
+  public `item.view.focusRingType` changes, with no private hierarchy traversal.
+- Inspected expanded/collapsed screenshots and selected different tabs in both
+  states. Repeated four native toggles, resized to 470 × 570 and back, and
+  confirmed the selected stepped tab stays visible and joins the continuous
+  editor top rule once layout settles. Sidebar filenames did not reorder.
+- Actual tab drag moved the window from (1008,255) to (1061,291); sequential
+  captures retained the same selected document and no rename field. A temporary
+  empty tab exercised new-document, selected-tab double-click, Escape rename
+  cancellation and Command-W closure (four → five → four tabs). Pin/unpin changed
+  the actual window layer 0 → 3 → 0. No real document content was edited.
+- Inspected signed Release light/dark captures; restored the initial light
+  appearance, unpinned state, normal size and original selection. Captures are
+  `/tmp/neateditor-1.0.14-release-*.png`; diagnostics are under `build/sidebar-review/`.
+- Application and DMG passed notarization and staple validation. All three public
+  assets were anonymously downloaded and compared byte-for-byte with the local
+  artifacts; DMG and ZIP SHA256 checks passed. The live appcast contains build 14
+  and its EdDSA-signed update URL. Installed and exported binary SHA256 match.
+
+Limits: execution was on macOS 27.2/Apple silicon, not native Intel or a minimum-OS
+machine. Full-screen/Split View, Settings and physical IME interaction were not
+rerun in this bounded pass. This host reports Gatekeeper security disabled;
+its `accepted` output is not a clean-machine enforcement test. Apple's accepted
+submissions and stapled tickets independently establish notarization.
 
 ## Architecture decisions still requiring product direction
 
-- The existing tab strip and search surface are custom implementations.
+- The owner explicitly retained the existing rounded stepped document tabs;
+  this scoped exception is recorded in `TabStripGestures.md` and must not be
+  silently replaced by a segmented picker. The search surface is also custom.
   Apple's native search integration is `NSTextView.usesFindBar`, backed by
   `NSTextFinder` and `NSScrollView`. A container migration must first reconcile
   the existing regular-expression and rename interactions with native
@@ -88,14 +120,20 @@ statements do not claim installed or publicly notarized acceptance.
   requires ordered saves plus close/quit completion semantics; no unverified
   asynchronous rewrite was added.
 
-## Distribution limitation
+## Distribution status
 
-The Apple notarization preflight returns HTTP 403 for a missing or expired
-account agreement. See
-[the account-agreement record](troubleshooting/2026-10-01-notary-agreement.md).
-This blocks public notarized packaging, not committed local builds or source
-publication. The account holder must resolve the agreement; changing keys or
-repeatedly submitting packages does not address it.
+The earlier account-agreement HTTP 403 is historical, not a current blocker;
+see [the account-agreement record](troubleshooting/2026-10-01-notary-agreement.md).
+Both 1.0.14 notarization submissions were accepted. A subsequent GitHub SSH
+transport failure was recovered over authenticated HTTPS using the existing
+credential helper and hooks, without rebuilding or resubmitting accepted bytes.
+
+Published [1.0.14](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.14)
+contains the signed/stapled DMG, signed update ZIP and their checksum file.
+The install is Developer ID-signed, universal and stapled. Release logs:
+`build/release-logs/publish-20261025-100230.log` and `resume-1.0.14.log`.
+Publication-only recovery and the remaining tooling improvement are documented
+in [RELEASING.md](../RELEASING.md#publication-only-recovery).
 
 ## Primary references
 

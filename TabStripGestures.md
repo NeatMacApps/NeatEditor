@@ -119,7 +119,8 @@ Official applicability and installed Xcode 27.2 SDK checked:
   Move to Trash where applicable. Middle-click closes the hit tab.
 - Scroll-wheel/trackpad tab stepping keeps the existing sensitivity and ignores
   momentum. Selection is revealed when clipped, including after a resize.
-- Native AppKit owns empty-titlebar double-click and window dragging. Never
+- Outside the tab strip's recorded drag scope, native AppKit owns empty-titlebar
+  double-click and window dragging. Never
   separately call zoom/miniaturize for the same event: that caused the earlier
   enlarge-then-immediately-restore regression.
 - Pin changes the native window level. Existing topmost hover-focus protection
