@@ -45,7 +45,6 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     private var tabWidth: NSLayoutConstraint?
     private var pinItem: NSToolbarItem?
     private weak var attachedWindow: NSWindow?
-    private var windowResizeObserver: NSObjectProtocol?
     private var isApplyingConfiguration = false
 
     init(configuration: WorkspaceSplitView) {
@@ -139,10 +138,9 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
 
     func detachToolbar() {
         tabHost.finishRename(commit: true)
-        if let windowResizeObserver {
-            NotificationCenter.default.removeObserver(windowResizeObserver)
-            self.windowResizeObserver = nil
-        }
+        NotificationCenter.default.removeObserver(
+            self, name: NSWindow.didResizeNotification, object: nil
+        )
         if attachedWindow?.toolbar === workspaceToolbar {
             attachedWindow?.toolbar = nil
         }
@@ -152,16 +150,15 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     private func attachToolbar() {
         guard let window = view.window else { return }
         if attachedWindow !== window {
-            if let windowResizeObserver {
-                NotificationCenter.default.removeObserver(windowResizeObserver)
-            }
+            NotificationCenter.default.removeObserver(
+                self, name: NSWindow.didResizeNotification, object: nil
+            )
             // Window resizes do not reliably reach viewDidLayout before the
             // toolbar re-lays out its items, so track the live width directly.
-            windowResizeObserver = NotificationCenter.default.addObserver(
-                forName: NSWindow.didResizeNotification, object: window, queue: .main
-            ) { [weak self] _ in
-                self?.updateTabWidth()
-            }
+            NotificationCenter.default.addObserver(
+                self, selector: #selector(windowDidResize(_:)),
+                name: NSWindow.didResizeNotification, object: window
+            )
             attachedWindow = window
         }
         guard window.toolbar !== workspaceToolbar else { return }
@@ -172,6 +169,10 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         // separator would draw a second line through the selected tab's join.
         window.titlebarSeparatorStyle = .none
         window.toolbar = workspaceToolbar
+    }
+
+    @objc private func windowDidResize(_ notification: Notification) {
+        updateTabWidth()
     }
 
     private func updateTabWidth() {
