@@ -61,16 +61,10 @@ final class EditorTextContainerView: NSView {
         onIncreaseFontSize: @escaping () -> Void = {},
         onDecreaseFontSize: @escaping () -> Void = {}
     ) {
-        let textStorage = NSTextStorage()
-        let layoutManager = NSLayoutManager()
-        let textContainer = NSTextContainer(
-            size: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
-        )
-
-        textStorage.addLayoutManager(layoutManager)
-        layoutManager.addTextContainer(textContainer)
-
-        let textView = ZoomableTextView(frame: .zero, textContainer: textContainer)
+        // TextKit 1 leaves stale last-line pixels during incremental edits.
+        // Build the native TextKit 2 network instead; never read the legacy
+        // `layoutManager` getter, which would silently switch this view back.
+        let textView = ZoomableTextView(usingTextLayoutManager: true)
         let scrollView = EditorScrollView(frame: .zero)
         let contentView = NSClipView()
 
@@ -235,31 +229,51 @@ final class EditorTextContainerView: NSView {
     }
 
     private func applySearchHighlights(for matchRanges: [NSRange]) {
-        guard let layoutManager = textView.layoutManager,
-              let textContainer = textView.textContainer else {
+        guard let textStorage = textView.textStorage else {
             return
         }
 
-        let glyphRange = layoutManager.glyphRange(for: textContainer)
-        layoutManager.removeTemporaryAttribute(.backgroundColor, forCharacterRange: glyphRange)
+        // TextKit 2 rendering attributes do not repaint reliably
+        // (FB9692714), so store the transient search colors as regular text
+        // attributes. The editor is plain text; the string is what gets saved,
+        // and attribute-only edits are not registered with the undo manager.
+        textStorage.beginEditing()
+        textStorage.removeAttribute(
+            .backgroundColor,
+            range: NSRange(location: 0, length: textStorage.length)
+        )
 
         for matchRange in matchRanges {
-            layoutManager.addTemporaryAttribute(
+            let clampedRange = NSIntersectionRange(
+                matchRange,
+                NSRange(location: 0, length: textStorage.length)
+            )
+            guard clampedRange.length > 0 else {
+                continue
+            }
+
+            textStorage.addAttribute(
                 .backgroundColor,
                 value: Self.searchHighlightColor,
-                forCharacterRange: matchRange
+                range: clampedRange
             )
         }
+        textStorage.endEditing()
+        textView.needsDisplay = true
     }
 
     func clearSearchHighlights() {
-        guard let layoutManager = textView.layoutManager,
-              let textContainer = textView.textContainer else {
+        guard let textStorage = textView.textStorage else {
             return
         }
 
-        let glyphRange = layoutManager.glyphRange(for: textContainer)
-        layoutManager.removeTemporaryAttribute(.backgroundColor, forCharacterRange: glyphRange)
+        textStorage.beginEditing()
+        textStorage.removeAttribute(
+            .backgroundColor,
+            range: NSRange(location: 0, length: textStorage.length)
+        )
+        textStorage.endEditing()
+        textView.needsDisplay = true
     }
 
     /// Re-apply the current search highlights after the buffer changed
@@ -328,6 +342,10 @@ final class EditorTextContainerView: NSView {
     }
 
     private func applyDefaultTypingAttributes(using font: NSFont) {
+        // A caret inside a search match must not start inheriting the
+        // transient background color for newly typed characters.
+        textView.typingAttributes.removeValue(forKey: .backgroundColor)
+
         let foregroundColor = editorForegroundColor()
         if appliedTypingAttributesFont == font,
            appliedTypingAttributesForegroundColor == foregroundColor {

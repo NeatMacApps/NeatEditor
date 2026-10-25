@@ -16,7 +16,7 @@ macOS 纯文本编辑器（SwiftUI + AppKit）。
 
 - [docs/WORKSPACE_TABS_KNOWLEDGE_BASE.md](~/Codes/NeatEditor/docs/WORKSPACE_TABS_KNOWLEDGE_BASE.md): 工作区与多标签管理：标签新建/切换/关闭/重开/废纸篓、存旧前置、状态快照、标题栏手势.
 
-- [docs/EDITOR_SYNC_KNOWLEDGE_BASE.md](~/Codes/NeatEditor/docs/EDITOR_SYNC_KNOWLEDGE_BASE.md): 编辑器文本同步与 AppKit 桥接：同步裁决、换绑六步、IME 组字、撤销隔离、搜索高亮、缩放与行号，以及显示残影的调研与待验方案.
+- [docs/EDITOR_SYNC_KNOWLEDGE_BASE.md](~/Codes/NeatEditor/docs/EDITOR_SYNC_KNOWLEDGE_BASE.md): 编辑器文本同步与 AppKit 桥接：同步裁决、换绑六步、IME 组字、撤销隔离、搜索高亮、缩放与行号，以及显示残影的 TextKit 2 修复与验收.
 
 - [docs/PERSISTENCE_AUTOSAVE_KNOWLEDGE_BASE.md](~/Codes/NeatEditor/docs/PERSISTENCE_AUTOSAVE_KNOWLEDGE_BASE.md): 文档持久化与自动保存：空白策略、独占首存、重命名搬文件、2 秒调度 token、懒打开、失败呈现.
 

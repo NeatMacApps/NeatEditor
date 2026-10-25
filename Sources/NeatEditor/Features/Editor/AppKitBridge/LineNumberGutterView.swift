@@ -58,78 +58,108 @@ final class LineNumberGutterView: NSView {
         scrollView.scrollWheel(with: event)
     }
 
+    struct RenderedLine: Equatable {
+        let number: Int
+        let y: CGFloat
+        let height: CGFloat
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         NSColor.controlBackgroundColor.setFill()
         dirtyRect.fill()
 
-        guard let scrollView,
-              let textView,
-              let layoutManager = textView.layoutManager,
-              let textContainer = textView.textContainer else {
+        guard let scrollView else {
             return
         }
 
-        layoutManager.ensureLayout(for: textContainer)
+        for line in renderedLines(in: scrollView.contentView.bounds) {
+            drawLineNumber(line.number, atY: line.y, lineHeight: line.height)
+        }
+    }
 
-        let visibleRect = scrollView.contentView.bounds
-        let string = textView.string as NSString
-        let fullLength = string.length
-
-        if fullLength == 0 {
-            drawLineNumber(
-                1,
-                atY: textView.textContainerInset.height,
-                lineHeight: editorLineHeight(for: textView)
-            )
-            return
+    /// Resolve the gutter entries for the current viewport using modern text
+    /// layout fragments. Logical line starts come from the existing line index,
+    /// so wrapped continuations do not receive their own numbers.
+    func renderedLines(in visibleRect: NSRect) -> [RenderedLine] {
+        guard let textView,
+              let textLayoutManager = textView.textLayoutManager,
+              let contentManager = textLayoutManager.textContentManager else {
+            return []
         }
 
-        let glyphRange = layoutManager.glyphRange(forBoundingRect: visibleRect, in: textContainer)
-        if glyphRange.length == 0 {
-            return
-        }
-
-        let firstGlyphIndex = glyphRange.location
-        let firstCharacterIndex = layoutManager.characterIndexForGlyph(at: firstGlyphIndex)
-        var lineStartIndex = string.lineRange(for: NSRange(location: firstCharacterIndex, length: 0)).location
-        var lineNumber = lineNumber(atCharacterIndex: lineStartIndex, string: string)
-
-        while lineStartIndex < fullLength {
-            let lineRange = string.lineRange(for: NSRange(location: lineStartIndex, length: 0))
-            let lineGlyphRange = layoutManager.glyphRange(
-                forCharacterRange: lineRange,
-                actualCharacterRange: nil
-            )
-
-            if lineGlyphRange.length > 0 {
-                var lineRect = layoutManager.lineFragmentRect(
-                    forGlyphAt: lineGlyphRange.location,
-                    effectiveRange: nil,
-                    withoutAdditionalLayout: true
+        let origin = textView.textContainerOrigin
+        guard (textView.string as NSString).length > 0 else {
+            return [
+                RenderedLine(
+                    number: 1,
+                    y: origin.y,
+                    height: editorLineHeight(for: textView)
                 )
-                lineRect.origin.y += textView.textContainerInset.height
+            ]
+        }
 
-                let y = lineRect.minY - visibleRect.minY
-                if y > bounds.maxY {
+        let containerTop = max(0, visibleRect.minY - origin.y)
+        let containerBounds = CGRect(
+            x: 0,
+            y: containerTop,
+            width: max(1, textView.bounds.width - origin.x * 2),
+            height: max(1, visibleRect.height)
+        )
+        textLayoutManager.ensureLayout(for: containerBounds)
+
+        let startLocation = textLayoutManager.textLayoutFragment(
+            for: CGPoint(x: 0, y: containerTop)
+        )?.rangeInElement.location ?? contentManager.documentRange.location
+
+        var renderedLines: [RenderedLine] = []
+
+        textLayoutManager.enumerateTextLayoutFragments(
+            from: startLocation,
+            options: [.ensuresLayout, .ensuresExtraLineFragment]
+        ) { fragment in
+            let fragmentFrame = fragment.layoutFragmentFrame.offsetBy(
+                dx: origin.x,
+                dy: origin.y
+            )
+            guard fragmentFrame.minY <= visibleRect.maxY else {
+                return false
+            }
+
+            let fragmentStart = contentManager.offset(
+                from: contentManager.documentRange.location,
+                to: fragment.rangeInElement.location
+            )
+
+            for textLineFragment in fragment.textLineFragments {
+                let lineFrame = textLineFragment.typographicBounds.offsetBy(
+                    dx: fragmentFrame.minX,
+                    dy: fragmentFrame.minY
+                )
+                guard lineFrame.minY <= visibleRect.maxY else {
                     break
                 }
-
-                if lineRect.maxY >= visibleRect.minY {
-                    drawLineNumber(lineNumber, atY: y, lineHeight: lineRect.height)
+                guard lineFrame.maxY >= visibleRect.minY else {
+                    continue
                 }
+
+                let lineStart = fragmentStart + textLineFragment.characterRange.location
+                guard let number = lineNumberIfStart(at: lineStart) else {
+                    continue
+                }
+
+                renderedLines.append(
+                    RenderedLine(
+                        number: number,
+                        y: lineFrame.minY - visibleRect.minY,
+                        height: lineFrame.height
+                    )
+                )
             }
 
-            lineStartIndex = NSMaxRange(lineRange)
-            lineNumber += 1
+            return true
         }
 
-        if lineStartIndices.last == fullLength {
-            let extraRect = layoutManager.extraLineFragmentRect
-            if !extraRect.isEmpty {
-                let y = extraRect.minY + textView.textContainerInset.height - visibleRect.minY
-                drawLineNumber(cachedLineCount, atY: y, lineHeight: extraRect.height)
-            }
-        }
+        return renderedLines
     }
 
     @objc
@@ -251,28 +281,32 @@ final class LineNumberGutterView: NSView {
     private func editorLineHeight(for textView: NSTextView) -> CGFloat {
         let font = textView.font
             ?? .monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
-        return textView.layoutManager?.defaultLineHeight(for: font)
-            ?? font.ascender - font.descender + font.leading
+        let naturalHeight = font.ascender - font.descender + font.leading
+        let lineHeightMultiple = textView.defaultParagraphStyle?.lineHeightMultiple ?? 0
+        return naturalHeight * (lineHeightMultiple > 0 ? lineHeightMultiple : 1)
     }
 
-    private func lineNumber(atCharacterIndex characterIndex: Int, string: NSString) -> Int {
-        guard characterIndex > 0 else {
-            return 1
-        }
-
-        let safeCharacterIndex = min(characterIndex, string.length)
+    /// Returns a line number only when `characterIndex` starts a logical line.
+    /// Wrapped continuation fragments share their paragraph's start offset and
+    /// therefore stay unnumbered.
+    private func lineNumberIfStart(at characterIndex: Int) -> Int? {
         var low = 0
         var high = lineStartIndices.count
 
         while low < high {
             let mid = (low + high) / 2
-            if lineStartIndices[mid] <= safeCharacterIndex {
+            if lineStartIndices[mid] <= characterIndex {
                 low = mid + 1
             } else {
                 high = mid
             }
         }
 
-        return max(1, low)
+        let index = low - 1
+        guard index >= 0, lineStartIndices[index] == characterIndex else {
+            return nil
+        }
+
+        return index + 1
     }
 }

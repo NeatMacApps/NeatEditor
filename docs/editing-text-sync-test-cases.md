@@ -107,21 +107,29 @@ The editor must update continuously without requiring scrolling, resizing,
 switching tabs or forcing a full redraw. Previous synchronization and line-ending
 fixes do not establish coverage of this symptom.
 
-**TC-14 (pending, not a pass):** Start with `"\naaaaa\nbbbbbb"` without a final
-newline. Repeatedly insert and delete newlines in the first empty line, then
-repeat in the middle of a longer document and near the viewport's bottom edge.
-At each step, compare the native buffer, native layout geometry and sequential
-window captures. The unchanged last line must appear exactly once in its current
-position. Repeat with a final newline, wrapped lines, CJK/emoji, search both open
-and closed, undo/redo, font zoom and window resizing. Check autosaved bytes and
-existing IME/tab-isolation contracts independently. A resized or forcibly redrawn
-final screenshot cannot establish incremental-paint correctness.
+**TC-14 (partially verified; manual actual-app keystroke matrix pending):** Start
+with `"\naaaaa\nbbbbbb"` without a final newline. Repeatedly insert and delete
+newlines in the first empty line, then repeat in the middle of a longer document
+and near the viewport's bottom edge. At each step, compare the native buffer,
+native layout geometry and sequential window captures. The unchanged last line
+must appear exactly once in its current position. Repeat with a final newline,
+wrapped lines, CJK/emoji, search both open and closed, undo/redo, font zoom and
+window resizing. Check autosaved bytes and existing IME/tab-isolation contracts
+independently. A resized or forcibly redrawn final screenshot cannot establish
+incremental-paint correctness.
 
-Current source uses an explicit TextKit 1 stack. A native API probe on macOS 27.2 /
-Xcode 27.2 confirmed that accessing `layoutManager` changes a TextKit 2 text view
-back to TextKit 1; this proves the migration hazard, not reproduction or repair
-of the reported display defect. Research, candidate scope and supporting sources
-are recorded in the parent workspace's `docs/EDITOR_SYNC_KNOWLEDGE_BASE.md`, §7.1.
+The editor now uses a native TextKit 2 network. A native probe on macOS 27.2 /
+Xcode 27.2 confirmed that reading `layoutManager` switches such a text view back
+to TextKit 1; no product source performs that read. The production AppKit views
+passed sequential unforced captures for start-of-document insert/delete,
+middle-line insertion, a 200-line bottom viewport, final-line insert/delete,
+search highlight and post-edit re-highlight. The integrated app's initial file
+surface was also inspected. Details and evidence paths are recorded in the parent
+workspace's `docs/EDITOR_SYNC_KNOWLEDGE_BASE.md`, §7.1.
+
+Still pending for a full TC-14 pass: manual actual-app keystroke replay covering
+IME, undo/redo, wrapped CJK/emoji, search open/closed, font zoom, resize and
+autosaved bytes; repeat on macOS 26.
 
 ## Shift+Enter line boundaries
 
