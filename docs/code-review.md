@@ -65,18 +65,32 @@ from a nonisolated static method, producing nine AppKit actor-isolation diagnost
 Keep the existing native-cell measurement and mark only that helper `@MainActor`;
 its production caller is the native strip's main-actor `update`, and its tests are
 already main-actor isolated. Pure geometry helpers retain their current isolation.
+The independent native-cell probe then isolated the title-width failures:
+centred `NSTextField` cells measure four points wider than otherwise identical
+left-aligned cells on this SDK. The strip was measuring a separately configured
+copy and compensating with a guessed two-point inset on each side. The final fix
+measures the displayed field's own cell (`cell?.cellSize.width`) and gives the
+title field the full padded width, so alignment and editing style stay with the
+control that renders them. AppKit keeps ownership of the exact metrics; no
+magic padding remains. The API is unchanged, and regression fields must fit CJK
+and long mixed-language filenames. Probe:
+`build/macos26-review/measure-title.swift`.
+
 This follows the [Swift migration guidance](https://www.swift.org/migration/documentation/swift-6-concurrency-migration-guide/commonproblems/)
 and the installed SDK's NSView/AppKit isolation contract. No suppression or unsafe
 actor assertion is needed. Final diagnostics must confirm removal.
 
-After the native-tab integration, independently repeated clean universal Debug
-build/analyze on source `567e3a5`. Both architectures compiled, the full log has
-only the assessed AppIntents metadata diagnostic, and structured build results
-report zero compiler/analyzer issues. Input fingerprints stayed identical during
-the check (`build/macos26-review/integration-build.json`); complete diagnostics:
-`build/macos26-review/integration-build.log` and `IntegrationBuild.xcresult`.
-The tab task's intermediate native suite ran 83 tests successfully; final release
-source and installation still require the publisher's current-artifact checks.
+After the native-tab integration and the title-cell fix, repeated clean universal
+Debug build/analyze on source `2e26959`. Both architectures compiled, the full log
+has only the assessed AppIntents metadata diagnostic, and structured build results
+report zero compiler/analyzer issues. The final arm64 suite passed **84 tests in
+13 suites**, including the CJK and long mixed-language title-fit regression and the
+CRLF/Unicode newline cases. Source files were unchanged during the checks; only
+documentation stayed dirty. Complete diagnostics:
+`build/macos26-review/final-universal.log` and `FinalUniversal.xcresult`;
+`build/macos26-review/post-alignment-test-2.log` and `PostAlignment2.xcresult`.
+Final release source and installation still require the publisher's
+current-artifact checks.
 
 Installed native pin acceptance: the exact installed application PID was
 resolved by bundle path, activated, and its actual `Always on Top` toolbar
