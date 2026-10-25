@@ -172,6 +172,19 @@ struct EditorNewlineTests {
         #expect(lines[1].y > lines[0].y)
     }
 
+    @Test("gutter numbers a wrapped logical line only once")
+    func gutterCountsWrappedLinesOnce() throws {
+        let (container, gutter, scrollView) = try makeLaidOutEditor(width: 360)
+        let editor = container.textView
+        editor.string = String(repeating: "wrap ", count: 40) + "\nlast"
+        container.synchronizeLineNumbersToCurrentText()
+        editor.layoutSubtreeIfNeeded()
+
+        let lines = gutter.renderedLines(in: scrollView.contentView.bounds)
+        #expect(lines.map(\.number) == [1, 2])
+        #expect(lines[0].y < lines[1].y)
+    }
+
     @Test("gutter follows the viewport at the end of a long document")
     func gutterFollowsScrolledViewport() throws {
         let (container, gutter, scrollView) = try makeLaidOutEditor()
@@ -254,18 +267,18 @@ struct EditorNewlineTests {
         #expect(editor.textLayoutManager != nil)
     }
 
-    private func makeLaidOutEditor() throws -> (
+    private func makeLaidOutEditor(width: CGFloat = 600) throws -> (
         EditorTextContainerView,
         LineNumberGutterView,
         NSScrollView
     ) {
         let container = EditorTextContainerView()
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 400),
+            contentRect: NSRect(x: 0, y: 0, width: width, height: 400),
             styleMask: [.titled], backing: .buffered, defer: false
         )
         window.contentView = container
-        container.frame = NSRect(x: 0, y: 0, width: 600, height: 400)
+        container.frame = NSRect(x: 0, y: 0, width: width, height: 400)
         window.contentView?.layoutSubtreeIfNeeded()
 
         let gutter = try #require(
