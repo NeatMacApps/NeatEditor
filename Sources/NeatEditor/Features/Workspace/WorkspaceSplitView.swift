@@ -6,7 +6,9 @@ import SwiftUI
 struct WorkspaceSplitView: NSViewControllerRepresentable {
     let sidebar: AnyView
     let detail: AnyView
-    let tabs: AnyView
+    let tabs: [EditorTabDescriptor]
+    let selectedTabID: UUID?
+    let tabActions: EditorTabActions
     let isSidebarVisible: Bool
     let isSettingsSelected: Bool
     let isWindowPinned: Bool
@@ -37,7 +39,8 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     private var configuration: WorkspaceSplitView
     private let sidebarController: NSHostingController<AnyView>
     private let detailController: NSHostingController<AnyView>
-    private let tabHost: WorkspaceTabHostingView
+    private let tabHost = EditorTabStripView()
+    private let topRule = EditorTabTopRuleView()
     private let workspaceToolbar = NSToolbar(identifier: "WorkspaceToolbar")
     private var tabWidth: NSLayoutConstraint?
     private var pinItem: NSToolbarItem?
@@ -48,8 +51,11 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         self.configuration = configuration
         sidebarController = NSHostingController(rootView: configuration.sidebar)
         detailController = NSHostingController(rootView: configuration.detail)
-        tabHost = WorkspaceTabHostingView(rootView: configuration.tabs)
         super.init(nibName: nil, bundle: nil)
+        tabHost.update(tabs: configuration.tabs, selectedTabID: configuration.selectedTabID,
+                       actions: configuration.tabActions)
+        tabHost.topRule = topRule
+        topRule.strip = tabHost
     }
 
     @available(*, unavailable)
@@ -73,7 +79,15 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         detail.minimumThickness = configuration.isSettingsSelected ? 500 : 300
         addSplitViewItem(detail)
 
-        tabHost.sizingOptions = []
+        topRule.translatesAutoresizingMaskIntoConstraints = false
+        detailController.view.addSubview(topRule)
+        NSLayoutConstraint.activate([
+            topRule.leadingAnchor.constraint(equalTo: detailController.view.leadingAnchor),
+            topRule.trailingAnchor.constraint(equalTo: detailController.view.trailingAnchor),
+            topRule.topAnchor.constraint(equalTo: detailController.view.topAnchor),
+            topRule.heightAnchor.constraint(equalToConstant: 1),
+        ])
+
         tabHost.translatesAutoresizingMaskIntoConstraints = false
         let width = tabHost.widthAnchor.constraint(lessThanOrEqualToConstant: 400)
         NSLayoutConstraint.activate([
@@ -120,7 +134,8 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         self.configuration = configuration
         sidebarController.rootView = configuration.sidebar
         detailController.rootView = configuration.detail
-        tabHost.rootView = configuration.tabs
+        tabHost.update(tabs: configuration.tabs, selectedTabID: configuration.selectedTabID,
+                       actions: configuration.tabActions)
         guard isViewLoaded else { return }
         isApplyingConfiguration = true
         splitViewItems.first?.isCollapsed = !configuration.isSidebarVisible
@@ -131,6 +146,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     }
 
     func detachToolbar() {
+        tabHost.finishRename(commit: true)
         if attachedWindow?.toolbar === workspaceToolbar {
             attachedWindow?.toolbar = nil
         }
@@ -236,14 +252,6 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         default:
             return nil
         }
-    }
-}
-
-/// The tab strip lives in the titlebar, so its first click must reach both the
-/// window-activation path and the tab monitor even when another app is active.
-final class WorkspaceTabHostingView: NSHostingView<AnyView> {
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
-        true
     }
 }
 

@@ -10,7 +10,9 @@ struct WorkspaceToolbarTests {
         WorkspaceSplitViewController(configuration: WorkspaceSplitView(
             sidebar: AnyView(EmptyView()),
             detail: AnyView(EmptyView()),
-            tabs: AnyView(EmptyView()),
+            tabs: [],
+            selectedTabID: nil,
+            tabActions: EditorTabActions(),
             isSidebarVisible: true,
             isSettingsSelected: false,
             isWindowPinned: false,

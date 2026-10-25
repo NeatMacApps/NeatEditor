@@ -66,8 +66,14 @@ button received accessibility press. The window level changed 0 → 3 → 0;
 inspected `/tmp/neateditor-macos26-pin-active.png` and
 `/tmp/neateditor-macos26-unpinned.png` show prominent filled-pin and ordinary
 pin states without a focus ring. Restored unpinned state. Both installed binary
-slices and `LSMinimumSystemVersion` read back `26.0`. Final gutter installation
-and public assets remain pending.
+slices and `LSMinimumSystemVersion` read back `26.0`. The final committed-gutter Debug was then installed. Inspected
+`/tmp/neateditor-macos26-lines.png`: all six terminators render as logical lines
+1–7. The actual editor received Shift+Enter at a UTF-16 selection before CRLF;
+AX text and autosaved fixture bytes exactly matched the expected preserved CRLF.
+A later unguarded Command-Z after autosave did not change the fixture; subsequent
+inspection found the app inactive. Native undo passes the unit window test, but
+this installed shortcut attempt is not accepted. Recheck with fresh input ownership
+before claiming that path. Public assets remain pending the integrated tab rewrite.
 
 ## Findings and disposition
 

@@ -4,5 +4,5 @@
 
 | 任务 | 状态 | 影响范围 | 开始 | 最近更新 | 备注 |
 |---|---|---|---|---|---|
-| Fix tab outline/title resize synchronization (Pi) | 验证中 | Tab local outline/scroll, geometry tests, TabStripGestures, integrated 1.0.15 release; Xcode 27.2 | 14:19 | 2026-10-25 14:29 | Debug 76 tests + analyze and universal Release build/analyze passed (build/resize-sync-logs). Snapshot/install then own motion acceptance; Pi is sole publisher. |
-| macOS 26 baseline and API review | 验证中 | project/CI, toolbar pin, newline handling, docs; Xcode 27.2 + Sparkle | 14:20 | 2026-10-25 14:20 | 14:37 checks/preflight passed. Installing current committed final-gutter Debug for own fixture acceptance; publish only via existing script single-instance lock, no source edits planned. |
+| Rewrite document-tab component (Pi) | 进行中 | Native tab strip/item/layout/top rule; WorkspaceSplitView/WorkspaceView; tests/docs; integrated 1.0.15 release | 14:19 | 2026-10-25 14:40 | Owner authorized rewrite. Prior patch failed dynamic rule-gap acceptance. Pi owns UI and sole publication; no install/restart of target during motion acceptance. |
+| macOS 26 baseline and API review | 验证中 | project/CI, toolbar pin, newline handling, docs; Xcode 27.2 + Sparkle | 14:20 | 2026-10-25 14:20 | 14:42 baseline source committed, 77 tests/checks passed, final-gutter Debug installed. Fixture Shift+Enter/autosave and 1–7 gutter passed; respecting Pi UI/release ownership; no more restarts or production edits. |

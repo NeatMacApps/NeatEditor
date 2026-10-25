@@ -12,14 +12,21 @@ struct WorkspaceView: View {
     @FocusState private var isSearchFieldFocused: Bool
     @State private var isCloseTabShortcutHintVisible = false
     @State private var isWindowPinned = false
-    @State private var tabStripLayout = TabStripLayoutModel()
-    @State private var editorWindowFrame: CGRect = .null
 
     var body: some View {
         WorkspaceSplitView(
             sidebar: AnyView(WorkspaceSidebarView().environment(workspaceStore)),
             detail: AnyView(editorColumn.environment(workspaceStore)),
-            tabs: AnyView(tabStrip.environment(workspaceStore)),
+            tabs: workspaceStore.tabs.map(EditorTabDescriptor.init),
+            selectedTabID: workspaceStore.selectedTabID,
+            tabActions: EditorTabActions(
+                onSelect: workspaceStore.selectTab,
+                onSelectRelative: workspaceStore.selectTab(relativeOffset:),
+                onRename: workspaceStore.renameDocument,
+                onClose: workspaceStore.closeDocument,
+                onDelete: workspaceStore.moveToTrash,
+                onCloseOthers: workspaceStore.closeOtherDocuments(keeping:)
+            ),
             isSidebarVisible: workspaceStore.preferences.isSidebarVisible,
             isSettingsSelected: isSettingsSelected,
             isWindowPinned: isWindowPinned,
@@ -75,23 +82,6 @@ struct WorkspaceView: View {
         workspaceStore.tabs.contains { $0.id == workspaceStore.selectedTabID && $0.isSettings }
     }
 
-    private var tabStrip: some View {
-        @Bindable var bindableWorkspace = workspaceStore
-        return EditorTabStripView(
-            tabs: $bindableWorkspace.tabs,
-            selectedTabID: workspaceStore.selectedTabID,
-            onSelectTab: workspaceStore.selectTab,
-            onSelectTabRelative: workspaceStore.selectTab(relativeOffset:),
-            onRenameTab: workspaceStore.renameDocument,
-            onCloseTab: workspaceStore.closeDocument,
-            onDeleteTab: workspaceStore.moveToTrash,
-            onCloseOtherTabs: workspaceStore.closeOtherDocuments(keeping:),
-            onLayoutChange: { state in
-                tabStripLayout.state = state
-            }
-        )
-    }
-
     private var editorColumn: some View {
         VStack(spacing: 0) {
 
@@ -117,38 +107,6 @@ struct WorkspaceView: View {
                 searchBar
             }
         }
-        .background {
-            ViewWindowFrameReader { frame in
-                editorWindowFrame = frame
-            }
-        }
-        .overlay(alignment: .top) {
-            if tabStripLayout.state.hasTabs {
-                editorTopRule
-            }
-        }
-    }
-
-    /// The editor column owns the full-width rule below the toolbar. It leaves
-    /// the selected tab's join open so the tab stays attached to the page.
-    private var editorTopRule: some View {
-        EditorTopRuleShape(gap: localSelectedTabGap())
-            .fill(EditorChrome.tabOutline)
-            .frame(height: EditorChrome.lineWidth)
-            .allowsHitTesting(false)
-    }
-
-    /// The tab strip and the editor column live in different AppKit hosting
-    /// views, so the tab's window-space join is converted with the editor's
-    /// window origin instead of SwiftUI's per-hierarchy `.global` space.
-    private func localSelectedTabGap() -> ClosedRange<CGFloat>? {
-        guard let gap = tabStripLayout.state.selectedTabGap,
-              !editorWindowFrame.isNull else {
-            return nil
-        }
-        let lower = gap.lowerBound - editorWindowFrame.minX
-        let upper = gap.upperBound - editorWindowFrame.minX
-        return lower...upper
     }
 
     private func editorBody(for tab: EditorTab, selectedTabID: UUID) -> some View {

@@ -48,25 +48,49 @@ cannot repeat the defect. Reference: the installed built-in `.toggleSidebar`
 item's public `view` is an `NSButton`; public callback/key/property verified
 against Xcode 27.2 headers and [Apple's focus ring API](https://developer.apple.com/documentation/appkit/nsview/focusringtype).
 
-`TitleBarEventNSView` owns the tab-strip drag because a custom view hosted in an
-`NSToolbarItem` does not get the window drag automatically, and
-`NSWindow.performDrag(with:)` is ignored in that context. The monitor records
-the initial window origin and pointer location, then moves the window directly
-once the pointer crosses the threshold, clamping the frame so part of the
-window remains on screen. Clicks are left untouched for SwiftUI; no event is
-replayed or delayed. This replaces the old native title-bar drag path only for
-the tab strip.
+### Tab implementation rewrite (owner direction 2026-10-25)
 
-`EditorTabStripView` preserves the product's existing `EditorTabItemView`,
-connected fill and inline rename inside the single native toolbar item. The
-inspected restoration reference is this repository's `b213e21` implementation
-of those components and the installed single-row screenshot. The rejected
-segmented-control replacement is not a reference for the document tabs.
-Use one continuous outline for the baseline and raised selected tab, rather
-than separate strokes with clearance gaps or mismatched fill/border curves.
-Native AppKit continues to own the surrounding toolbar and window behavior.
-Restoring an owner-decided design is exempt from new appearance research;
-public API changes still require official documentation and SDK checks.
+The owner approved replacing the scattered tab implementation, not another
+geometry-delay patch. Scope is the document-tab component and its editor join;
+retain the stepped appearance, one toolbar row, native surrounding controls and
+all existing document actions. Editor buffers, save/restore and sidebar behavior
+are not redesigned.
+
+`EditorTabStripView` is a native toolbar `NSView`, owning one `NSScrollView`,
+stable-ID tab views and immediate selection reveal. Each `EditorTabItemView`
+keeps its native `NSTextField`, fill and open outline in the same local bounds.
+`WorkspaceSplitViewController` attaches the editor's native top-rule view. That
+view converts the current selected tab and viewport into its coordinates when
+it draws; it never consumes a cached frame or asynchronously published gap.
+SwiftUI passes immutable tab descriptors and action callbacks only. Remove the
+old frame preferences, cross-host observable geometry, global pending rename and
+separate SwiftUI/AppKit event-monitor machinery.
+
+The strip owns pointer tracking and applies the existing four-point window-drag
+threshold; it records initial pointer/window origins and clamps the moved window
+to remain partly visible. A completed drag never selects or renames. Keep this
+scoped manual move because the previous toolbar-hosted implementation verified
+that `NSWindow.performDrag(with:)` did not move this custom toolbar item. Native
+AppKit still owns empty chrome outside the tab component. Rename state belongs
+to the strip and uses the standard field editor, not a global draft. An outside
+click or app deactivation commits; Escape cancels.
+
+Inspected implementation references: this repository's existing stepped curve
+and installed 1.0.14 appearance; MacVim's `src/MacVim/MMTabline/MMTabline.m`
+(`layout`, native scroll/document container) and `MMTab.m` (local tab drawing
+with a native title field), inspected from the current upstream source. Reuse
+that ownership pattern, not its appearance, extra buttons, tab-reordering,
+animations, legacy availability branches or Vim-specific behavior. No external
+source/dependency is copied. The owner's existing scoped custom-tab exception
+continues; this is not a replacement for surrounding native toolbar controls.
+
+Public APIs checked against Apple's documentation and installed Xcode 27.2 SDK:
+[NSToolbarItem.view](https://developer.apple.com/documentation/appkit/nstoolbaritem),
+[NSView](https://developer.apple.com/documentation/appkit/nsview),
+[NSScrollView](https://developer.apple.com/documentation/appkit/nsscrollview),
+[NSTextField](https://developer.apple.com/documentation/appkit/nstextfield),
+`NSView.convert(_:from:)`, `NSClipView.scroll(to:)` and native field-editor
+commands. No private chrome traversal or manual traffic-light positioning.
 
 On macOS 26+, the native pin item uses `NSToolbarItem.style`: `.prominent`
 while pinned and `.plain` otherwise. This reuses the existing pin item/action
@@ -78,20 +102,15 @@ continues to follow the shared focus-ring policy.
 - During continuous window resize, the selected tab's filename, fill and raised
   outline must move as one object, including when overflow reveals the selection.
   Alignment only after releasing the resize gesture is not sufficient.
-- Keep the raised outline inside `EditorTabItemView`, sharing the title/fill's
-  local bounds and scroll transform. Do not redraw it in the strip from a frame
-  copied through an asynchronous preference/state update: that lets the title
-  move before the outline, especially during animated overflow scrolling.
-- Reuse the existing `ConnectedTabGeometry` curve and SwiftUI's public
-  `overlay(alignment:content:)`; no control replacement or appearance redesign.
-  Preserve horizontal viewport clipping while allowing the outline's bottom
-  half-point join to reach the editor rule. API reference:
-  [Apple overlay](https://developer.apple.com/documentation/swiftui/view/overlay(alignment:content:))
-  and [custom scroll clipping](https://developer.apple.com/documentation/swiftui/view/scrollclipdisabled(_:))
-  (both present in the installed Xcode 27.2 SDK).
-- Overflow reveal reacts to selection, tab sizes and viewport size, not to every
-  intermediate scroll offset. Selection may animate; resize reveals are immediate
-  and must not queue competing animations on successive run-loop turns.
+- The filename, fill and raised outline share one native tab view and one scroll
+  transform. The editor rule reads live native geometry during drawing. No
+  geometry travels through SwiftUI preferences, tasks or next-run-loop callbacks.
+- Reuse the existing `ConnectedTabGeometry` curve; preserve horizontal viewport
+  clipping and the bottom half-point join. Partial-patch motion capture showed
+  that a local outline alone did not fix the asynchronously positioned rule gap;
+  both parts must pass the same continuous-resize acceptance.
+- Reveal selection during the same native layout pass after selection, tab-size
+  or viewport-size changes. Do not animate or queue resize reveals.
 - Acceptance requires sequential frames during repeated fast shrink/expand and
   direction reversals, with sidebar both visible and hidden and a trailing tab
   selected. A settled screenshot or a passing build is not motion evidence.
@@ -136,10 +155,9 @@ Official applicability and installed Xcode 27.2 SDK checked:
 
 - Single click selects immediately; no multi-click recognition delay.
 - A left drag beginning anywhere in the tab strip moves the window after a
-  4-point threshold. SwiftUI still receives the press, so a click without
-  movement selects or renames normally; only a completed drag suppresses the
-  tab action. The inline rename field remains a text field and is not turned
-  into a window-drag surface.
+  4-point threshold. Native pointer tracking distinguishes a click from a drag;
+  only a completed drag suppresses the tab action. The inline rename field
+  remains a native text field and is not a window-drag surface.
 - Double-click a tab that was already selected on the first click to rename
   inline. Double-clicking an inactive tab selects it without starting rename.
 - Enter, clicking outside or switching apps commits rename. Escape cancels it.
