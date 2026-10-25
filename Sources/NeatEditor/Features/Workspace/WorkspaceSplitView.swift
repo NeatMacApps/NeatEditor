@@ -45,6 +45,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     private var tabWidth: NSLayoutConstraint?
     private var pinItem: NSToolbarItem?
     private weak var attachedWindow: NSWindow?
+    private var windowResizeObserver: NSObjectProtocol?
     private var isApplyingConfiguration = false
 
     init(configuration: WorkspaceSplitView) {
@@ -138,6 +139,10 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
 
     func detachToolbar() {
         tabHost.finishRename(commit: true)
+        if let windowResizeObserver {
+            NotificationCenter.default.removeObserver(windowResizeObserver)
+            self.windowResizeObserver = nil
+        }
         if attachedWindow?.toolbar === workspaceToolbar {
             attachedWindow?.toolbar = nil
         }
@@ -146,7 +151,19 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
 
     private func attachToolbar() {
         guard let window = view.window else { return }
-        attachedWindow = window
+        if attachedWindow !== window {
+            if let windowResizeObserver {
+                NotificationCenter.default.removeObserver(windowResizeObserver)
+            }
+            // Window resizes do not reliably reach viewDidLayout before the
+            // toolbar re-lays out its items, so track the live width directly.
+            windowResizeObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.didResizeNotification, object: window, queue: .main
+            ) { [weak self] _ in
+                self?.updateTabWidth()
+            }
+            attachedWindow = window
+        }
         guard window.toolbar !== workspaceToolbar else { return }
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
@@ -158,13 +175,19 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     }
 
     private func updateTabWidth() {
-        guard isViewLoaded, let tabWidth else { return }
+        guard isViewLoaded, let tabWidth, let window = attachedWindow ?? view.window else { return }
         // This is a maximum, not a required width. AppKit must also reserve
         // native traffic lights and sidebar controls when the sidebar is hidden.
         // A required detail-derived width pushed the entire tab item into overflow.
-        let width = max(80, detailController.view.bounds.width - 112)
+        let sidebarWidth = splitViewItems.first?.isCollapsed == false
+            ? splitViewItems.first?.viewController.view.frame.width ?? 0
+            : 0
+        let detailWidth = window.contentLayoutRect.width - sidebarWidth - splitView.dividerThickness
+        let width = max(80, detailWidth - 112)
         if abs(tabWidth.constant - width) > 0.5 {
             tabWidth.constant = width
+            tabHost.needsLayout = true
+            workspaceToolbar.validateVisibleItems()
         }
     }
 
