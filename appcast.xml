@@ -3,6 +3,26 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.14</title>
+            <pubDate>Sun, 25 Oct 2026 10:03:35 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>14</sparkle:version>
+            <sparkle:shortVersionString>1.0.14</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.14
+
+
+### Fixed
+
+- The native Sidebar toolbar button no longer draws a blue focus ring after accessibility or keyboard activation. Rounded stepped tabs, the continuous editor join, folder selection and window dragging are unchanged.
+
+### 简体中文
+
+- 修复通过辅助功能或键盘激活原生侧边栏按钮后出现蓝色焦点圈的问题；保留圆角台阶标签、连续底边、文件夹切换及拖窗优化。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.14/NeatEditor-1.0.14.zip" length="3657752" type="application/octet-stream" sparkle:edSignature="wRsamdPLDBbyKXg/z3FNG3ggIfeVAO96bxrs/oeVVUibFgjp6NOKCUc3XVuo0EEg3+G5LZzEbQUuX84oe73TDA=="/>
+        </item>
+        <item>
             <title>1.0.13</title>
             <pubDate>Sun, 25 Oct 2026 00:08:42 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
