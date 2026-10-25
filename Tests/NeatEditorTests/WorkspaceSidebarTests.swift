@@ -1,10 +1,37 @@
 import Foundation
+import AppKit
 import SwiftUI
 import Testing
 
 @testable import NeatEditor
 
 struct WorkspaceSidebarTests {
+    @MainActor
+    @Test("sidebar folder header carries no actions control")
+    func folderHeaderHasNoActionsButton() {
+        let host = NSHostingView(
+            rootView: WorkspaceSidebarFolderHeader(
+                name: "Documents",
+                path: "/Users/example/Documents"
+            )
+        )
+        host.frame = NSRect(x: 0, y: 0, width: 200, height: 22)
+        host.layoutSubtreeIfNeeded()
+        #expect(buttons(in: host).isEmpty)
+    }
+
+    @MainActor
+    private func buttons(in view: NSView) -> [NSButton] {
+        var buttons: [NSButton] = []
+        if let button = view as? NSButton {
+            buttons.append(button)
+        }
+        for subview in view.subviews {
+            buttons.append(contentsOf: self.buttons(in: subview))
+        }
+        return buttons
+    }
+
     @MainActor
     @Test("sidebar row heights match for empty, short, multiline and overflowing content")
     func equalRowHeights() throws {

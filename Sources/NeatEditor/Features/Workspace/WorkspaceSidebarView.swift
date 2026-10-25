@@ -42,6 +42,10 @@ struct WorkspaceSidebarView: View {
             Button(action: workspaceStore.createNewDocument) {
                 Label("New Document", systemImage: "plus")
             }
+            Button(action: workspaceStore.revealDocumentsFolderInFinder) {
+                Label("Show in Finder", systemImage: "folder")
+            }
+            Divider()
             Button(action: workspaceStore.refreshSidebarFiles) {
                 Label("Refresh", systemImage: "arrow.clockwise")
             }
@@ -74,32 +78,10 @@ struct WorkspaceSidebarView: View {
     }
 
     private var folderHeader: some View {
-        HStack(spacing: 6) {
-            Text(workspaceStore.documentsFolderName)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .help(workspaceStore.documentsFolder.path)
-
-            Spacer(minLength: 0)
-
-            Menu {
-                Button(action: workspaceStore.revealDocumentsFolderInFinder) {
-                    Label("Show in Finder", systemImage: "folder")
-                }
-                Divider()
-                Button(action: workspaceStore.refreshSidebarFiles) {
-                    Label("Refresh", systemImage: "arrow.clockwise")
-                }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .accessibilityLabel("Folder Actions")
-        }
+        WorkspaceSidebarFolderHeader(
+            name: workspaceStore.documentsFolderName,
+            path: workspaceStore.documentsFolder.path
+        )
     }
 
     @ViewBuilder
@@ -180,6 +162,20 @@ struct WorkspaceSidebarView: View {
         renamingItem = nil
         guard !trimmed.isEmpty, trimmed != item.title else { return }
         workspaceStore.renameSidebarFile(at: item.fileURL, to: trimmed)
+    }
+}
+
+/// Native section-header label for the documents folder. Folder and file
+/// actions stay in the list's context menus, so the header carries no control.
+struct WorkspaceSidebarFolderHeader: View {
+    let name: String
+    let path: String
+
+    var body: some View {
+        Text(verbatim: name)
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .help(path)
     }
 }
 
