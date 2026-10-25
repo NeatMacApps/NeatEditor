@@ -29,11 +29,13 @@ struct EditorTabActions {
 }
 
 enum EditorTabLayout {
-    /// Fallback only; the live band follows the native titlebar's safe area.
-    static let stripHeight: CGFloat = 32
-    static let tabHeight: CGFloat = 26
+    /// Native compact row height; the band is reserved at least this tall.
+    static let stripHeight: CGFloat = 40
+    static let tabHeight: CGFloat = 30
     /// Trailing slot after the tabs that holds the New Document button.
     static let newDocumentSlotWidth: CGFloat = 32
+    /// Keeps the trailing pin clear of the window's rounded corner.
+    static let trailingMargin: CGFloat = 6
     static let fadeWidth: CGFloat = 16
     static let titleFontSize: CGFloat = 13
     static let horizontalPadding: CGFloat = 12

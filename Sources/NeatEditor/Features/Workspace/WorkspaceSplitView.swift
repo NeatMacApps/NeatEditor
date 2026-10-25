@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// AppKit owns the split and the native 32 pt titlebar. Document tabs live in
-/// the editor column's titlebar band; there is no toolbar row.
+/// AppKit owns the split and the native compact top row. Document tabs live in
+/// the editor column's titlebar band; the toolbar exists only for its height.
 struct WorkspaceSplitView: NSViewControllerRepresentable {
     let sidebar: AnyView
     let detail: AnyView
@@ -28,14 +28,16 @@ struct WorkspaceSplitView: NSViewControllerRepresentable {
     }
 }
 
-final class WorkspaceSplitViewController: NSSplitViewController {
+final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelegate {
     private var configuration: WorkspaceSplitView
     private let sidebarController: NSHostingController<AnyView>
     private let detailController: WorkspaceEditorViewController
+    /// Empty `.unifiedCompact` toolbar: the native 40 pt row with centred
+    /// traffic lights. A bare titlebar is 32 pt and cannot be made taller.
+    private let heightToolbar = NSToolbar(identifier: "WorkspaceCompactRow")
     private let sidebarAccessory = NSTitlebarAccessoryViewController()
-    private let pinAccessory = NSTitlebarAccessoryViewController()
     private let sidebarButton = WorkspaceSplitViewController.titlebarButton(symbol: "sidebar.left")
-    private let pinButton = WorkspaceSplitViewController.titlebarButton(symbol: "pin")
+    private var pinButton: NSButton { detailController.pinButton }
     private weak var attachedWindow: NSWindow?
     private var isApplyingConfiguration = false
 
@@ -46,7 +48,7 @@ final class WorkspaceSplitViewController: NSSplitViewController {
         super.init(nibName: nil, bundle: nil)
         detailController.strip.update(tabs: configuration.tabs, selectedTabID: configuration.selectedTabID,
                                       actions: configuration.tabActions)
-        detailController.accessoryViews = [sidebarButton, pinButton]
+        detailController.accessoryViews = [sidebarButton]
     }
 
     @available(*, unavailable)
@@ -79,8 +81,9 @@ final class WorkspaceSplitViewController: NSSplitViewController {
         sidebarAccessory.layoutAttribute = .leading
         pinButton.target = self
         pinButton.action = #selector(togglePin(_:))
-        pinAccessory.view = pinButton
-        pinAccessory.layoutAttribute = .trailing
+        heightToolbar.delegate = self
+        heightToolbar.allowsUserCustomization = false
+        heightToolbar.allowsDisplayModeCustomization = false
         updatePinButton()
     }
 
@@ -127,22 +130,26 @@ final class WorkspaceSplitViewController: NSSplitViewController {
     func detachFromWindow() {
         detailController.strip.finishRename(commit: true)
         sidebarAccessory.removeFromParent()
-        pinAccessory.removeFromParent()
+        if attachedWindow?.toolbar === heightToolbar {
+            attachedWindow?.toolbar = nil
+        }
         attachedWindow = nil
     }
 
     private func attachToWindow() {
         guard let window = view.window, attachedWindow !== window else { return }
         attachedWindow = window
-        window.toolbar = nil
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         // The connected tab outline owns this boundary; a native full-width
         // separator would draw a second line through the selected tab's join.
         window.titlebarSeparatorStyle = .none
-        for accessory in [sidebarAccessory, pinAccessory]
-        where !window.titlebarAccessoryViewControllers.contains(accessory) {
-            window.addTitlebarAccessoryViewController(accessory)
+        // Titlebar accessories and toolbars exist only on titled windows.
+        guard window.styleMask.contains(.titled) else { return }
+        window.toolbar = heightToolbar
+        window.toolbarStyle = .unifiedCompact
+        if !window.titlebarAccessoryViewControllers.contains(sidebarAccessory) {
+            window.addTitlebarAccessoryViewController(sidebarAccessory)
         }
         detailController.view.needsLayout = true
     }
@@ -165,7 +172,11 @@ final class WorkspaceSplitViewController: NSSplitViewController {
         configuration.onTogglePin()
     }
 
-    private static func titlebarButton(symbol: String) -> NSButton {
+    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] { [] }
+
+    func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] { [] }
+
+    fileprivate static func titlebarButton(symbol: String, pointSize: CGFloat = 15) -> NSButton {
         let button = NSButton()
         button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
         button.isBordered = false
@@ -173,9 +184,10 @@ final class WorkspaceSplitViewController: NSSplitViewController {
         button.contentTintColor = .secondaryLabelColor
         button.focusRingType = .none
         // Keeps the image's symbol configuration across later image swaps.
-        button.symbolConfiguration = .init(pointSize: 15, weight: .regular)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.widthAnchor.constraint(equalToConstant: 40).isActive = true
+        button.symbolConfiguration = .init(pointSize: pointSize, weight: .regular)
+        // Frame-sized: titlebar accessories are placed by AppKit, and an
+        // Auto Layout width here displaced them onto the traffic lights.
+        button.frame.size = CGSize(width: 40, height: EditorTabLayout.stripHeight)
         return button
     }
 }
@@ -186,6 +198,10 @@ private final class WorkspaceEditorViewController: NSViewController {
     private let host: NSHostingController<AnyView>
     let topRule = EditorTabTopRuleView()
     let strip = EditorTabStripView()
+    /// Peer of the strip's New Document button: same size, colour and centre line.
+    let pinButton = WorkspaceSplitViewController.titlebarButton(
+        symbol: "pin", pointSize: EditorTabLayout.titleFontSize
+    )
     /// Titlebar accessory views whose frames the tab band must not cover.
     var accessoryViews: [NSView] = [] {
         didSet {
@@ -222,6 +238,7 @@ private final class WorkspaceEditorViewController: NSViewController {
         view.addSubview(host.view)
         view.addSubview(topRule, positioned: .above, relativeTo: host.view)
         view.addSubview(strip, positioned: .above, relativeTo: topRule)
+        view.addSubview(pinButton, positioned: .above, relativeTo: strip)
         NSLayoutConstraint.activate([
             host.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             host.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -236,10 +253,23 @@ private final class WorkspaceEditorViewController: NSViewController {
 
     override func viewDidLayout() {
         super.viewDidLayout()
-        let systemBand = view.safeAreaInsets.top
-        let band = systemBand > 0 ? systemBand : EditorTabLayout.stripHeight
+        // Full screen hides the titlebar and its safe area; reserve the band
+        // ourselves so tabs never cover the editor's first line.
+        let systemBand = view.safeAreaInsets.top - view.additionalSafeAreaInsets.top
+        let reserved = max(0, EditorTabLayout.stripHeight - systemBand)
+        if view.additionalSafeAreaInsets.top != reserved {
+            view.additionalSafeAreaInsets.top = reserved
+        }
+        let band = systemBand + reserved
         strip.frame = CGRect(x: 0, y: view.bounds.height - band, width: view.bounds.width, height: band)
-        strip.contentInsets = accessoryInsets()
+        let slot = EditorTabLayout.newDocumentSlotWidth
+        let trailingSlot = slot + EditorTabLayout.trailingMargin
+        // Bottom-aligned like the tabs, so its centre matches the titles and +.
+        pinButton.frame = CGRect(x: view.bounds.width - trailingSlot, y: strip.frame.minY,
+                                 width: slot, height: EditorTabLayout.tabHeight)
+        var insets = accessoryInsets()
+        insets.right = max(insets.right, trailingSlot)
+        strip.contentInsets = insets
     }
 
     /// Accessory frames are read at layout time in window coordinates.

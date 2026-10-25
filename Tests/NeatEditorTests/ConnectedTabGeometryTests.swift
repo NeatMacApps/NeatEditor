@@ -9,7 +9,7 @@ struct ConnectedTabGeometryTests {
         let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 1200, height: 600),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        let strip = EditorTabStripView(frame: CGRect(x: 240, y: 548, width: 900, height: 32))
+        let strip = EditorTabStripView(frame: CGRect(x: 240, y: 548, width: 900, height: 40))
         let rule = EditorTabTopRuleView(frame: CGRect(x: 200, y: 547, width: 1000, height: 1))
         window.contentView?.addSubview(strip)
         window.contentView?.addSubview(rule)
@@ -44,7 +44,7 @@ struct ConnectedTabGeometryTests {
         strip.update(tabs: tabs, selectedTabID: last.id, actions: EditorTabActions())
         let item = try #require(strip.tabViews[last.id])
         for width: CGFloat in [900, 700, 500, 300, 180, 350, 600, 900, 450, 800] {
-            strip.setFrameSize(CGSize(width: width, height: 32))
+            strip.setFrameSize(CGSize(width: width, height: 40))
             strip.layoutSubtreeIfNeeded()
             let gap = try #require(strip.selectedTabGap(in: rule))
             let frame = rule.convert(item.tabBounds, from: item)
@@ -56,8 +56,8 @@ struct ConnectedTabGeometryTests {
             #expect(gap.upperBound <= 40 + width - 32)
             #expect(item.titleField.frame.midX == item.tabBounds.midX)
             #expect(item.titleField.frame.midY == item.tabBounds.midY)
-            #expect(item.tabBounds.height == 26)
-            #expect(strip.convert(item.tabBounds, from: item).minY == 6)
+            #expect(item.tabBounds.height == 30)
+            #expect(strip.convert(item.tabBounds, from: item).minY == 10)
         }
         let before = try #require(strip.selectedTabGap(in: rule))
         strip.setFrameOrigin(CGPoint(x: 300, y: 548))
@@ -76,7 +76,7 @@ struct ConnectedTabGeometryTests {
         let first = try #require(tabs.first)
         strip.update(tabs: tabs, selectedTabID: first.id, actions: EditorTabActions())
         for width: CGFloat in [900, 600, 250, 900] {
-            strip.setFrameSize(CGSize(width: width, height: 32))
+            strip.setFrameSize(CGSize(width: width, height: 40))
             strip.layoutSubtreeIfNeeded()
             for x in [CGFloat(10), width / 2, width - 1] {
                 let point = strip.convert(CGPoint(x: x, y: 4), to: strip.superview)
@@ -126,7 +126,7 @@ struct ConnectedTabGeometryTests {
         #expect(strip.convert(first.tabBounds, from: first).minX == 120)
         #expect(button.frame.minX == 120 + 2 * EditorTabLayout.tabWidth)
 
-        strip.setFrameSize(CGSize(width: 400, height: 32))
+        strip.setFrameSize(CGSize(width: 400, height: 40))
         strip.layoutSubtreeIfNeeded()
         #expect(abs(button.frame.maxX - (400 - 40)) < 0.001)
     }
