@@ -5,4 +5,4 @@
 | 任务 | 状态 | 影响范围 | 开始 | 最近更新 | 备注 |
 |---|---|---|---|---|---|
 | Fix tab outline/title resize synchronization (Pi) | 验证中 | Tab local outline/scroll, geometry tests, TabStripGestures, integrated 1.0.15 release; Xcode 27.2 | 14:19 | 2026-10-25 14:29 | Debug 76 tests + analyze and universal Release build/analyze passed (build/resize-sync-logs). Snapshot/install then own motion acceptance; Pi is sole publisher. |
-| macOS 26 baseline and API review | 验证中 | project/CI, toolbar pin, newline handling, docs; Xcode 27.2 + Sparkle | 14:20 | 2026-10-25 14:20 | 14:30 final clean universal Debug build/test/analyze passed, 77 tests. Source ready; rebuild/install after gutter edit. I verify pin/newline; Pi owns publisher. |
+| macOS 26 baseline and API review | 验证中 | project/CI, toolbar pin, newline handling, docs; Xcode 27.2 + Sparkle | 14:20 | 2026-10-25 14:20 | 14:34 source ready; 77 tests + both Debug arches/analyze passed. Pin actual AX+screenshots passed, restored unpinned. Final gutter needs new install; Pi owns publisher. |

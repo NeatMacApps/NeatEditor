@@ -60,7 +60,14 @@ the gutter regression failed on CR/NEL/line/paragraph separators. Final cases
 cover all six native terminators, UTF-16 emoji/CJK positions, last/empty lines,
 native undo and the 999-to-1000 line-number width transition.
 
-Installed behavior and public assets: pending current final artifact.
+Installed native pin acceptance: the exact installed application PID was
+resolved by bundle path, activated, and its actual `Always on Top` toolbar
+button received accessibility press. The window level changed 0 → 3 → 0;
+inspected `/tmp/neateditor-macos26-pin-active.png` and
+`/tmp/neateditor-macos26-unpinned.png` show prominent filled-pin and ordinary
+pin states without a focus ring. Restored unpinned state. Both installed binary
+slices and `LSMinimumSystemVersion` read back `26.0`. Final gutter installation
+and public assets remain pending.
 
 ## Findings and disposition
 
