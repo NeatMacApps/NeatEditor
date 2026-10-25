@@ -38,9 +38,9 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
 
     private var configuration: WorkspaceSplitView
     private let sidebarController: NSHostingController<AnyView>
-    private let detailController: NSHostingController<AnyView>
+    private let detailController: WorkspaceEditorViewController
     private let tabHost = EditorTabStripView()
-    private let topRule = EditorTabTopRuleView()
+    private var topRule: EditorTabTopRuleView { detailController.topRule }
     private let workspaceToolbar = NSToolbar(identifier: "WorkspaceToolbar")
     private var tabWidth: NSLayoutConstraint?
     private var pinItem: NSToolbarItem?
@@ -50,7 +50,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     init(configuration: WorkspaceSplitView) {
         self.configuration = configuration
         sidebarController = NSHostingController(rootView: configuration.sidebar)
-        detailController = NSHostingController(rootView: configuration.detail)
+        detailController = WorkspaceEditorViewController(rootView: configuration.detail)
         super.init(nibName: nil, bundle: nil)
         tabHost.update(tabs: configuration.tabs, selectedTabID: configuration.selectedTabID,
                        actions: configuration.tabActions)
@@ -78,15 +78,6 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         let detail = NSSplitViewItem(viewController: detailController)
         detail.minimumThickness = configuration.isSettingsSelected ? 500 : 300
         addSplitViewItem(detail)
-
-        topRule.translatesAutoresizingMaskIntoConstraints = false
-        detailController.view.addSubview(topRule)
-        NSLayoutConstraint.activate([
-            topRule.leadingAnchor.constraint(equalTo: detailController.view.leadingAnchor),
-            topRule.trailingAnchor.constraint(equalTo: detailController.view.trailingAnchor),
-            topRule.topAnchor.constraint(equalTo: detailController.view.topAnchor),
-            topRule.heightAnchor.constraint(equalToConstant: 1),
-        ])
 
         tabHost.translatesAutoresizingMaskIntoConstraints = false
         let width = tabHost.widthAnchor.constraint(lessThanOrEqualToConstant: 400)
@@ -252,6 +243,45 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         default:
             return nil
         }
+    }
+}
+
+/// The rule is a native sibling above the hosting view, not a subview whose
+/// ordering or layout is owned by SwiftUI's hosting implementation.
+private final class WorkspaceEditorViewController: NSViewController {
+    private let host: NSHostingController<AnyView>
+    let topRule = EditorTabTopRuleView()
+
+    var rootView: AnyView {
+        get { host.rootView }
+        set { host.rootView = newValue }
+    }
+
+    init(rootView: AnyView) {
+        host = NSHostingController(rootView: rootView)
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func loadView() {
+        view = NSView()
+        addChild(host)
+        host.view.translatesAutoresizingMaskIntoConstraints = false
+        topRule.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(host.view)
+        view.addSubview(topRule, positioned: .above, relativeTo: host.view)
+        NSLayoutConstraint.activate([
+            host.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            host.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            host.view.topAnchor.constraint(equalTo: view.topAnchor),
+            host.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            topRule.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            topRule.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            topRule.topAnchor.constraint(equalTo: view.topAnchor),
+            topRule.heightAnchor.constraint(equalToConstant: 1),
+        ])
     }
 }
 
