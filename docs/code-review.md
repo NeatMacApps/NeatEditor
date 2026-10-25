@@ -40,7 +40,27 @@ in the existing close-tab shortcut hint. Preserve its behavior and bold shortcut
 using Apple's [Text interpolation](https://developer.apple.com/documentation/swiftui/text),
 with a complete localizable sentence so translators can place the shortcut.
 
-Verification and distribution: pending current-artifact checks.
+Retained toolchain diagnostic: universal Debug test linking reports
+`_Testing_CoreTransferable ... fat file missing arch 'x86_64', file has
+'arm64,arm64e'` in `NeatEditorTests`. `lipo -archs` on the installed Xcode
+27.2 beta 2 testing framework confirms those two slices; the application does
+not link that testing framework. The arm64 suite executes; Intel test execution
+is not established. No linker suppression, dependency substitution or weakened
+check was added. Recheck with a stable universal Xcode testing framework before
+claiming native Intel test coverage. The separate AppIntents metadata diagnostic
+retains the individual assessment below.
+
+Final clean Debug build/test/analyze passed with arm64 and x86_64 compilation:
+**77 tests in 13 suites executed on arm64**. Logs:
+`build/macos26-review/final-checks.log`; structured result:
+`build/macos26-review/FinalChecks.xcresult`. Swift compiler and analyzer emitted
+no source warning/error. The two toolchain diagnostics above remain assessed.
+Before the fixes, newline regressions failed on CRLF/NEL/paragraph separator;
+the gutter regression failed on CR/NEL/line/paragraph separators. Final cases
+cover all six native terminators, UTF-16 emoji/CJK positions, last/empty lines,
+native undo and the 999-to-1000 line-number width transition.
+
+Installed behavior and public assets: pending current final artifact.
 
 ## Findings and disposition
 

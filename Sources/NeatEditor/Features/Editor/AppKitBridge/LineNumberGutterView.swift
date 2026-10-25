@@ -123,7 +123,7 @@ final class LineNumberGutterView: NSView {
             lineNumber += 1
         }
 
-        if textView.string.hasSuffix("\n") {
+        if lineStartIndices.last == fullLength {
             let extraRect = layoutManager.extraLineFragmentRect
             if !extraRect.isEmpty {
                 let y = extraRect.minY + textView.textContainerInset.height - visibleRect.minY
@@ -189,20 +189,19 @@ final class LineNumberGutterView: NSView {
         }
 
         var updatedLineStartIndices = [0]
-        var searchRange = NSRange(location: 0, length: string.length)
-
-        while searchRange.length > 0 {
-            let matchRange = string.range(of: "\n", options: [], range: searchRange)
-            guard matchRange.location != NSNotFound else {
-                break
-            }
-
-            let nextLineStartIndex = matchRange.location + matchRange.length
-            updatedLineStartIndices.append(nextLineStartIndex)
-            searchRange = NSRange(
-                location: nextLineStartIndex,
-                length: string.length - nextLineStartIndex
+        var lineStart = 0
+        while lineStart < string.length {
+            var lineEnd = lineStart
+            var contentsEnd = lineStart
+            string.getLineStart(
+                nil,
+                end: &lineEnd,
+                contentsEnd: &contentsEnd,
+                for: NSRange(location: lineStart, length: 0)
             )
+            guard lineEnd > contentsEnd else { break }
+            updatedLineStartIndices.append(lineEnd)
+            lineStart = lineEnd
         }
 
         lineStartIndices = updatedLineStartIndices

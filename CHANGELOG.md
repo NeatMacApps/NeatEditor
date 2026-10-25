@@ -15,7 +15,7 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 ### Fixed
 
 - Keep the selected tab's filename, fill and outline together during rapid window resizing and overflow scrolling. Resize no longer queues competing reveal animations.
-- Shift+Enter now inserts at the logical content end without splitting CRLF or overlooking Unicode line terminators. The insertion still supports native undo.
+- Shift+Enter now inserts at the logical content end without splitting CRLF or overlooking Unicode line terminators. The insertion still supports native undo. Line numbers now count the same native line boundaries, including the final empty line.
 
 ### 简体中文
 
@@ -23,7 +23,7 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 - 置顶启用时使用 macOS 26 原生工具栏强调样式，清楚显示当前状态。
 - 用完整句子的本地化插值替换已废弃的 SwiftUI 文本拼接，保留快捷键的加粗显示。
 - 修复快速调整窗口大小和溢出滚动时，标签文件名、底色与轮廓各自移动的问题；缩放不再叠加相互竞争的滚动动画。
-- 修复 Shift+Enter 拆开 CRLF 或漏判 Unicode 换行符的问题；插入操作仍可原生撤销。
+- 修复 Shift+Enter 拆开 CRLF 或漏判 Unicode 换行符的问题；插入操作仍可原生撤销，行号也按相同的原生换行边界计数（包含末尾空行）。
 
 ## 1.0.14 - 2026-10-25
 
