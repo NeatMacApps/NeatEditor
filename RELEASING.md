@@ -167,10 +167,23 @@ was regenerated from the **unchanged** signed ZIP and bilingual CHANGELOG notes;
 DMG/ZIP bytes were not rebuilt. Anonymous full downloads and the live build-14
 feed were independently checked afterward.
 
+The 1.0.15 run failed later: a TCP reset interrupted the update-ZIP upload after
+the draft already held the DMG. Publication resumed from the same `98784c7`
+snapshot: signatures, tickets, hashes and tag identity were revalidated, the
+existing three files were uploaded with `--clobber`, downloaded and compared
+byte-for-byte, the draft was published, and the appcast was regenerated from the
+unchanged signed ZIP. Other agents began editing app sources after the snapshot,
+so the resume did not require a clean tree; it staged only `appcast.xml` and left
+their in-progress files uncommitted. It did not stash, reset, rebuild, re-sign or
+resubmit notarization. The live build-15 feed and an install from the public DMG
+were verified afterward.
+
 Follow-up (not implemented here): provide a maintained publish-only resume mode
-with persistent source/asset fingerprints and generated appcast. The workaround
-above is evidence-backed recovery, not an instruction to silently rerun the
-whole archive/notarization pipeline after a transport failure.
+with persistent source/asset fingerprints and generated appcast. Both recoveries
+(1.0.14 for SSH, 1.0.15 for attachment upload) used ad hoc scripts; the maintained
+mode should own draft state and appcast regeneration. The workaround above is
+evidence-backed recovery, not an instruction to silently rerun the whole
+archive/notarization pipeline after a transport failure.
 
 ## References
 
