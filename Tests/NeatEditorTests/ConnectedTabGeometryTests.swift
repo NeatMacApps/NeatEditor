@@ -56,8 +56,8 @@ struct ConnectedTabGeometryTests {
             #expect(gap.upperBound <= 40 + width - 12)
             #expect(item.titleField.frame.midX == item.tabBounds.midX)
             #expect(item.titleField.frame.midY == item.tabBounds.midY)
-            #expect(item.tabBounds.height == 32)
-            #expect(strip.convert(item.tabBounds, from: item).minY == 20)
+            #expect(item.tabBounds.height == 38)
+            #expect(strip.convert(item.tabBounds, from: item).minY == 14)
         }
         let before = try #require(strip.selectedTabGap(in: rule))
         strip.setFrameOrigin(CGPoint(x: 300, y: 548))
@@ -201,7 +201,7 @@ struct ConnectedTabGeometryTests {
         #expect(strip.renameClickMonitor == nil)
     }
 
-    @Test("tabs keep equal widths, default-size centered type and native trailing ellipsis")
+    @Test("tabs keep equal widths, moderate centered type and native trailing ellipsis")
     func nativeTitleMeasurement() throws {
         let (window, strip, _) = makeStrip()
         defer { window.close() }
@@ -214,9 +214,9 @@ struct ConnectedTabGeometryTests {
             for tab in tabs {
                 let item = try #require(strip.tabViews[tab.id])
                 let field = item.titleField
-                #expect(item.tabBounds.width == 168)
-                #expect(field.frame.width == 144)
-                #expect(field.font?.pointSize == 13)
+                #expect(item.tabBounds.width == 184)
+                #expect(field.frame.width == 152)
+                #expect(field.font?.pointSize == 14)
                 #expect(field.frame.height >= field.intrinsicContentSize.height)
                 #expect(field.frame.midY == item.tabBounds.midY)
                 #expect(field.lineBreakMode == .byTruncatingTail)

@@ -59,7 +59,7 @@ are not redesigned.
 `EditorTabStripView` is a native toolbar `NSView`, owning one `NSScrollView`,
 stable-ID tab views and immediate selection reveal. Each `EditorTabItemView`
 keeps its native `NSTextField`, fill and open outline in the same local bounds.
-All tabs use one fixed slot width (168 pt; see Toolbar height below), independent of title or selection.
+All tabs use one fixed slot width (184 pt; see Toolbar height below), independent of title or selection.
 The native title field truncates at the tail; full filenames remain available
 through the existing tooltip and accessibility label. Overflow still reveals
 the selected tab synchronously; do not make a long filename widen one slot.
@@ -175,12 +175,13 @@ after lock are not transition evidence. No document text or window size changed.
 - Owner correction (2026-10-25, later; supersedes the same day's 44 pt / 15 pt
   enlargement): the tabs read as too large and dominant. Keep the native 52 pt
   row, its standard glass controls and the stepped, editor-joined shape, but
-  lower the tabs' visual weight: 32 pt tall, bottom-aligned with the editor,
-  9 pt corners reduced to 7 pt, one fixed 168 pt slot width, 12 pt horizontal
-  title padding. The remaining top gutter is window chrome, not tab content;
-  do not enlarge the toolbar or introduce another row.
-- Filenames use the macOS default 13 pt system size (HIG body), so navigation
-  stays quieter than document text and does not follow editor zoom. Selection
+  lower the tabs' visual weight. Owner follow-up: the 32 pt / 13 pt version
+  felt empty; settle midway at 38 pt tall, bottom-aligned with the editor,
+  8 pt corners, one fixed 184 pt slot width, 16 pt horizontal title padding.
+  The remaining top gutter is window chrome, not tab content; do not enlarge the toolbar or introduce another row.
+- Filenames use a 14 pt system font, between the 13 pt macOS default (HIG
+  body) and the rejected 15 pt, so navigation stays quieter than document text
+  and does not follow editor zoom. Selection
   is expressed by color, not weight: the selected title uses the primary label
   color, others the secondary label color, both regular weight. Reuse the
   existing native `NSTextField` and center it by its `intrinsicContentSize`;
