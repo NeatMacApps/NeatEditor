@@ -222,7 +222,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     }
 
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [.toggleSidebar, .sidebarTrackingSeparator, Item.tabs, Item.newDocument, Item.pin]
+        [.toggleSidebar, .sidebarTrackingSeparator, Item.tabs, .flexibleSpace, Item.newDocument, Item.pin]
     }
 
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {

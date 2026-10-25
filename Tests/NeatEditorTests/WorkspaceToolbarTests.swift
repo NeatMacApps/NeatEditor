@@ -6,20 +6,42 @@ import Testing
 
 @MainActor
 struct WorkspaceToolbarTests {
-    private func makeController() -> WorkspaceSplitViewController {
+    private func makeController(sidebarVisible: Bool = true) -> WorkspaceSplitViewController {
         WorkspaceSplitViewController(configuration: WorkspaceSplitView(
             sidebar: AnyView(EmptyView()),
             detail: AnyView(EmptyView()),
             tabs: [],
             selectedTabID: nil,
             tabActions: EditorTabActions(),
-            isSidebarVisible: true,
+            isSidebarVisible: sidebarVisible,
             isSettingsSelected: false,
             isWindowPinned: false,
             onSidebarVisibilityChange: { _ in },
             onNewDocument: {},
             onTogglePin: {}
         ))
+    }
+
+    @Test("native flexible space keeps document actions trailing in both sidebar states",
+          arguments: [true, false])
+    func documentActionsFollowFlexibleSpace(sidebarVisible: Bool) {
+        let controller = makeController(sidebarVisible: sidebarVisible)
+        let toolbar = NSToolbar(identifier: "WorkspaceToolbarAlignmentTest")
+        let identifiers = controller.toolbarDefaultItemIdentifiers(toolbar)
+        let expected: [NSToolbarItem.Identifier] = [
+            .toggleSidebar, .sidebarTrackingSeparator,
+            NSToolbarItem.Identifier("WorkspaceDocumentTabs"), .flexibleSpace,
+            NSToolbarItem.Identifier("WorkspaceNewDocument"),
+            NSToolbarItem.Identifier("WorkspacePin"),
+        ]
+        #expect(identifiers == expected)
+        #expect(controller.toolbarAllowedItemIdentifiers(toolbar) == expected)
+
+        toolbar.delegate = controller
+        for identifier in identifiers {
+            toolbar.insertItem(withItemIdentifier: identifier, at: toolbar.items.count)
+        }
+        #expect(toolbar.items.map(\.itemIdentifier) == expected)
     }
 
     @Test("the built-in Sidebar toolbar button keeps native behavior without a focus ring")
