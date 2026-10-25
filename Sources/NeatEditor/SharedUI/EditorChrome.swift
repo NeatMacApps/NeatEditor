@@ -7,7 +7,8 @@ enum EditorChrome {
     static let editorSurface = Color(editorSurfaceColor)
     static let borderColor = NSColor.separatorColor
     static let border = Color(borderColor)
-    static let tabOutline = Color.primary.opacity(0.22)
+    static let tabOutlineColor = NSColor.separatorColor
+    static let tabOutline = Color(tabOutlineColor)
     static let lineWidth: CGFloat = 1
     static let hoverFill = Color.secondary.opacity(0.08)
 }

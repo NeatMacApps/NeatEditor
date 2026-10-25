@@ -59,7 +59,7 @@ are not redesigned.
 `EditorTabStripView` is a native toolbar `NSView`, owning one `NSScrollView`,
 stable-ID tab views and immediate selection reveal. Each `EditorTabItemView`
 keeps its native `NSTextField`, fill and open outline in the same local bounds.
-All tabs use one fixed 200 pt slot width, independent of title or selection.
+All tabs use one fixed slot width (168 pt; see Toolbar height below), independent of title or selection.
 The native title field truncates at the tail; full filenames remain available
 through the existing tooltip and accessibility label. Overflow still reveals
 the selected tab synchronously; do not make a long filename widen one slot.
@@ -172,17 +172,23 @@ after lock are not transition evidence. No document text or window size changed.
   the top-right New Document and pin actions with Corral's top bar; compact
   glass (24 pt tall) clamped the glyphs and read as cramped. The installed
   unified toolbar draws 36 pt glass, the same as the reference.
-- Owner correction (2026-10-25): keep the native 52 pt row and its standard
-  glass controls, but increase the stepped tabs from 32 to 44 pt, bottom-aligned
-  with the editor. The remaining 8 pt top gutter is window chrome, not tab
-  content. Center filenames vertically in the taller tabs; do not enlarge the
-  toolbar or introduce another row.
-- Owner follow-up: increase filenames from 13 to 15 pt to suit the 44 pt tabs.
-  Keep medium weight for selection and regular weight otherwise. Reuse the
-  existing native `NSTextField` and measure its `intrinsicContentSize` for
-  vertical centering inside the common-width slot; no fixed 18 pt title
-  box or clipping of CJK glyphs/Latin descenders. This is an owner-selected
-  typography adjustment, not a change to editor text size.
+- Owner correction (2026-10-25, later; supersedes the same day's 44 pt / 15 pt
+  enlargement): the tabs read as too large and dominant. Keep the native 52 pt
+  row, its standard glass controls and the stepped, editor-joined shape, but
+  lower the tabs' visual weight: 32 pt tall, bottom-aligned with the editor,
+  9 pt corners reduced to 7 pt, one fixed 168 pt slot width, 12 pt horizontal
+  title padding. The remaining top gutter is window chrome, not tab content;
+  do not enlarge the toolbar or introduce another row.
+- Filenames use the macOS default 13 pt system size (HIG body), so navigation
+  stays quieter than document text and does not follow editor zoom. Selection
+  is expressed by color, not weight: the selected title uses the primary label
+  color, others the secondary label color, both regular weight. Reuse the
+  existing native `NSTextField` and center it by its `intrinsicContentSize`;
+  no fixed title box or clipping of CJK glyphs/Latin descenders.
+- The selected tab's raised outline and the editor's top rule share one
+  1 pt native `separatorColor` stroke (`EditorChrome.tabOutlineColor`), so the
+  open join still meets on a single line and the outline recedes behind text. Reference: [Apple HIG typography](https://developer.apple.com/design/human-interface-guidelines/typography)
+  (macOS default 13 pt; tab titles do not grow with content text size).
 - Unselected tabs have no rounded-rectangle hover fill. The owner identified the
   previous capsule as a leftover background; only the selected stepped tab owns
   a fill and raised outline. Switching, scrolling and resizing must leave no

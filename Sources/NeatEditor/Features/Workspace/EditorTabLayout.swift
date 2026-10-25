@@ -29,12 +29,12 @@ struct EditorTabActions {
 
 enum EditorTabLayout {
     static let stripHeight: CGFloat = 52
-    static let tabHeight: CGFloat = 44
+    static let tabHeight: CGFloat = 32
     static let trailingPadding: CGFloat = 12
     static let fadeWidth: CGFloat = 16
-    static let titleFontSize: CGFloat = 15
-    static let horizontalPadding: CGFloat = 24
-    static let tabWidth: CGFloat = 200
+    static let titleFontSize: CGFloat = 13
+    static let horizontalPadding: CGFloat = 12
+    static let tabWidth: CGFloat = 168
     static let minimumWindowEdge: CGFloat = 470
 
     static func revealedOffset(
@@ -64,9 +64,9 @@ enum EditorTabLayout {
 
 /// The single stepped curve used by both fill and open outline.
 enum ConnectedTabGeometry {
-    static let topInset: CGFloat = 6
-    static let topCornerRadius: CGFloat = 9
-    static let bottomJoinRadius: CGFloat = 9
+    static let topInset: CGFloat = 4
+    static let topCornerRadius: CGFloat = 7
+    static let bottomJoinRadius: CGFloat = 7
     static let baselineOutset: CGFloat = bottomJoinRadius - topInset
     static let baselineCenterDrop: CGFloat = 0.5
 

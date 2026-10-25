@@ -10,7 +10,7 @@ final class EditorTabTopRuleView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         guard let strip, !strip.tabs.isEmpty else { return }
-        NSColor.labelColor.withAlphaComponent(0.22).setFill()
+        EditorChrome.tabOutlineColor.setFill()
         guard let gap = strip.selectedTabGap(in: self) else {
             bounds.fill()
             return

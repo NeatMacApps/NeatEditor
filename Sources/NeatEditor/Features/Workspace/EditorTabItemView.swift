@@ -44,8 +44,7 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
         self.descriptor = descriptor
         isSelected = selected
         if strip?.editingTabID != id { titleField.stringValue = descriptor.title }
-        titleField.font = .systemFont(ofSize: EditorTabLayout.titleFontSize,
-                                      weight: selected ? .medium : .regular)
+        titleField.font = .systemFont(ofSize: EditorTabLayout.titleFontSize)
         titleField.textColor = selected ? .labelColor : .secondaryLabelColor
         setAccessibilityLabel(descriptor.title)
         setAccessibilityValue(selected ? 1 : 0)
@@ -71,8 +70,8 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
             context.setFillColor(EditorChrome.editorSurfaceColor.cgColor)
             context.fillPath()
             context.addPath(ConnectedTabGeometry.outline(in: tabBounds))
-            context.setStrokeColor(NSColor.labelColor.withAlphaComponent(0.22).cgColor)
-            context.setLineWidth(1)
+            context.setStrokeColor(EditorChrome.tabOutlineColor.cgColor)
+            context.setLineWidth(EditorChrome.lineWidth)
             context.strokePath()
         }
     }
