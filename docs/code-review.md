@@ -28,12 +28,18 @@ must remain intact; the shortcut must remain one undoable edit. The same review
 found LF-only gutter indexing despite native line-range drawing; its numbering
 and trailing-empty-line detection must use the same Foundation boundaries.
 
-TextKit 1 remains intentional: line-number layout and temporary search highlights
-use `NSLayoutManager`. Apple's [NSTextView documentation](https://developer.apple.com/documentation/appkit/nstextview)
-retains that compatibility path; changing construction alone would still fall
-back when those consumers access `layoutManager`. A TextKit 2 migration needs
-coordinated gutter/highlight/IME validation and is not a deployment-target edit.
-No obsolete runtime-availability fallback was found in current application code.
+The initial review retained TextKit 1 because the gutter and search both used
+`NSLayoutManager`. That decision was superseded by the coordinated rendering
+repair in `94423bc`: the editor now constructs
+`ZoomableTextView(usingTextLayoutManager: true)`, the gutter uses modern visible
+layout fragments, and plain-text search decoration uses removable text-storage
+attributes. Apple's [TextKit compatibility guidance](https://developer.apple.com/videos/play/wwdc2022/10090/)
+explains why reading `NSTextView.layoutManager` would switch the engine back;
+current product code has no such read. The installed SDK declares these TextKit
+2 APIs from macOS 12, within the macOS 26 baseline. No macOS 27-only viewport API
+or obsolete runtime-availability fallback is needed. The coordinated repair,
+regressions and remaining actual-app/IME acceptance are owned by
+[the editing contract](editing-text-sync-test-cases.md#display-only-editing-acceptance).
 
 A clean compile also identified macOS 26's deprecated `Text + Text` operator
 in the existing close-tab shortcut hint. Preserve its behavior and bold shortcut
@@ -60,11 +66,12 @@ the gutter regression failed on CR/NEL/line/paragraph separators. Final cases
 cover all six native terminators, UTF-16 emoji/CJK positions, last/empty lines,
 native undo and the 999-to-1000 line-number width transition.
 
-The later native-title measurement helper constructed/configured an `NSTextField`
-from a nonisolated static method, producing nine AppKit actor-isolation diagnostics.
-Keep the existing native-cell measurement and mark only that helper `@MainActor`;
-its production caller is the native strip's main-actor `update`, and its tests are
-already main-actor isolated. Pure geometry helpers retain their current isolation.
+During native-tab integration, a title-measurement helper constructed an
+`NSTextField` from a nonisolated static method, producing nine AppKit isolation
+diagnostics. Isolating that helper to `@MainActor` removed them. The final
+implementation then removed the duplicate measurement field altogether and
+measures the actual native item on its existing main actor. Pure geometry helpers
+retain their current isolation.
 The independent native-cell probe then isolated the title-width failures:
 centred `NSTextField` cells measure four points wider than otherwise identical
 left-aligned cells on this SDK. The strip was measuring a separately configured
@@ -96,9 +103,9 @@ signature and `minimumSystemVersion` 26.0. The public DMG was mounted and instal
 at `/Applications/NeatEditor.app`: the universal binary contains both slices,
 `LSMinimumSystemVersion` reads 26.0, Gatekeeper reports `Notarized Developer ID`,
 and the installed app launched with the mixed-language fixture documents passed to
-it without a launch failure. Pixel
-inspection of the new tab widths could not run in this host because Screen
-Recording and Accessibility access are unavailable; the production control's
+it without a launch failure. At publication time, pixel
+inspection of the new tab widths could not run because Screen
+Recording and Accessibility access were unavailable to that execution host; the production control's
 geometry is covered by the passing native title-fit test, and the earlier pin and
 newline screenshots predate this title-sizing change.
 
@@ -115,7 +122,43 @@ AX text and autosaved fixture bytes exactly matched the expected preserved CRLF.
 A later unguarded Command-Z after autosave did not change the fixture; subsequent
 inspection found the app inactive. Native undo passes the unit window test, but
 this installed shortcut attempt is not accepted. Recheck with fresh input ownership
-before claiming that path. Public assets remain pending the integrated tab rewrite.
+before claiming that path. These captures establish the earlier compatibility
+fixes; they do not establish acceptance of later tab or TextKit 2 changes.
+
+### Follow-up after concurrent updates
+
+The [published 1.0.15](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.15)
+snapshot is `98784c7`; its release-validation workflow
+[passed on Xcode 26.0.1](https://github.com/NeatMacApps/NeatEditor/actions/runs/40172972989).
+The [runner's official tool inventory](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md)
+still includes that compiler and macOS 26.0 SDK. The later TextKit 2, live-resize
+and trailing-toolbar fixes are newer than that public snapshot; do not attribute
+them to the published assets. They retain the 26.0 deployment target and need
+their own local acceptance and the next release-train publication.
+
+On 2026-10-25, the installed bundle's `LSMinimumSystemVersion` and both binary
+slices' `LC_BUILD_VERSION.minos` independently read back 26.0. The host remains
+macOS 27.2 on Apple silicon: this establishes the declared runtime requirement,
+not native Intel execution or a macOS 26 runtime test.
+
+Independent follow-up checks cover the integrated source now committed as
+`a4322bc`, including the TextKit 2 repair, toolbar alignment and taller native
+tabs. A clean universal Debug build, arm64 execution of **94 tests in 13 suites**,
+static analysis and a universal Release build all passed. The source/config/test
+input digest stayed unchanged through both configurations:
+`d1e23e72e2685d131102a7fdbc8b3690154cbb4d36694553ead6f9533e849492`.
+Full diagnostics and structured results are retained at
+`build/macos26-review/followup-final-{debug,release}.log`,
+`FollowupFinalDebug.xcresult`, `FollowupFinalRelease.xcresult` and
+`followup-final-checks.json`. No source/compiler or analyzer issue was reported;
+only the individually assessed AppIntents metadata diagnostic and test-only
+Intel framework warning above remain.
+
+The installed Release's current editor surface was passively captured and
+inspected at `build/macos26-review/followup-installed.png`: wrapped CJK text has
+one gutter label per logical line. This static capture predates the taller-tab
+installation and does not replace that change's interaction acceptance. Existing
+user tabs and the active UI agent's application session were left intact.
 
 ## Findings and disposition
 
