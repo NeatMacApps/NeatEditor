@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// AppKit owns the split, toolbar and tracking separator. Document tabs are
-/// content of the native toolbar, never a second row beneath it.
+/// AppKit owns the split and the native 32 pt titlebar. Document tabs live in
+/// the editor column's titlebar band; there is no toolbar row.
 struct WorkspaceSplitView: NSViewControllerRepresentable {
     let sidebar: AnyView
     let detail: AnyView
@@ -13,7 +13,6 @@ struct WorkspaceSplitView: NSViewControllerRepresentable {
     let isSettingsSelected: Bool
     let isWindowPinned: Bool
     let onSidebarVisibilityChange: (Bool) -> Void
-    let onNewDocument: () -> Void
     let onTogglePin: () -> Void
 
     func makeNSViewController(context: Context) -> WorkspaceSplitViewController {
@@ -25,25 +24,18 @@ struct WorkspaceSplitView: NSViewControllerRepresentable {
     }
 
     static func dismantleNSViewController(_ controller: WorkspaceSplitViewController, coordinator: ()) {
-        controller.detachToolbar()
+        controller.detachFromWindow()
     }
 }
 
-final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelegate {
-    private enum Item {
-        static let tabs = NSToolbarItem.Identifier("WorkspaceDocumentTabs")
-        static let newDocument = NSToolbarItem.Identifier("WorkspaceNewDocument")
-        static let pin = NSToolbarItem.Identifier("WorkspacePin")
-    }
-
+final class WorkspaceSplitViewController: NSSplitViewController {
     private var configuration: WorkspaceSplitView
     private let sidebarController: NSHostingController<AnyView>
     private let detailController: WorkspaceEditorViewController
-    private let tabHost = EditorTabStripView()
-    private var topRule: EditorTabTopRuleView { detailController.topRule }
-    private let workspaceToolbar = NSToolbar(identifier: "WorkspaceToolbar")
-    private var tabWidth: NSLayoutConstraint?
-    private var pinItem: NSToolbarItem?
+    private let sidebarAccessory = NSTitlebarAccessoryViewController()
+    private let pinAccessory = NSTitlebarAccessoryViewController()
+    private let sidebarButton = WorkspaceSplitViewController.titlebarButton(symbol: "sidebar.left")
+    private let pinButton = WorkspaceSplitViewController.titlebarButton(symbol: "pin")
     private weak var attachedWindow: NSWindow?
     private var isApplyingConfiguration = false
 
@@ -52,10 +44,9 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         sidebarController = NSHostingController(rootView: configuration.sidebar)
         detailController = WorkspaceEditorViewController(rootView: configuration.detail)
         super.init(nibName: nil, bundle: nil)
-        tabHost.update(tabs: configuration.tabs, selectedTabID: configuration.selectedTabID,
-                       actions: configuration.tabActions)
-        tabHost.topRule = topRule
-        topRule.strip = tabHost
+        detailController.strip.update(tabs: configuration.tabs, selectedTabID: configuration.selectedTabID,
+                                      actions: configuration.tabActions)
+        detailController.accessoryViews = [sidebarButton, pinButton]
     }
 
     @available(*, unavailable)
@@ -79,35 +70,33 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         detail.minimumThickness = configuration.isSettingsSelected ? 500 : 300
         addSplitViewItem(detail)
 
-        tabHost.translatesAutoresizingMaskIntoConstraints = false
-        let width = tabHost.widthAnchor.constraint(lessThanOrEqualToConstant: 400)
-        NSLayoutConstraint.activate([
-            tabHost.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
-            width,
-            tabHost.heightAnchor.constraint(equalToConstant: EditorTabStripView.titleBarHeight),
-        ])
-        tabWidth = width
-
-        workspaceToolbar.delegate = self
-        workspaceToolbar.displayMode = .iconOnly
-        workspaceToolbar.sizeMode = .regular
-        workspaceToolbar.allowsUserCustomization = false
+        let sidebarLabel = String(localized: "Toggle Sidebar")
+        sidebarButton.toolTip = sidebarLabel
+        sidebarButton.setAccessibilityLabel(sidebarLabel)
+        sidebarButton.target = self
+        sidebarButton.action = #selector(toggleSidebar(_:))
+        sidebarAccessory.view = sidebarButton
+        sidebarAccessory.layoutAttribute = .leading
+        pinButton.target = self
+        pinButton.action = #selector(togglePin(_:))
+        pinAccessory.view = pinButton
+        pinAccessory.layoutAttribute = .trailing
+        updatePinButton()
     }
 
     override func viewWillAppear() {
         super.viewWillAppear()
-        attachToolbar()
+        attachToWindow()
     }
 
     override func viewDidLayout() {
         super.viewDidLayout()
-        attachToolbar()
-        updateTabWidth()
+        attachToWindow()
     }
 
     override func splitViewDidResizeSubviews(_ notification: Notification) {
         super.splitViewDidResizeSubviews(notification)
-        updateTabWidth()
+        detailController.view.needsLayout = true
         guard !isApplyingConfiguration, let sidebar = splitViewItems.first else { return }
         let visible = !sidebar.isCollapsed
         guard visible != configuration.isSidebarVisible else { return }
@@ -125,156 +114,90 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         self.configuration = configuration
         sidebarController.rootView = configuration.sidebar
         detailController.rootView = configuration.detail
-        tabHost.update(tabs: configuration.tabs, selectedTabID: configuration.selectedTabID,
-                       actions: configuration.tabActions)
+        detailController.strip.update(tabs: configuration.tabs, selectedTabID: configuration.selectedTabID,
+                                      actions: configuration.tabActions)
         guard isViewLoaded else { return }
         isApplyingConfiguration = true
         splitViewItems.first?.isCollapsed = !configuration.isSidebarVisible
         splitViewItems.last?.minimumThickness = configuration.isSettingsSelected ? 500 : 300
         isApplyingConfiguration = false
-        updatePinItem()
-        updateTabWidth()
+        updatePinButton()
     }
 
-    func detachToolbar() {
-        tabHost.finishRename(commit: true)
-        NotificationCenter.default.removeObserver(
-            self, name: NSWindow.didResizeNotification, object: nil
-        )
-        if attachedWindow?.toolbar === workspaceToolbar {
-            attachedWindow?.toolbar = nil
-        }
+    func detachFromWindow() {
+        detailController.strip.finishRename(commit: true)
+        sidebarAccessory.removeFromParent()
+        pinAccessory.removeFromParent()
         attachedWindow = nil
     }
 
-    private func attachToolbar() {
-        guard let window = view.window else { return }
-        if attachedWindow !== window {
-            NotificationCenter.default.removeObserver(
-                self, name: NSWindow.didResizeNotification, object: nil
-            )
-            // Window resizes do not reliably reach viewDidLayout before the
-            // toolbar re-lays out its items, so track the live width directly.
-            NotificationCenter.default.addObserver(
-                self, selector: #selector(windowDidResize(_:)),
-                name: NSWindow.didResizeNotification, object: window
-            )
-            attachedWindow = window
-        }
-        guard window.toolbar !== workspaceToolbar else { return }
+    private func attachToWindow() {
+        guard let window = view.window, attachedWindow !== window else { return }
+        attachedWindow = window
+        window.toolbar = nil
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
-        window.toolbarStyle = .unified
         // The connected tab outline owns this boundary; a native full-width
         // separator would draw a second line through the selected tab's join.
         window.titlebarSeparatorStyle = .none
-        window.toolbar = workspaceToolbar
-    }
-
-    @objc private func windowDidResize(_ notification: Notification) {
-        updateTabWidth()
-    }
-
-    private func updateTabWidth() {
-        guard isViewLoaded, let tabWidth, let window = attachedWindow ?? view.window else { return }
-        // This is a maximum, not a required width. AppKit must also reserve
-        // native traffic lights and sidebar controls when the sidebar is hidden.
-        // A required detail-derived width pushed the entire tab item into overflow.
-        let sidebarWidth = splitViewItems.first?.isCollapsed == false
-            ? splitViewItems.first?.viewController.view.frame.width ?? 0
-            : 0
-        let detailWidth = window.contentLayoutRect.width - sidebarWidth - splitView.dividerThickness
-        let width = max(80, detailWidth - 112)
-        if abs(tabWidth.constant - width) > 0.5 {
-            tabWidth.constant = width
-            tabHost.needsLayout = true
-            workspaceToolbar.validateVisibleItems()
+        for accessory in [sidebarAccessory, pinAccessory]
+        where !window.titlebarAccessoryViewControllers.contains(accessory) {
+            window.addTitlebarAccessoryViewController(accessory)
         }
+        detailController.view.needsLayout = true
     }
 
-    private func updatePinItem() {
-        let label = String(localized: "Always on Top")
-        pinItem?.style = configuration.isWindowPinned ? .prominent : .plain
-        pinItem?.image = NSImage(
-            systemSymbolName: configuration.isWindowPinned ? "pin.fill" : "pin",
-            accessibilityDescription: label
+    private func updatePinButton() {
+        let pinned = configuration.isWindowPinned
+        pinButton.image = NSImage(
+            systemSymbolName: pinned ? "pin.fill" : "pin",
+            accessibilityDescription: String(localized: "Always on Top")
         )
-        pinItem?.toolTip = configuration.isWindowPinned
+        pinButton.contentTintColor = pinned ? .controlAccentColor : .secondaryLabelColor
+        pinButton.toolTip = pinned
             ? String(localized: "Disable Always on Top")
             : String(localized: "Enable Always on Top")
-    }
-
-    @objc private func newDocument(_ sender: Any?) {
-        configuration.onNewDocument()
+        pinButton.setAccessibilityLabel(String(localized: "Always on Top"))
+        pinButton.setAccessibilityValue(pinned ? 1 : 0)
     }
 
     @objc private func togglePin(_ sender: Any?) {
         configuration.onTogglePin()
     }
 
-    func toolbarWillAddItem(_ notification: Notification) {
-        guard let item = notification.userInfo?[NSToolbarUserInfoKey.itemKey] as? NSToolbarItem else {
-            return
-        }
-        // Configure the public item view, including AppKit's built-in Sidebar
-        // button, without replacing controls or traversing private chrome.
-        item.view?.focusRingType = .none
-    }
-
-    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [.toggleSidebar, .sidebarTrackingSeparator, Item.tabs, .flexibleSpace, Item.newDocument, Item.pin]
-    }
-
-    func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        toolbarDefaultItemIdentifiers(toolbar)
-    }
-
-    func toolbar(
-        _ toolbar: NSToolbar,
-        itemForItemIdentifier identifier: NSToolbarItem.Identifier,
-        willBeInsertedIntoToolbar flag: Bool
-    ) -> NSToolbarItem? {
-        switch identifier {
-        case .sidebarTrackingSeparator:
-            return NSTrackingSeparatorToolbarItem(
-                identifier: identifier,
-                splitView: splitView,
-                dividerIndex: 0
-            )
-        case Item.tabs:
-            let item = NSToolbarItem(itemIdentifier: identifier)
-            item.label = String(localized: "Documents")
-            item.view = tabHost
-            item.isBordered = false
-            item.visibilityPriority = .user
-            return item
-        case Item.newDocument:
-            let item = NSToolbarItem(itemIdentifier: identifier)
-            item.label = String(localized: "New Document")
-            item.toolTip = item.label
-            item.image = NSImage(systemSymbolName: "square.and.pencil", accessibilityDescription: item.label)
-            item.target = self
-            item.action = #selector(newDocument(_:))
-            return item
-        case Item.pin:
-            let item = NSToolbarItem(itemIdentifier: identifier)
-            item.label = String(localized: "Always on Top")
-            item.target = self
-            item.action = #selector(togglePin(_:))
-            pinItem = item
-            updatePinItem()
-            return item
-        default:
-            return nil
-        }
+    private static func titlebarButton(symbol: String) -> NSButton {
+        let button = NSButton()
+        button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+        button.isBordered = false
+        button.imagePosition = .imageOnly
+        button.contentTintColor = .secondaryLabelColor
+        button.focusRingType = .none
+        // Keeps the image's symbol configuration across later image swaps.
+        button.symbolConfiguration = .init(pointSize: 15, weight: .regular)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.widthAnchor.constraint(equalToConstant: 40).isActive = true
+        return button
     }
 }
 
-/// The rule is a native sibling above the hosting view, not a subview whose
-/// ordering or layout is owned by SwiftUI's hosting implementation.
+/// The tab band and top rule are native siblings above the hosting view, not
+/// subviews whose ordering or layout is owned by SwiftUI's hosting implementation.
 private final class WorkspaceEditorViewController: NSViewController {
     private let host: NSHostingController<AnyView>
     let topRule = EditorTabTopRuleView()
+    let strip = EditorTabStripView()
+    /// Titlebar accessory views whose frames the tab band must not cover.
+    var accessoryViews: [NSView] = [] {
+        didSet {
+            for view in accessoryViews {
+                view.postsFrameChangedNotifications = true
+                NotificationCenter.default.addObserver(
+                    self, selector: #selector(accessoryFrameChanged(_:)),
+                    name: NSView.frameDidChangeNotification, object: view
+                )
+            }
+        }
+    }
 
     var rootView: AnyView {
         get { host.rootView }
@@ -284,6 +207,8 @@ private final class WorkspaceEditorViewController: NSViewController {
     init(rootView: AnyView) {
         host = NSHostingController(rootView: rootView)
         super.init(nibName: nil, bundle: nil)
+        strip.topRule = topRule
+        topRule.strip = strip
     }
 
     @available(*, unavailable)
@@ -296,6 +221,7 @@ private final class WorkspaceEditorViewController: NSViewController {
         topRule.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(host.view)
         view.addSubview(topRule, positioned: .above, relativeTo: host.view)
+        view.addSubview(strip, positioned: .above, relativeTo: topRule)
         NSLayoutConstraint.activate([
             host.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             host.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -306,6 +232,35 @@ private final class WorkspaceEditorViewController: NSViewController {
             topRule.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             topRule.heightAnchor.constraint(equalToConstant: 1),
         ])
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        let systemBand = view.safeAreaInsets.top
+        let band = systemBand > 0 ? systemBand : EditorTabLayout.stripHeight
+        strip.frame = CGRect(x: 0, y: view.bounds.height - band, width: view.bounds.width, height: band)
+        strip.contentInsets = accessoryInsets()
+    }
+
+    /// Accessory frames are read at layout time in window coordinates.
+    private func accessoryInsets() -> NSEdgeInsets {
+        guard view.window != nil else { return NSEdgeInsets() }
+        let column = view.convert(view.bounds, to: nil)
+        var insets = NSEdgeInsets()
+        for accessory in accessoryViews where accessory.window === view.window && !accessory.isHiddenOrHasHiddenAncestor {
+            let frame = accessory.convert(accessory.bounds, to: nil)
+            guard frame.maxX > column.minX, frame.minX < column.maxX else { continue }
+            if frame.midX < column.midX {
+                insets.left = max(insets.left, frame.maxX - column.minX)
+            } else {
+                insets.right = max(insets.right, column.maxX - frame.minX)
+            }
+        }
+        return insets
+    }
+
+    @objc private func accessoryFrameChanged(_ notification: Notification) {
+        view.needsLayout = true
     }
 }
 

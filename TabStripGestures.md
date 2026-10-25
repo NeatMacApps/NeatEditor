@@ -27,6 +27,44 @@ Owner corrections (2026-10-24):
   Fix continuous outlines without changing that design. Manual traffic-light
   placement remains prohibited.
 
+## Compact 32 pt titlebar (owner decision 2026-10-25, authoritative)
+
+The owner rejected the system-standard 52 pt toolbar for this minimal editor:
+the design philosophy includes using as much screen space as possible for text.
+The owner chose a single 32 pt row and explicitly approved removing `NSToolbar`
+for this window. This is an owner exception for the workspace window's top row
+only; sidebar, split view, window controls and editor remain native.
+
+- The window has no `NSToolbar`. The top row is the native titlebar of the
+  SwiftUI `.hiddenTitleBar` (full-size-content) window, measured 32 pt on
+  macOS 27.2 with traffic lights centred 16 pt from the top. Traffic lights stay
+  system-placed; never reposition them.
+- Sidebar toggle: a native borderless `NSButton` (`sidebar.left`) in a
+  `.leading` `NSTitlebarAccessoryViewController`, so AppKit places it beside
+  the traffic lights. It calls `NSSplitViewController.toggleSidebar(_:)`.
+- Pin: a native borderless `NSButton` in a `.trailing` titlebar accessory at the
+  window's trailing edge; `pin`/`pin.fill`, accent tint while pinned, the
+  existing Enable/Disable Always on Top tooltips.
+- New Document: a borderless `plus` button immediately after the last tab, owned
+  by the tab strip; when tabs overflow it stays at the strip's trailing edge.
+- No glass capsules: a 36 pt glass item cannot fit a 32 pt row, and the capsules
+  were the main source of top-row weight. Buttons never draw focus rings.
+- The tab strip is a native sibling in the editor column's top band (titlebar
+  height), excluding the frames of the two accessories. With the sidebar
+  collapsed it starts after the sidebar button; with it expanded it starts at
+  the editor column. Blank strip space still hit-tests through to native
+  titlebar drag/double-click.
+- Tabs: 26 pt tall, bottom-aligned with the editor, 13 pt regular titles,
+  168 pt equal slots, 12 pt title padding, 7 pt corners; the stepped
+  editor-joined shape and separator-colour outline are retained.
+- Supersedes: the 52 pt `.unified` toolbar, toolbar item focus/`.prominent`
+  pin policy, tracking separator and flexible-space notes below, and the
+  38 pt / 14 pt tab sizes. Those sections remain as history.
+- Reference: local probe windows (`NSTitlebarAccessoryViewController`
+  `.leading/.trailing` stayed 32 pt; content views in the titlebar band receive
+  hits). Apple [NSTitlebarAccessoryViewController](https://developer.apple.com/documentation/appkit/nstitlebaraccessoryviewcontroller)
+  `layoutAttribute` supports bottom, leading and trailing.
+
 ## Native implementation and reference
 
 `WorkspaceSplitViewController` uses `NSSplitViewController`, a full-height
@@ -169,8 +207,8 @@ after lock are not transition evidence. No document text or window size changed.
 
 - Owner principle (2026-10-25): NeatEditor is a minimal text editor whose design
   philosophy includes using as much screen space as possible for text. The
-  system-standard 52 pt toolbar height does not fit that philosophy; a compact
-  top-row redesign is pending the owner's choice below.
+  system-standard 52 pt toolbar height does not fit that philosophy. Decided:
+  see "Compact 32 pt titlebar" above.
 - Measured on macOS 27.2 (probe windows, `frame.height - contentLayoutRect.height`):
   titlebar only 32 pt (traffic-light centre 16 pt from top); `.unifiedCompact`
   40 pt (centre 20 pt, sidebar item 24 pt tall); `.unified` 52 pt in this app.

@@ -25,16 +25,19 @@ struct EditorTabActions {
     var onClose: (UUID) -> Void = { _ in }
     var onDelete: (UUID) -> Void = { _ in }
     var onCloseOthers: (UUID) -> Void = { _ in }
+    var onNewDocument: () -> Void = {}
 }
 
 enum EditorTabLayout {
-    static let stripHeight: CGFloat = 52
-    static let tabHeight: CGFloat = 38
-    static let trailingPadding: CGFloat = 12
+    /// Fallback only; the live band follows the native titlebar's safe area.
+    static let stripHeight: CGFloat = 32
+    static let tabHeight: CGFloat = 26
+    /// Trailing slot after the tabs that holds the New Document button.
+    static let newDocumentSlotWidth: CGFloat = 32
     static let fadeWidth: CGFloat = 16
-    static let titleFontSize: CGFloat = 14
-    static let horizontalPadding: CGFloat = 16
-    static let tabWidth: CGFloat = 184
+    static let titleFontSize: CGFloat = 13
+    static let horizontalPadding: CGFloat = 12
+    static let tabWidth: CGFloat = 168
     static let minimumWindowEdge: CGFloat = 470
 
     static func revealedOffset(
@@ -64,9 +67,9 @@ enum EditorTabLayout {
 
 /// The single stepped curve used by both fill and open outline.
 enum ConnectedTabGeometry {
-    static let topInset: CGFloat = 5
-    static let topCornerRadius: CGFloat = 8
-    static let bottomJoinRadius: CGFloat = 8
+    static let topInset: CGFloat = 4
+    static let topCornerRadius: CGFloat = 7
+    static let bottomJoinRadius: CGFloat = 7
     static let baselineOutset: CGFloat = bottomJoinRadius - topInset
     static let baselineCenterDrop: CGFloat = 0.5
 

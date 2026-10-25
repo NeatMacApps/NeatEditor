@@ -25,7 +25,8 @@ struct WorkspaceView: View {
                 onRename: workspaceStore.renameDocument,
                 onClose: workspaceStore.closeDocument,
                 onDelete: workspaceStore.moveToTrash,
-                onCloseOthers: workspaceStore.closeOtherDocuments(keeping:)
+                onCloseOthers: workspaceStore.closeOtherDocuments(keeping:),
+                onNewDocument: workspaceStore.createNewDocument
             ),
             isSidebarVisible: workspaceStore.preferences.isSidebarVisible,
             isSettingsSelected: isSettingsSelected,
@@ -35,7 +36,6 @@ struct WorkspaceView: View {
                     workspaceStore.preferences.isSidebarVisible = visible
                 }
             },
-            onNewDocument: workspaceStore.createNewDocument,
             onTogglePin: { isWindowPinned.toggle() }
         )
         .ignoresSafeArea(.container, edges: .top)

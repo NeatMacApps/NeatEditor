@@ -9,7 +9,7 @@ struct ConnectedTabGeometryTests {
         let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 1200, height: 600),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        let strip = EditorTabStripView(frame: CGRect(x: 240, y: 548, width: 900, height: 52))
+        let strip = EditorTabStripView(frame: CGRect(x: 240, y: 548, width: 900, height: 32))
         let rule = EditorTabTopRuleView(frame: CGRect(x: 200, y: 547, width: 1000, height: 1))
         window.contentView?.addSubview(strip)
         window.contentView?.addSubview(rule)
@@ -44,20 +44,20 @@ struct ConnectedTabGeometryTests {
         strip.update(tabs: tabs, selectedTabID: last.id, actions: EditorTabActions())
         let item = try #require(strip.tabViews[last.id])
         for width: CGFloat in [900, 700, 500, 300, 180, 350, 600, 900, 450, 800] {
-            strip.setFrameSize(CGSize(width: width, height: 52))
+            strip.setFrameSize(CGSize(width: width, height: 32))
             strip.layoutSubtreeIfNeeded()
             let gap = try #require(strip.selectedTabGap(in: rule))
             let frame = rule.convert(item.tabBounds, from: item)
-            if width - 12 >= frame.width + 6 {
+            if width - 32 >= frame.width + 6 {
                 #expect(abs(gap.lowerBound - (frame.minX - 3)) < 0.000_001)
                 #expect(abs(gap.upperBound - (frame.maxX + 3)) < 0.000_001)
             }
             #expect(gap.lowerBound >= 40)
-            #expect(gap.upperBound <= 40 + width - 12)
+            #expect(gap.upperBound <= 40 + width - 32)
             #expect(item.titleField.frame.midX == item.tabBounds.midX)
             #expect(item.titleField.frame.midY == item.tabBounds.midY)
-            #expect(item.tabBounds.height == 38)
-            #expect(strip.convert(item.tabBounds, from: item).minY == 14)
+            #expect(item.tabBounds.height == 26)
+            #expect(strip.convert(item.tabBounds, from: item).minY == 6)
         }
         let before = try #require(strip.selectedTabGap(in: rule))
         strip.setFrameOrigin(CGPoint(x: 300, y: 548))
@@ -76,7 +76,7 @@ struct ConnectedTabGeometryTests {
         let first = try #require(tabs.first)
         strip.update(tabs: tabs, selectedTabID: first.id, actions: EditorTabActions())
         for width: CGFloat in [900, 600, 250, 900] {
-            strip.setFrameSize(CGSize(width: width, height: 52))
+            strip.setFrameSize(CGSize(width: width, height: 32))
             strip.layoutSubtreeIfNeeded()
             for x in [CGFloat(10), width / 2, width - 1] {
                 let point = strip.convert(CGPoint(x: x, y: 4), to: strip.superview)
@@ -100,6 +100,35 @@ struct ConnectedTabGeometryTests {
         strip.update(tabs: [], selectedTabID: nil, actions: EditorTabActions())
         strip.layoutSubtreeIfNeeded()
         #expect(strip.hitTest(trailing) == nil)
+    }
+
+    @Test("new document button follows the last tab, stays visible on overflow and respects accessory insets")
+    func newDocumentButtonPlacement() throws {
+        let (window, strip, _) = makeStrip()
+        defer { window.close() }
+        var created = 0
+        var actions = EditorTabActions()
+        actions.onNewDocument = { created += 1 }
+        let tabs = ["One.md", "Two.md"].map { EditorTabDescriptor(id: UUID(), title: $0) }
+        strip.update(tabs: tabs, selectedTabID: tabs[0].id, actions: actions)
+        strip.layoutSubtreeIfNeeded()
+        let button = try #require(strip.subviews.compactMap { $0 as? NSButton }.first)
+        #expect(button.frame.minX == 2 * EditorTabLayout.tabWidth)
+        #expect(button.frame.maxY == strip.bounds.maxY)
+        #expect(strip.hitTest(strip.convert(CGPoint(x: button.frame.midX, y: button.frame.midY),
+                                            to: strip.superview)) === button)
+        button.performClick(nil)
+        #expect(created == 1)
+
+        strip.contentInsets = NSEdgeInsets(top: 0, left: 120, bottom: 0, right: 40)
+        strip.layoutSubtreeIfNeeded()
+        let first = try #require(strip.tabViews[tabs[0].id])
+        #expect(strip.convert(first.tabBounds, from: first).minX == 120)
+        #expect(button.frame.minX == 120 + 2 * EditorTabLayout.tabWidth)
+
+        strip.setFrameSize(CGSize(width: 400, height: 32))
+        strip.layoutSubtreeIfNeeded()
+        #expect(abs(button.frame.maxX - (400 - 40)) < 0.001)
     }
 
     @Test("inactive tabs never acquire a hover capsule or retain the selected fill")
@@ -201,7 +230,7 @@ struct ConnectedTabGeometryTests {
         #expect(strip.renameClickMonitor == nil)
     }
 
-    @Test("tabs keep equal widths, moderate centered type and native trailing ellipsis")
+    @Test("tabs keep equal widths, compact centered type and native trailing ellipsis")
     func nativeTitleMeasurement() throws {
         let (window, strip, _) = makeStrip()
         defer { window.close() }
@@ -214,9 +243,9 @@ struct ConnectedTabGeometryTests {
             for tab in tabs {
                 let item = try #require(strip.tabViews[tab.id])
                 let field = item.titleField
-                #expect(item.tabBounds.width == 184)
-                #expect(field.frame.width == 152)
-                #expect(field.font?.pointSize == 14)
+                #expect(item.tabBounds.width == 168)
+                #expect(field.frame.width == 144)
+                #expect(field.font?.pointSize == 13)
                 #expect(field.frame.height >= field.intrinsicContentSize.height)
                 #expect(field.frame.midY == item.tabBounds.midY)
                 #expect(field.lineBreakMode == .byTruncatingTail)

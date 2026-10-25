@@ -3,13 +3,16 @@ import AppKit
 /// One native owner for tab identity, layout, scrolling and interaction.
 /// SwiftUI supplies descriptors/actions, never pixel geometry.
 final class EditorTabStripView: NSView {
-    static let titleBarHeight = EditorTabLayout.stripHeight
     static let minimumWindowEdge = EditorTabLayout.minimumWindowEdge
 
     private(set) var tabs: [EditorTabDescriptor] = []
     private(set) var selectedTabID: UUID?
     private(set) var tabViews: [UUID: EditorTabItemView] = [:]
     var actions = EditorTabActions()
+    /// Titlebar regions owned by native accessories (sidebar button, pin).
+    var contentInsets = NSEdgeInsets() {
+        didSet { needsLayout = true }
+    }
     weak var topRule: EditorTabTopRuleView?
     var editingTabID: UUID?
     var renameEligibleID: UUID?
@@ -17,6 +20,7 @@ final class EditorTabStripView: NSView {
     private var scrollStepper = EditorTabScrollStepper()
     private let scrollView = EditorTabScrollView()
     private let canvas = EditorTabCanvas()
+    private let newDocumentButton = NSButton()
     private let leadingFade = CAGradientLayer()
     private let trailingFade = CAGradientLayer()
 
@@ -40,6 +44,7 @@ final class EditorTabStripView: NSView {
         scrollView.contentView.postsBoundsChangedNotifications = true
         scrollView.documentView = canvas
         addSubview(scrollView)
+        configureNewDocumentButton()
         for fade in [leadingFade, trailingFade] {
             fade.zPosition = 100
             fade.startPoint = CGPoint(x: 0, y: 0.5)
@@ -94,11 +99,30 @@ final class EditorTabStripView: NSView {
         topRule?.needsDisplay = true
     }
 
+    private func configureNewDocumentButton() {
+        let label = String(localized: "New Document")
+        newDocumentButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: label)?
+            .withSymbolConfiguration(.init(pointSize: 13, weight: .regular))
+        newDocumentButton.isBordered = false
+        newDocumentButton.imagePosition = .imageOnly
+        newDocumentButton.contentTintColor = .secondaryLabelColor
+        newDocumentButton.focusRingType = .none
+        newDocumentButton.toolTip = label
+        newDocumentButton.setAccessibilityLabel(label)
+        newDocumentButton.target = self
+        newDocumentButton.action = #selector(newDocument(_:))
+        addSubview(newDocumentButton)
+    }
+
+    @objc private func newDocument(_ sender: Any?) { actions.onNewDocument() }
+
     override func layout() {
         super.layout()
-        let viewportWidth = max(0, bounds.width - EditorTabLayout.trailingPadding)
+        let viewportX = contentInsets.left
+        let viewportWidth = max(0, bounds.width - contentInsets.left - contentInsets.right
+            - EditorTabLayout.newDocumentSlotWidth)
         // One extra point carries the tab's join into the editor's top rule.
-        scrollView.frame = CGRect(x: 0, y: 0, width: viewportWidth, height: bounds.height + 1)
+        scrollView.frame = CGRect(x: viewportX, y: 0, width: viewportWidth, height: bounds.height + 1)
         scrollView.tile()
         var x: CGFloat = 0
         for tab in tabs {
@@ -111,7 +135,8 @@ final class EditorTabStripView: NSView {
             )
             x += width
         }
-        canvas.frame.size = CGSize(width: max(viewportWidth, x + EditorTabLayout.trailingPadding),
+        // Room for the last tab's join foot so overflow never clips it.
+        canvas.frame.size = CGSize(width: max(viewportWidth, x + ConnectedTabGeometry.baselineOutset),
                                    height: bounds.height + 1)
         let selectedFrame = selectedTabID.flatMap { tabViews[$0] }.map {
             canvas.convert($0.tabBounds, from: $0)
@@ -123,6 +148,12 @@ final class EditorTabStripView: NSView {
         )
         scrollView.contentView.scroll(to: CGPoint(x: offset, y: 0))
         scrollView.reflectScrolledClipView(scrollView.contentView)
+        // Directly after the last tab; pinned to the viewport end on overflow.
+        let tabsEnd = viewportX + min(viewportWidth, x - offset)
+        newDocumentButton.frame = CGRect(
+            x: tabsEnd, y: bounds.height - EditorTabLayout.tabHeight,
+            width: EditorTabLayout.newDocumentSlotWidth, height: EditorTabLayout.tabHeight
+        )
         geometryDidChange()
     }
 
@@ -152,11 +183,12 @@ final class EditorTabStripView: NSView {
     private func geometryDidChange() {
         let offset = scrollView.contentView.bounds.minX
         let width = scrollView.contentView.bounds.width
+        let originX = scrollView.frame.minX
         let color = NSColor.windowBackgroundColor.cgColor
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        leadingFade.frame = CGRect(x: 0, y: 0, width: EditorTabLayout.fadeWidth, height: bounds.height)
-        trailingFade.frame = CGRect(x: max(0, width - EditorTabLayout.fadeWidth), y: 0,
+        leadingFade.frame = CGRect(x: originX, y: 0, width: EditorTabLayout.fadeWidth, height: bounds.height)
+        trailingFade.frame = CGRect(x: originX + max(0, width - EditorTabLayout.fadeWidth), y: 0,
                                     width: EditorTabLayout.fadeWidth, height: bounds.height)
         leadingFade.colors = [color, NSColor.windowBackgroundColor.withAlphaComponent(0).cgColor]
         trailingFade.colors = [NSColor.windowBackgroundColor.withAlphaComponent(0).cgColor, color]
@@ -195,8 +227,9 @@ final class EditorTabStripView: NSView {
     override func hitTest(_ point: NSPoint) -> NSView? {
         // The toolbar's native chrome must own blank-space double-click/drag.
         // Only tab controls (including their rename field) consume events here.
-        guard let hit = super.hitTest(point),
-              tabViews.values.contains(where: { hit === $0 || hit.isDescendant(of: $0) }) else {
+        guard let hit = super.hitTest(point) else { return nil }
+        if hit === newDocumentButton { return hit }
+        guard tabViews.values.contains(where: { hit === $0 || hit.isDescendant(of: $0) }) else {
             return nil
         }
         return hit
