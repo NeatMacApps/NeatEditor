@@ -40,6 +40,7 @@
 		833161AD0662EF0AA75851C0 /* WorkspaceSidebarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A6D6237DD372EDEF3850424 /* WorkspaceSidebarItem.swift */; };
 		83AA4C1985409273788FD141 /* EditorTabItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98813FD87C11733B55049246 /* EditorTabItemView.swift */; };
 		85E7BB7174B4D000CEFDE8A6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4EDF9A6AA28B3E0BB1ED45 /* SettingsView.swift */; };
+		904A3DDCB223E39240F95CA4 /* WorkspaceToolbarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C21CDB2A4B0C2A6A6DFAF57 /* WorkspaceToolbarTests.swift */; };
 		92AE87B6A8CBD6148076B130 /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F0D88DC1A7D3B01D9DBBD6 /* AppUpdater.swift */; };
 		93921D6CEFE951DE0C2E142A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 35B5BE7CD19E6AD7BA68BF31 /* Sparkle */; };
 		97DF5482D6F249403D615719 /* WorkspacePreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */; };
@@ -76,6 +77,7 @@
 		239A9A4637B76518C6187B38 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		31C04ABF5739CF2D974AA14F /* WorkspaceStore+Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Sidebar.swift"; sourceTree = "<group>"; };
 		32C74314E17C1CDECDF2EDB4 /* ExternalFileOpenCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalFileOpenCoordinator.swift; sourceTree = "<group>"; };
+		3C21CDB2A4B0C2A6A6DFAF57 /* WorkspaceToolbarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceToolbarTests.swift; sourceTree = "<group>"; };
 		3DB9D86BBC9C10E24C2579C1 /* TitleBarTrafficLightAlignmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleBarTrafficLightAlignmentView.swift; sourceTree = "<group>"; };
 		41100292C0909F81989C8A6B /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		53C5DF0B6EF2E580E16B1247 /* ViewWindowFrameReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewWindowFrameReader.swift; sourceTree = "<group>"; };
@@ -213,6 +215,7 @@
 				F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */,
 				C50807406F37393832E921EC /* WorkspaceSidebarTests.swift */,
 				04E92B1CA43CA429B446891A /* WorkspaceStoreTests.swift */,
+				3C21CDB2A4B0C2A6A6DFAF57 /* WorkspaceToolbarTests.swift */,
 			);
 			path = NeatEditorTests;
 			sourceTree = "<group>";
@@ -422,6 +425,7 @@
 				97DF5482D6F249403D615719 /* WorkspacePreferencesTests.swift in Sources */,
 				34C2AC68775F3BA373AC7357 /* WorkspaceSidebarTests.swift in Sources */,
 				4167662901A455448BDCB6DE /* WorkspaceStoreTests.swift in Sources */,
+				904A3DDCB223E39240F95CA4 /* WorkspaceToolbarTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -566,7 +570,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -581,7 +585,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0.13;
+				MARKETING_VERSION = 1.0.14;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";
@@ -668,7 +672,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -689,7 +693,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0.13;
+				MARKETING_VERSION = 1.0.14;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

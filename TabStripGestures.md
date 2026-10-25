@@ -38,6 +38,16 @@ unbordered; its minimum and maximum widths use constraints rather than deprecate
 width: the hidden-sidebar layout also needs space for native window controls.
 Tabs have user visibility priority so actions overflow before document selection.
 
+Toolbar controls must not draw focus rings after mouse, accessibility or keyboard
+activation. Installed 1.0.13 exposed a blue ring on the native Sidebar button
+through its actual accessibility press. Preserve AppKit's built-in items and
+set `item.view?.focusRingType = .none` in `toolbarWillAddItem(_:)`, using public
+`NSToolbarUserInfoKey.itemKey`; do not search private titlebar descendants or replace
+the native button. Apply the same policy to all items so New Document and pin
+cannot repeat the defect. Reference: the installed built-in `.toggleSidebar`
+item's public `view` is an `NSButton`; public callback/key/property verified
+against Xcode 27.2 headers and [Apple's focus ring API](https://developer.apple.com/documentation/appkit/nsview/focusringtype).
+
 `TitleBarEventNSView` owns the tab-strip drag because a custom view hosted in an
 `NSToolbarItem` does not get the window drag automatically, and
 `NSWindow.performDrag(with:)` is ignored in that context. The monitor records
@@ -57,6 +67,23 @@ than separate strokes with clearance gaps or mismatched fill/border curves.
 Native AppKit continues to own the surrounding toolbar and window behavior.
 Restoring an owner-decided design is exempt from new appearance research;
 public API changes still require official documentation and SDK checks.
+
+### Toolbar height and editor top rule (owner direction 2026-10-25)
+
+- Use the native `unified` toolbar (52 pt), not `unifiedCompact` (40 pt), so
+  the native glass items keep their standard control size. The owner compared
+  the top-right New Document and pin actions with Corral's top bar; compact
+  glass (24 pt tall) clamped the glyphs and read as cramped. The installed
+  unified toolbar draws 36 pt glass, the same as the reference.
+- The document-tab strip fills that row and keeps the existing 32 pt tab shape
+  bottom-aligned, so the tab still meets the editor surface. Tabs sit about
+  10 pt lower than the traffic-light centres; shrinking the row again would
+  restore the cramped glass, so do not change the height without the owner.
+- The editor column owns the full-width 1 pt top rule. It is not drawn when
+  there are no tabs, and it leaves an open span under the selected tab's join.
+  The tab strip draws only the raised tab outline; both strokes are measured
+  in AppKit window coordinates so they meet on one line instead of stepping at
+  the tab's bottom corners.
 
 Inspected component references:
 

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.14 - 2026-10-25
+
+### Fixed
+
+- The native Sidebar toolbar button no longer draws a blue focus ring after accessibility or keyboard activation. Rounded stepped tabs, the continuous editor join, folder selection and window dragging are unchanged.
+
+### 简体中文
+
+- 修复通过辅助功能或键盘激活原生侧边栏按钮后出现蓝色焦点圈的问题；保留圆角台阶标签、连续底边、文件夹切换及拖窗优化。
+
 ## 1.0.13 - 2026-10-25
 
 ### Fixed

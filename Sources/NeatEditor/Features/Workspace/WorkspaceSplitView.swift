@@ -180,6 +180,15 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         configuration.onTogglePin()
     }
 
+    func toolbarWillAddItem(_ notification: Notification) {
+        guard let item = notification.userInfo?[NSToolbarUserInfoKey.itemKey] as? NSToolbarItem else {
+            return
+        }
+        // Configure the public item view, including AppKit's built-in Sidebar
+        // button, without replacing controls or traversing private chrome.
+        item.view?.focusRingType = .none
+    }
+
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         [.toggleSidebar, .sidebarTrackingSeparator, Item.tabs, Item.newDocument, Item.pin]
     }
