@@ -102,6 +102,25 @@ while pinned and `.plain` otherwise. This reuses the existing pin item/action
 and Apple's WWDC25 toolbar state example, not a separate glass view. The item
 continues to follow the shared focus-ring policy.
 
+### Trailing toolbar actions (owner report 2026-10-25)
+
+- New Document and pin remain at the native trailing window margin with the
+  sidebar both expanded and collapsed. Opening the sidebar must not leave an
+  extra empty region to the right of these actions. Preserve their native size,
+  grouping, actions and the existing single-row tab design.
+- Reuse this controller's existing `NSToolbar` items and add AppKit's standard
+  `.flexibleSpace` between the document tabs and the trailing actions. A tab
+  item's maximum width only caps its size; it does not consume the remaining
+  toolbar space. Do not compensate with sidebar-dependent button offsets.
+- Reference inspected: `WorkspaceSplitView.swift`'s default item order and
+  tab-width constraint, compared with the owner's expanded/collapsed captures.
+  Apple's [flexibleSpace](https://developer.apple.com/documentation/appkit/nstoolbaritem/identifier/flexiblespace)
+  supplies the missing flexible width; the identifier is declared in the
+  installed Xcode 27.2 `NSToolbarItem.h`. No replacement controls are needed.
+- Verify the installed app by pressing the actual Sidebar toolbar button at
+  normal and narrow window widths, including a resized sidebar. Compare both
+  action frames and screenshots against the native trailing margin.
+
 ### Live resize synchronization (owner report 2026-10-25)
 
 - During continuous window resize, the selected tab's filename, fill and raised
@@ -116,9 +135,18 @@ continues to follow the shared focus-ring policy.
   both parts must pass the same continuous-resize acceptance.
 - Reveal selection during the same native layout pass after selection, tab-size
   or viewport-size changes. Do not animate or queue resize reveals.
+- The tab toolbar item's maximum width must follow every window resize, not only
+  split-view or sidebar changes. Derive it from the window's current content
+  layout width minus the visible sidebar and divider, and update it synchronously
+  from the native resize callback. Otherwise widening leaves a stale narrow strip
+  that hides tabs while both buttons and window space remain free.
 - Acceptance requires sequential frames during repeated fast shrink/expand and
   direction reversals, with sidebar both visible and hidden and a trailing tab
   selected. A settled screenshot or a passing build is not motion evidence.
+  Verified on the installed 1.0.15 release: 85 visible-sidebar and 106
+  hidden-sidebar frames across roughly 700–1330 pt widths, plus settled 700/1150/
+  1330 checks. The selected filename, fill and outline stayed in one frame, and
+  the strip width tracked the window instead of retaining a 398 pt cap.
 
 ### Toolbar height and editor top rule (owner direction 2026-10-25)
 

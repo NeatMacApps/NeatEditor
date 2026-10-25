@@ -136,6 +136,7 @@ before claiming that path. Public assets remain pending the integrated tab rewri
 | P2 | A standalone View command menu duplicated the system View menu. | Fixed: add zoom commands to the existing menu through `CommandGroup(after: .toolbar)`. Installed-menu verification is pending. |
 | P2 | Release artifacts preceded the source commit; detached execution, notes and checksum documentation were inconsistent. | Fixed and exercised for 1.0.14: commit-first universal archive/export, app/DMG notarization, draft-only uploads, downloaded-byte verification and signed appcast. |
 | P2 | Hosting document tabs in an `NSToolbarItem` removed the old title-bar drag: dragging a tab no longer moved the window. | Fixed: the tab-strip monitor tracks the press, moves the window after 4 points, clamps it on screen, and leaves clicks to SwiftUI. Installed drag verified from a tab (window origin 100,100 → 280,200). |
+| P2 | The tab toolbar item's maximum width refreshed only on split-view resize, so widening the window kept a 398 pt strip and hid tabs despite free toolbar space. | Fixed: derive the width from the current content layout width on `NSWindow.didResizeNotification`, update the tab host synchronously, and revalidate toolbar items. Installed Release verified at 700/1150/1330 pt and with 191 live-drag frames across both sidebar states. |
 
 ## Sidebar review (2026-10-24)
 
