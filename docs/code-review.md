@@ -60,6 +60,15 @@ the gutter regression failed on CR/NEL/line/paragraph separators. Final cases
 cover all six native terminators, UTF-16 emoji/CJK positions, last/empty lines,
 native undo and the 999-to-1000 line-number width transition.
 
+The later native-title measurement helper constructed/configured an `NSTextField`
+from a nonisolated static method, producing nine AppKit actor-isolation diagnostics.
+Keep the existing native-cell measurement and mark only that helper `@MainActor`;
+its production caller is the native strip's main-actor `update`, and its tests are
+already main-actor isolated. Pure geometry helpers retain their current isolation.
+This follows the [Swift migration guidance](https://www.swift.org/migration/documentation/swift-6-concurrency-migration-guide/commonproblems/)
+and the installed SDK's NSView/AppKit isolation contract. No suppression or unsafe
+actor assertion is needed. Final diagnostics must confirm removal.
+
 After the native-tab integration, independently repeated clean universal Debug
 build/analyze on source `567e3a5`. Both architectures compiled, the full log has
 only the assessed AppIntents metadata diagnostic, and structured build results

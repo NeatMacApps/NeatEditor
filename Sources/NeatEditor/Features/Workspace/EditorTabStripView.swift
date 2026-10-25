@@ -9,6 +9,7 @@ final class EditorTabStripView: NSView {
     private(set) var tabs: [EditorTabDescriptor] = []
     private(set) var selectedTabID: UUID?
     private(set) var tabViews: [UUID: EditorTabItemView] = [:]
+    private var tabWidths: [UUID: CGFloat] = [:]
     var actions = EditorTabActions()
     weak var topRule: EditorTabTopRuleView?
     var editingTabID: UUID?
@@ -74,6 +75,7 @@ final class EditorTabStripView: NSView {
         }
         self.tabs = tabs
         self.selectedTabID = selectedTabID
+        tabWidths = [:]
         for tab in tabs {
             let item: EditorTabItemView
             if let existing = tabViews[tab.id] {
@@ -85,6 +87,7 @@ final class EditorTabStripView: NSView {
                 canvas.addSubview(item)
             }
             item.update(descriptor: tab, selected: tab.id == selectedTabID)
+            tabWidths[tab.id] = EditorTabLayout.width(for: item.titleField)
         }
         setAccessibilityChildren(tabs.compactMap { tabViews[$0.id] })
         if let selectedTabID, let selected = tabViews[selectedTabID] {
@@ -102,7 +105,7 @@ final class EditorTabStripView: NSView {
         scrollView.tile()
         var x: CGFloat = 0
         for tab in tabs {
-            let width = EditorTabLayout.width(for: tab.title)
+            let width = tabWidths[tab.id] ?? EditorTabLayout.minimumTabWidth
             tabViews[tab.id]?.frame = CGRect(
                 x: x - ConnectedTabGeometry.baselineOutset,
                 y: bounds.height - EditorTabLayout.tabHeight,

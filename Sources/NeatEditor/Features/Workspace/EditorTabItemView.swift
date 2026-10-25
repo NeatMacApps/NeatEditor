@@ -59,10 +59,9 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
     override func layout() {
         super.layout()
         let rect = tabBounds
-        // Native text cells inset their glyphs by two points on each side.
-        titleField.frame = CGRect(x: rect.minX + EditorTabLayout.horizontalPadding - 2,
+        titleField.frame = CGRect(x: rect.minX + EditorTabLayout.horizontalPadding,
                                   y: 6,
-                                  width: max(0, rect.width - 2 * EditorTabLayout.horizontalPadding + 4),
+                                  width: max(0, rect.width - 2 * EditorTabLayout.horizontalPadding),
                                   height: 18)
     }
 

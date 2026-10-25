@@ -37,8 +37,12 @@ enum EditorTabLayout {
     static let minimumTabWidth = ceil(textWidth("untitleduntitled") + 2 * horizontalPadding)
     static let minimumWindowEdge = ceil(76 + 12 + 52 + 2 * minimumTabWidth + 24)
 
-    static func width(for title: String) -> CGFloat {
-        max(minimumTabWidth, ceil(textWidth(title) + 2 * horizontalPadding))
+    @MainActor
+    static func width(for field: NSTextField) -> CGFloat {
+        // Cell insets depend on the configured alignment and editing style.
+        // Measure the displayed field rather than a separately configured copy.
+        let width = field.cell?.cellSize.width ?? field.intrinsicContentSize.width
+        return max(minimumTabWidth, ceil(width + 2 * horizontalPadding))
     }
 
     private static func textWidth(_ title: String) -> CGFloat {

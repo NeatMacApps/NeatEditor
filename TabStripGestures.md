@@ -59,7 +59,12 @@ are not redesigned.
 `EditorTabStripView` is a native toolbar `NSView`, owning one `NSScrollView`,
 stable-ID tab views and immediate selection reveal. Each `EditorTabItemView`
 keeps its native `NSTextField`, fill and open outline in the same local bounds.
-`WorkspaceSplitViewController` attaches the editor's native top-rule view. That
+Measure each configured title field's native cell, not just its glyphs or a
+separately configured probe; centered cells include additional insets. Cache
+those widths on descriptor/selection updates, not on every resize frame.
+`WorkspaceSplitViewController` attaches the editor's native top-rule view as a
+sibling above hosted content, anchored to the native top safe area below the
+toolbar rather than the full-size content view's top edge. That
 view converts the current selected tab and viewport into its coordinates when
 it draws; it never consumes a cached frame or asynchronously published gap.
 SwiftUI passes immutable tab descriptors and action callbacks only. Remove the
