@@ -15,6 +15,18 @@ struct SettingsView: View {
                 .padding(.top, 20)
             Form {
                 Section("Editor") {
+                    LabeledContent("Documents Folder") {
+                        HStack {
+                            Text(verbatim: workspaceStore.documentsFolderName)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .help(workspaceStore.documentsFolder.path)
+                                .accessibilityLabel(Text(verbatim: workspaceStore.documentsFolder.path))
+                            Button("Choose Folder…", action: workspaceStore.chooseDocumentsFolder)
+                                .accessibilityIdentifier("settings.documentsFolder.choose")
+                        }
+                    }
                     Picker("Tab Behavior", selection: $workspace.preferences.tabBehavior) {
                         ForEach(TabBehavior.allCases, id: \.self) { behavior in
                             Text(LocalizedStringKey(behavior.rawValue)).tag(behavior)

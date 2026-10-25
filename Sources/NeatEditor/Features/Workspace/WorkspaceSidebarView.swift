@@ -54,9 +54,6 @@ struct WorkspaceSidebarView: View {
             Button(action: workspaceStore.createNewDocument) {
                 Label("New Document", systemImage: "plus")
             }
-            Button(action: workspaceStore.chooseDocumentsFolder) {
-                Label("Choose Folder…", systemImage: "folder")
-            }
             Button(action: workspaceStore.refreshSidebarFiles) {
                 Label("Refresh", systemImage: "arrow.clockwise")
             }
@@ -98,9 +95,6 @@ struct WorkspaceSidebarView: View {
             Spacer(minLength: 0)
 
             Menu {
-                Button(action: workspaceStore.chooseDocumentsFolder) {
-                    Label("Choose Folder…", systemImage: "folder")
-                }
                 Button(action: workspaceStore.revealDocumentsFolderInFinder) {
                     Label("Show in Finder", systemImage: "folder")
                 }
@@ -132,14 +126,12 @@ struct WorkspaceSidebarView: View {
                 Text(message)
             } actions: {
                 Button("Retry", action: workspaceStore.refreshSidebarFiles)
-                Button("Choose Folder…", action: workspaceStore.chooseDocumentsFolder)
             }
         } else {
             ContentUnavailableView {
                 Label("No Documents", systemImage: "doc.text")
             } actions: {
                 Button("New Document", action: workspaceStore.createNewDocument)
-                Button("Choose Folder…", action: workspaceStore.chooseDocumentsFolder)
             }
         }
     }

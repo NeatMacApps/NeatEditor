@@ -82,6 +82,7 @@
 "Always on Top" = "窗口置顶";
 "Retry" = "重试";
 "Couldn’t Load Documents" = "无法加载文档";
+"Documents Folder" = "文档文件夹";
 "Choose Folder…" = "选择文件夹…";
 "Choose" = "选择";
 "Choose the folder to list in the sidebar." = "选择要在侧边栏中显示的文件夹。";
