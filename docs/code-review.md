@@ -50,7 +50,7 @@ check was added. Recheck with a stable universal Xcode testing framework before
 claiming native Intel test coverage. The separate AppIntents metadata diagnostic
 retains the individual assessment below.
 
-Final clean Debug build/test/analyze passed with arm64 and x86_64 compilation:
+Baseline clean Debug build/test/analyze passed with arm64 and x86_64 compilation:
 **77 tests in 13 suites executed on arm64**. Logs:
 `build/macos26-review/final-checks.log`; structured result:
 `build/macos26-review/FinalChecks.xcresult`. Swift compiler and analyzer emitted
@@ -59,6 +59,15 @@ Before the fixes, newline regressions failed on CRLF/NEL/paragraph separator;
 the gutter regression failed on CR/NEL/line/paragraph separators. Final cases
 cover all six native terminators, UTF-16 emoji/CJK positions, last/empty lines,
 native undo and the 999-to-1000 line-number width transition.
+
+After the native-tab integration, independently repeated clean universal Debug
+build/analyze on source `567e3a5`. Both architectures compiled, the full log has
+only the assessed AppIntents metadata diagnostic, and structured build results
+report zero compiler/analyzer issues. Input fingerprints stayed identical during
+the check (`build/macos26-review/integration-build.json`); complete diagnostics:
+`build/macos26-review/integration-build.log` and `IntegrationBuild.xcresult`.
+The tab task's intermediate native suite ran 83 tests successfully; final release
+source and installation still require the publisher's current-artifact checks.
 
 Installed native pin acceptance: the exact installed application PID was
 resolved by bundle path, activated, and its actual `Always on Top` toolbar

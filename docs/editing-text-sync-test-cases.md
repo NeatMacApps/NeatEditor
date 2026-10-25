@@ -92,10 +92,36 @@ Historical 1.0.8 diagnostics: 51 tests in six suites passed; the scheduler suite
 Driving real keystrokes/cuts inside `NSTextView` needs accessibility-driven UI
 scripting (TCC-gated in agent sessions), so TC-01/02/04/06/10 were verified by
 code-path review plus launch smoke test; the sync *decision* behind them is
-pinned by the unit tests above. If a future "lines disappear" report arrives,
-replay TC-01 slowly first: with the fix, any remaining loss must come from a
-new external writer of `tabs[].content` (search for assignments) rather than
-the bridge.
+pinned by the unit tests above. These checks do not establish correct incremental
+painting. For a new "lines disappear" report, distinguish the live buffer and
+saved bytes from the displayed pixels before choosing a repair. Correct content
+with a repeated or missing displayed line requires layout/painting investigation;
+it is not evidence of another writer of `tabs[].content`. Re-run TC-01/02 for
+actual content loss, and TC-14 below for display-only artifacts.
+
+## Display-only editing acceptance
+
+Owner report (2026-10-25): deleting a line can leave the last line displayed twice;
+inserting a line can hide the last line, while the text itself remains correct.
+The editor must update continuously without requiring scrolling, resizing,
+switching tabs or forcing a full redraw. Previous synchronization and line-ending
+fixes do not establish coverage of this symptom.
+
+**TC-14 (pending, not a pass):** Start with `"\naaaaa\nbbbbbb"` without a final
+newline. Repeatedly insert and delete newlines in the first empty line, then
+repeat in the middle of a longer document and near the viewport's bottom edge.
+At each step, compare the native buffer, native layout geometry and sequential
+window captures. The unchanged last line must appear exactly once in its current
+position. Repeat with a final newline, wrapped lines, CJK/emoji, search both open
+and closed, undo/redo, font zoom and window resizing. Check autosaved bytes and
+existing IME/tab-isolation contracts independently. A resized or forcibly redrawn
+final screenshot cannot establish incremental-paint correctness.
+
+Current source uses an explicit TextKit 1 stack. A native API probe on macOS 27.2 /
+Xcode 27.2 confirmed that accessing `layoutManager` changes a TextKit 2 text view
+back to TextKit 1; this proves the migration hazard, not reproduction or repair
+of the reported display defect. Research, candidate scope and supporting sources
+are recorded in the parent workspace's `docs/EDITOR_SYNC_KNOWLEDGE_BASE.md`, §7.1.
 
 ## Shift+Enter line boundaries
 

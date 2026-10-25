@@ -33,6 +33,7 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
         titleField.delegate = self
         titleField.setAccessibilityElement(false)
         addSubview(titleField)
+        setAccessibilityElement(true)
         setAccessibilityRole(.radioButton)
         setAccessibilityIdentifier("document-tab-\(id)")
         update(descriptor: descriptor, selected: false)

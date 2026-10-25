@@ -86,6 +86,7 @@ final class EditorTabStripView: NSView {
             }
             item.update(descriptor: tab, selected: tab.id == selectedTabID)
         }
+        setAccessibilityChildren(tabs.compactMap { tabViews[$0.id] })
         if let selectedTabID, let selected = tabViews[selectedTabID] {
             canvas.addSubview(selected, positioned: .above, relativeTo: nil)
         }

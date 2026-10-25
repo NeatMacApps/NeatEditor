@@ -126,6 +126,21 @@ struct ConnectedTabGeometryTests {
         #expect(strip.renameClickMonitor == nil)
     }
 
+    @Test("native title fields fit measured mixed-language filenames without truncation")
+    func nativeTitleMeasurement() throws {
+        let (window, strip, _) = makeStrip()
+        defer { window.close() }
+        for title in ["我的职业技术规划.txt", "MacOS26-Compatibility-Check.txt", "Readme.md"] {
+            let tab = EditorTabDescriptor(id: UUID(), title: title)
+            strip.update(tabs: [tab], selectedTabID: tab.id, actions: EditorTabActions())
+            strip.layoutSubtreeIfNeeded()
+            let field = try #require(strip.tabViews[tab.id]?.titleField)
+            let cell = try #require(field.cell)
+            #expect(field.frame.width >= cell.cellSize.width)
+            #expect(field.stringValue == title)
+        }
+    }
+
     @Test("overflow offsets are bounded and long selected titles are centered")
     func boundedOffsets() {
         #expect(EditorTabLayout.revealedOffset(selectedFrame: nil, viewportWidth: 500,
