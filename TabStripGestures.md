@@ -167,6 +167,15 @@ after lock are not transition evidence. No document text or window size changed.
 
 ### Toolbar height and editor top rule (owner direction 2026-10-25)
 
+- Owner principle (2026-10-25): NeatEditor is a minimal text editor whose design
+  philosophy includes using as much screen space as possible for text. The
+  system-standard 52 pt toolbar height does not fit that philosophy; a compact
+  top-row redesign is pending the owner's choice below.
+- Measured on macOS 27.2 (probe windows, `frame.height - contentLayoutRect.height`):
+  titlebar only 32 pt (traffic-light centre 16 pt from top); `.unifiedCompact`
+  40 pt (centre 20 pt, sidebar item 24 pt tall); `.unified` 52 pt in this app.
+  No public API sets an intermediate toolbar height.
+
 - Use the native `unified` toolbar (52 pt), not `unifiedCompact` (40 pt), so
   the native glass items keep their standard control size. The owner compared
   the top-right New Document and pin actions with Corral's top bar; compact
