@@ -279,7 +279,7 @@ private final class WorkspaceEditorViewController: NSViewController {
             host.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             topRule.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             topRule.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            topRule.topAnchor.constraint(equalTo: view.topAnchor),
+            topRule.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             topRule.heightAnchor.constraint(equalToConstant: 1),
         ])
     }
