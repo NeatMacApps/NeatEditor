@@ -93,9 +93,10 @@ Release 1.0.15 was published from `98784c7`. The notarized, stapled DMG and the
 Sparkle ZIP download anonymously byte-identical to the local artifacts
 (`SHA256SUMS.txt` verified); the live appcast carries build 15 with an EdDSA
 signature and `minimumSystemVersion` 26.0. The public DMG was mounted and installed
-at `/Applications/NeatEditor.app`: both slices and `LSMinimumSystemVersion` read
-back 26.0, Gatekeeper reports `Notarized Developer ID`, and the installed app
-opened the mixed-language fixture documents without a launch failure. Pixel
+at `/Applications/NeatEditor.app`: the universal binary contains both slices,
+`LSMinimumSystemVersion` reads 26.0, Gatekeeper reports `Notarized Developer ID`,
+and the installed app launched with the mixed-language fixture documents passed to
+it without a launch failure. Pixel
 inspection of the new tab widths could not run in this host because Screen
 Recording and Accessibility access are unavailable; the production control's
 geometry is covered by the passing native title-fit test, and the earlier pin and
