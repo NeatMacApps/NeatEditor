@@ -1,9 +1,34 @@
 import Foundation
+import SwiftUI
 import Testing
 
 @testable import NeatEditor
 
 struct WorkspaceSidebarTests {
+    @MainActor
+    @Test("sidebar row heights match for empty, short, multiline and overflowing content")
+    func equalRowHeights() throws {
+        let samples = [
+            ("Empty.txt", ""),
+            ("Short.md", "One line"),
+            ("多行文件.txt", "First line\nSecond line\nThird line"),
+            (String(repeating: "很长的文件名", count: 15), String(repeating: "A long preview 正文 ", count: 50))
+        ]
+        for width: CGFloat in [160, 240, 340] {
+            var sizes: [CGSize] = []
+            for (title, preview) in samples {
+                let host = NSHostingController(rootView: WorkspaceSidebarFileRow(title: title, preview: preview))
+                sizes.append(host.sizeThatFits(in: CGSize(width: width, height: 1000)))
+            }
+            let first = try #require(sizes.first)
+            #expect(first.height > 30)
+            for size in sizes {
+                #expect(abs(size.height - first.height) < 0.01, "width=\(width), sizes=\(sizes)")
+                #expect(size.width <= width)
+            }
+        }
+    }
+
     private func makeService() throws -> (DocumentPersistenceService, URL) {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("NeatEditorSidebarTests-\(UUID().uuidString)", isDirectory: true)

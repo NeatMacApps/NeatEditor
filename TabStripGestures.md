@@ -59,9 +59,10 @@ are not redesigned.
 `EditorTabStripView` is a native toolbar `NSView`, owning one `NSScrollView`,
 stable-ID tab views and immediate selection reveal. Each `EditorTabItemView`
 keeps its native `NSTextField`, fill and open outline in the same local bounds.
-Measure each configured title field's native cell, not just its glyphs or a
-separately configured probe; centered cells include additional insets. Cache
-those widths on descriptor/selection updates, not on every resize frame.
+All tabs use one fixed 200 pt slot width, independent of title or selection.
+The native title field truncates at the tail; full filenames remain available
+through the existing tooltip and accessibility label. Overflow still reveals
+the selected tab synchronously; do not make a long filename widen one slot.
 `WorkspaceSplitViewController` attaches the editor's native top-rule view as a
 sibling above hosted content, anchored to the native top safe area below the
 toolbar rather than the full-size content view's top edge. That
@@ -176,6 +177,12 @@ after lock are not transition evidence. No document text or window size changed.
   with the editor. The remaining 8 pt top gutter is window chrome, not tab
   content. Center filenames vertically in the taller tabs; do not enlarge the
   toolbar or introduce another row.
+- Owner follow-up: increase filenames from 13 to 15 pt to suit the 44 pt tabs.
+  Keep medium weight for selection and regular weight otherwise. Reuse the
+  existing native `NSTextField` and measure its `intrinsicContentSize` for
+  vertical centering inside the common-width slot; no fixed 18 pt title
+  box or clipping of CJK glyphs/Latin descenders. This is an owner-selected
+  typography adjustment, not a change to editor text size.
 - Unselected tabs have no rounded-rectangle hover fill. The owner identified the
   previous capsule as a leftover background; only the selected stepped tab owns
   a fill and raised outline. Switching, scrolling and resizing must leave no
@@ -195,6 +202,13 @@ after lock are not transition evidence. No document text or window size changed.
   installed SDK. [Apple's window guide](https://support.apple.com/guide/mac-help/work-with-app-windows-mchlp2469/mac)
   confirms titlebar double-click follows Desktop & Dock settings. Installed
   acceptance must verify the actual blank regions, not a direct zoom call.
+- Owner color correction: the selected tab and the content surface it joins
+  must resolve the same background color in light and dark appearances,
+  including Settings and other non-text content. Use one `EditorChrome` AppKit
+  color shared with SwiftUI, and paint the entire detail body; the Settings
+  host's default window background previously exposed a subtle darker-tab seam.
+  Native toolbar glass remains native; do not flatten it to hide the mismatch.
+  Verify colors on both sides of the open join, not only text-editor tabs.
 - The editor column owns the full-width 1 pt top rule. It is not drawn when
   there are no tabs, and it leaves an open span under the selected tab's join.
   The tab strip draws only the raised tab outline; both strokes are measured
@@ -241,6 +255,26 @@ Official applicability and installed Xcode 27.2 SDK checked:
   enlarge-then-immediately-restore regression.
 - Pin changes the native window level. Existing topmost hover-focus protection
   and debounce remain in `WindowPinningView`.
+
+## Sidebar row consistency
+
+Owner follow-up (2026-10-25): every file entry has the same height, including
+empty files and files with short or multiline previews. Keep one filename line
+and two reserved preview lines, aligned to the same leading edge. The native
+sidebar list retains selection, scrolling, context menus and accessibility.
+Long filenames/previews truncate at the tail; content does not enlarge the row.
+
+Inspected reference: the existing `WorkspaceSidebarView` native `List(selection:)`
+and its filename/preview `VStack`. Reuse that row, not a replacement list or a
+custom selection background. Always include the preview `Text`, with common
+18 pt title and 28 pt preview slots using public `frame(height:alignment:)` and
+`@ScaledMetric` for text-size adaptation. Native `lineLimit(2, reservesSpace: true)`
+was tested but left an empty preview 11 pt shorter; a newline substitute instead
+made it 1 pt taller on Xcode 27.2/macOS 27.2. Shared slot heights, not filler text
+or a relaxed equality assertion, establish the row contract.
+[Native tail truncation](https://developer.apple.com/documentation/swiftui/view/truncationmode(_:))
+preserves equal peer geometry. Verify empty, one-line, multiline and long CJK
+content together at narrow and wide sidebar widths.
 
 ## File correctness
 

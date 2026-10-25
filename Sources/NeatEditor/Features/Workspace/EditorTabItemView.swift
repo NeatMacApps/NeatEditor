@@ -26,7 +26,7 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
         titleField.drawsBackground = false
         titleField.focusRingType = .none
         titleField.alignment = .center
-        titleField.lineBreakMode = .byTruncatingMiddle
+        titleField.lineBreakMode = .byTruncatingTail
         titleField.usesSingleLineMode = true
         titleField.delegate = self
         titleField.setAccessibilityElement(false)
@@ -57,17 +57,18 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
     override func layout() {
         super.layout()
         let rect = tabBounds
+        let titleHeight = ceil(titleField.intrinsicContentSize.height)
         titleField.frame = CGRect(x: rect.minX + EditorTabLayout.horizontalPadding,
-                                  y: rect.midY - 9,
+                                  y: rect.midY - titleHeight / 2,
                                   width: max(0, rect.width - 2 * EditorTabLayout.horizontalPadding),
-                                  height: 18)
+                                  height: titleHeight)
     }
 
     override func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext else { return }
         if isSelected {
             context.addPath(ConnectedTabGeometry.fill(in: tabBounds))
-            context.setFillColor(NSColor.controlBackgroundColor.cgColor)
+            context.setFillColor(EditorChrome.editorSurfaceColor.cgColor)
             context.fillPath()
             context.addPath(ConnectedTabGeometry.outline(in: tabBounds))
             context.setStrokeColor(NSColor.labelColor.withAlphaComponent(0.22).cgColor)

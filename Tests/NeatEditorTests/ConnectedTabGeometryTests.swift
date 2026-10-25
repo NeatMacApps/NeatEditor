@@ -201,18 +201,29 @@ struct ConnectedTabGeometryTests {
         #expect(strip.renameClickMonitor == nil)
     }
 
-    @Test("native title fields fit measured mixed-language filenames without truncation")
+    @Test("tabs keep equal widths, larger centered type and native trailing ellipsis")
     func nativeTitleMeasurement() throws {
         let (window, strip, _) = makeStrip()
         defer { window.close() }
-        for title in ["我的职业技术规划.txt", "MacOS26-Compatibility-Check.txt", "Readme.md"] {
-            let tab = EditorTabDescriptor(id: UUID(), title: title)
-            strip.update(tabs: [tab], selectedTabID: tab.id, actions: EditorTabActions())
+        let titles = ["短.txt", "我的职业技术规划以及未来五年的详细规划.txt",
+                      "MacOS26-Compatibility-Check.txt", "Readme.md", "gjpq.txt"]
+        let tabs = titles.map { EditorTabDescriptor(id: UUID(), title: $0) }
+        for selected in tabs {
+            strip.update(tabs: tabs, selectedTabID: selected.id, actions: EditorTabActions())
             strip.layoutSubtreeIfNeeded()
-            let field = try #require(strip.tabViews[tab.id]?.titleField)
-            let cell = try #require(field.cell)
-            #expect(field.frame.width >= cell.cellSize.width)
-            #expect(field.stringValue == title)
+            for tab in tabs {
+                let item = try #require(strip.tabViews[tab.id])
+                let field = item.titleField
+                #expect(item.tabBounds.width == 200)
+                #expect(field.frame.width == 152)
+                #expect(field.font?.pointSize == 15)
+                #expect(field.frame.height >= field.intrinsicContentSize.height)
+                #expect(field.frame.midY == item.tabBounds.midY)
+                #expect(field.lineBreakMode == .byTruncatingTail)
+                #expect(field.usesSingleLineMode)
+                #expect(field.stringValue == tab.title)
+                #expect(item.toolTip == tab.title)
+            }
         }
     }
 

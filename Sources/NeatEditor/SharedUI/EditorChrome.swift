@@ -3,7 +3,8 @@ import SwiftUI
 
 enum EditorChrome {
     static let tabBarBackground = Color(NSColor.windowBackgroundColor)
-    static let editorSurface = Color(NSColor.controlBackgroundColor)
+    static let editorSurfaceColor = NSColor.controlBackgroundColor
+    static let editorSurface = Color(editorSurfaceColor)
     static let borderColor = NSColor.separatorColor
     static let border = Color(borderColor)
     static let tabOutline = Color.primary.opacity(0.22)

@@ -151,6 +151,7 @@ struct WorkspaceView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(EditorChrome.editorSurface)
     }
 
     private var searchBar: some View {

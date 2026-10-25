@@ -9,19 +9,7 @@ struct WorkspaceSidebarView: View {
         List(selection: selection) {
             Section {
                 ForEach(workspaceStore.sidebarFiles) { item in
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(item.title)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-
-                        if !item.preview.isEmpty {
-                            Text(item.preview)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
-                        }
-                    }
-                    .padding(.vertical, 3)
+                    WorkspaceSidebarFileRow(title: item.title, preview: item.preview)
                     .tag(item.fileURL)
                     .contextMenu {
                         sidebarItemMenu(for: item)
@@ -192,6 +180,33 @@ struct WorkspaceSidebarView: View {
         renamingItem = nil
         guard !trimmed.isEmpty, trimmed != item.title else { return }
         workspaceStore.renameSidebarFile(at: item.fileURL, to: trimmed)
+    }
+}
+
+/// Native List row content with stable title and preview slots for every file.
+struct WorkspaceSidebarFileRow: View {
+    let title: String
+    let preview: String
+    @ScaledMetric(relativeTo: .body) private var titleHeight: CGFloat = 18
+    @ScaledMetric(relativeTo: .caption) private var previewHeight: CGFloat = 28
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(verbatim: title)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(height: titleHeight, alignment: .topLeading)
+
+            Text(verbatim: preview)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .truncationMode(.tail)
+                .frame(height: previewHeight, alignment: .topLeading)
+                .accessibilityHidden(preview.isEmpty)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 3)
     }
 }
 
