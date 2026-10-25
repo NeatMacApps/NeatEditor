@@ -63,7 +63,7 @@ Standard macOS text shortcuts such as `Command + Z`, `Command + X`, `Command + C
 
 NeatEditor is ready to use as a lightweight macOS plain text editor.
 
-- Platform target: macOS 15.0+
+- Platform target: macOS 26.0+
 - Stack: Swift 6, SwiftUI, AppKit bridge, Observation, XcodeGen
 - Validation today: `xcodebuild ... test` (unit tests covering editor text sync, document persistence, autosave scheduling, workspace failure paths, native composition commits, and font preferences), build verification, and manual testing
 - Distribution today: Developer ID-signed + notarized DMG built locally via `scripts/publish-release.sh` (see [RELEASING.md](./RELEASING.md))
@@ -85,13 +85,13 @@ The app opens with a ready-to-use document; press `Command + N` for a new one.
 
 ### Supported Platforms
 
-- Supported: macOS 15.0+ (Apple silicon and Intel, universal build).
+- Supported: macOS 26.0+ (Apple silicon and Intel, universal build).
 - Not supported: Linux and Windows. The app depends on AppKit and macOS-only code signing/notarization, so it neither builds nor runs there and no packages are provided.
 
 ### Requirements (Building From Source)
 
-- macOS 15.0+
-- Xcode 16.2+
+- macOS 26.0+
+- Xcode 26.0+
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.44+
 
 ### Clone And Open

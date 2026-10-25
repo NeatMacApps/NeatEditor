@@ -63,7 +63,7 @@ NeatEditor 的目标很直接：减少界面噪音，把注意力还给文字本
 
 NeatEditor 现在已经可以作为一个轻量 macOS 纯文本编辑器使用。
 
-- 平台目标：macOS 15.0+
+- 平台目标：macOS 26.0+
 - 技术栈：Swift 6、SwiftUI、AppKit bridge、Observation、XcodeGen
 - 当前验证方式：`xcodebuild ... test`（单元测试覆盖编辑器文本同步、文档持久化、自动保存调度、工作区失败路径、原生输入法组合提交、字号偏好）、构建校验和手动测试
 - 当前分发方式：通过 `scripts/publish-release.sh` 在本机打出 Developer ID 签名 + 公证 DMG（见 [RELEASING.md](./RELEASING.md)）
@@ -85,13 +85,13 @@ open -a NeatEditor
 
 ### 支持的平台
 
-- 支持：macOS 15.0+（Apple silicon 与 Intel，universal 构建）。
+- 支持：macOS 26.0+（Apple silicon 与 Intel，universal 构建）。
 - 不支持：Linux 与 Windows。应用依赖 AppKit 与 macOS 专属签名/公证，在这些平台上无法构建也无法运行，不提供安装包。
 
 ### 环境要求（从源码构建）
 
-- macOS 15.0+
-- Xcode 16.2+
+- macOS 26.0+
+- Xcode 26.0+
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.44+
 
 ### 克隆并打开

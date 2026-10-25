@@ -79,6 +79,12 @@ struct EditorTabStripView: View {
                     .padding(.trailing, Self.trailingTabScrollPadding)
                     .padding(.top, Self.titleBarHeight - EditorTabItemView.height)
                 }
+                .scrollClipDisabled()
+                .mask {
+                    // Clip horizontal overflow but preserve the half-point join
+                    // and its stroke below the scroll viewport.
+                    Rectangle().padding(.bottom, -EditorChrome.lineWidth)
+                }
                 .background {
                     GeometryReader { proxy in
                         Color.clear.preference(
@@ -105,12 +111,12 @@ struct EditorTabStripView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .onChange(of: selectedTabID) { _, _ in
+                    scrollSelectedTabIntoView(using: scrollProxy, animated: true)
+                }
+                .onChange(of: tabFrames.mapValues(\.size)) { _, _ in
                     scrollSelectedTabIntoView(using: scrollProxy)
                 }
-                .onChange(of: tabFrames) { _, _ in
-                    scrollSelectedTabIntoView(using: scrollProxy)
-                }
-                .onChange(of: tabScrollViewportFrame) { _, _ in
+                .onChange(of: tabScrollViewportFrame.size) { _, _ in
                     scrollSelectedTabIntoView(using: scrollProxy)
                 }
                 .onAppear {
@@ -150,11 +156,6 @@ struct EditorTabStripView: View {
             onLayoutChange(newState)
         }
         .background(EditorChrome.tabBarBackground)
-        .overlay {
-            TabBarOutlineShape(selectedTabFrame: selectedTabFrame)
-                .stroke(EditorChrome.tabOutline, lineWidth: EditorChrome.lineWidth)
-                .allowsHitTesting(false)
-        }
         .background {
             TitleBarEventMonitor(
                 isEditing: editingTabID != nil,
@@ -238,7 +239,10 @@ struct EditorTabStripView: View {
         editingTabID = nil
     }
 
-    private func scrollSelectedTabIntoView(using scrollProxy: ScrollViewProxy) {
+    private func scrollSelectedTabIntoView(
+        using scrollProxy: ScrollViewProxy,
+        animated: Bool = false
+    ) {
         guard let selectedTabID,
             let selectedFrame = tabFrames[selectedTabID],
             !tabScrollViewportFrame.isNull
@@ -252,8 +256,14 @@ struct EditorTabStripView: View {
             return
         }
 
-        DispatchQueue.main.async {
+        // Resize follows the input directly. Only a deliberate selection gets
+        // an animation; scroll-position updates must not enqueue more scrolls.
+        if animated {
             withAnimation(.easeInOut(duration: 0.14)) {
+                scrollProxy.scrollTo(selectedTabID, anchor: .center)
+            }
+        } else {
+            withTransaction(Transaction(animation: nil)) {
                 scrollProxy.scrollTo(selectedTabID, anchor: .center)
             }
         }
@@ -704,25 +714,16 @@ struct ConnectedTabFillShape: Shape {
     }
 }
 
-struct TabBarOutlineShape: Shape {
-    let selectedTabFrame: CGRect
-
-    /// Only the raised selected tab. The horizontal rule belongs to the editor
-    /// column, which can span the full window width and leave the tab's join
-    /// open; drawing it here would stop at this toolbar item's edges.
+/// Only the raised outline, in the same local bounds as the tab fill/title.
+/// The full-width horizontal rule still belongs to the editor column.
+struct ConnectedTabOutlineShape: Shape {
     func path(in rect: CGRect) -> Path {
-        guard !selectedTabFrame.isNull, selectedTabFrame.intersects(rect) else {
-            return Path()
-        }
-
         var path = Path()
-        let startX = selectedTabFrame.minX + ConnectedTabGeometry.topInset
-            - ConnectedTabGeometry.bottomJoinRadius
         path.move(to: CGPoint(
-            x: startX,
-            y: selectedTabFrame.maxY + ConnectedTabGeometry.baselineCenterDrop
+            x: rect.minX - ConnectedTabGeometry.baselineOutset,
+            y: rect.maxY + ConnectedTabGeometry.baselineCenterDrop
         ))
-        ConnectedTabGeometry.appendTopEdge(to: &path, in: selectedTabFrame)
+        ConnectedTabGeometry.appendTopEdge(to: &path, in: rect)
         return path
     }
 }

@@ -20,7 +20,7 @@ permissions:
 jobs:
   build-and-validate:
     name: Build And Validate Tag
-    runs-on: macos-15
+    runs-on: macos-26
 
     env:
       APP_NAME: NeatEditor
@@ -33,10 +33,10 @@ jobs:
       - name: Checkout Tag Source
         uses: actions/checkout@v4
 
-      - name: Select Xcode 16.2
+      - name: Select Xcode 26.0.1
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "16.2"
+          xcode-version: "26.0.1"
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -102,9 +102,7 @@ jobs:
           mkdir -p "${STAGE}"
           ditto "${APP_PATH}" "${STAGE}/${APP_NAME}.app"
           ln -s /Applications "${STAGE}/Applications"
-          # The release runner is macos-15, which has no `diskutil image`
-          # subcommand (macOS 26+ only), so hdiutil stays until the runner
-          # moves to macOS 26 or later.
+          # Keep the established hdiutil packaging path on the Tahoe runner.
           hdiutil create \
             -volname "${APP_NAME} ${VERSION}" \
             -srcfolder "${STAGE}" \

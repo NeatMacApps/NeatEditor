@@ -62,7 +62,7 @@ Native macOS-Textkurzbefehle wie `Command + Z`, `Command + X`, `Command + C` und
 
 NeatEditor ist als leichter Plain-Text-Editor für macOS einsatzbereit und wird als `1.0.0` veröffentlicht.
 
-- Zielplattform: macOS 15.0+
+- Zielplattform: macOS 26.0+
 - Stack: Swift 6, SwiftUI, AppKit bridge, Observation, XcodeGen
 - Aktuelle Validierung: `xcodebuild ... test` (Unit-Tests: Text-Sync, Persistenz, Autosave-Planung, Workspace-Fehlerpfade, native IME-Commits, Schriftgrößen-Einstellungen), Build-Prüfung und manuelle Tests
 - Aktueller Umfang: Plain-Text-Workflow, kein Rich Text, keine Plugins, keine plattformübergreifende Unterstützung
@@ -71,8 +71,8 @@ NeatEditor ist als leichter Plain-Text-Editor für macOS einsatzbereit und wird 
 
 ### Voraussetzungen
 
-- macOS 15.0+
-- Xcode 16.2+
+- macOS 26.0+
+- Xcode 26.0+
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.44+
 
 ### Klonen und öffnen
@@ -110,7 +110,7 @@ Dieses Repository veröffentlicht über signierte lokale Releases, nicht über C
 - Jede signierte öffentliche Release enthält das signierte DMG (Erstinstallation), das signierte Sparkle-ZIP (In-App-Updates) und `SHA256SUMS.txt`, mit zweisprachigen Hinweisen aus dem `CHANGELOG.md`-Eintrag der Version.
 - Der tagbasierte GitHub-Actions-Workflow baut nur zur Validierung und behält unsignierte Pakete als login-required Workflow-Artefakte (jede angemeldete Person mit Zugriff kann sie laden); diese nicht als Release installieren.
 
-Installationsweg: Auf der Releases-Seite eine Version wählen, deren Hinweise Developer-ID-Signierung + Notarisierung nennen — nur signierte Dateien installieren (ältere `*-macOS-universal.*`-Dateien, z. B. unter v1.0.3, sind unsignierte CI-Platzhalter). Nach `Applications` ziehen, dann `open -a NeatEditor`. Nur macOS 15.0+ wird unterstützt.
+Installationsweg: Auf der Releases-Seite eine Version wählen, deren Hinweise Developer-ID-Signierung + Notarisierung nennen — nur signierte Dateien installieren (ältere `*-macOS-universal.*`-Dateien, z. B. unter v1.0.3, sind unsignierte CI-Platzhalter). Nach `Applications` ziehen, dann `open -a NeatEditor`. Nur macOS 26.0+ wird unterstützt.
 
 Details stehen in [RELEASING.md](./RELEASING.md).
 

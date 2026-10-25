@@ -163,6 +163,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
 
     private func updatePinItem() {
         let label = String(localized: "Always on Top")
+        pinItem?.style = configuration.isWindowPinned ? .prominent : .plain
         pinItem?.image = NSImage(
             systemSymbolName: configuration.isWindowPinned ? "pin.fill" : "pin",
             accessibilityDescription: label

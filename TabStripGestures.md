@@ -68,6 +68,34 @@ Native AppKit continues to own the surrounding toolbar and window behavior.
 Restoring an owner-decided design is exempt from new appearance research;
 public API changes still require official documentation and SDK checks.
 
+On macOS 26+, the native pin item uses `NSToolbarItem.style`: `.prominent`
+while pinned and `.plain` otherwise. This reuses the existing pin item/action
+and Apple's WWDC25 toolbar state example, not a separate glass view. The item
+continues to follow the shared focus-ring policy.
+
+### Live resize synchronization (owner report 2026-10-25)
+
+- During continuous window resize, the selected tab's filename, fill and raised
+  outline must move as one object, including when overflow reveals the selection.
+  Alignment only after releasing the resize gesture is not sufficient.
+- Keep the raised outline inside `EditorTabItemView`, sharing the title/fill's
+  local bounds and scroll transform. Do not redraw it in the strip from a frame
+  copied through an asynchronous preference/state update: that lets the title
+  move before the outline, especially during animated overflow scrolling.
+- Reuse the existing `ConnectedTabGeometry` curve and SwiftUI's public
+  `overlay(alignment:content:)`; no control replacement or appearance redesign.
+  Preserve horizontal viewport clipping while allowing the outline's bottom
+  half-point join to reach the editor rule. API reference:
+  [Apple overlay](https://developer.apple.com/documentation/swiftui/view/overlay(alignment:content:))
+  and [custom scroll clipping](https://developer.apple.com/documentation/swiftui/view/scrollclipdisabled(_:))
+  (both present in the installed Xcode 27.2 SDK).
+- Overflow reveal reacts to selection, tab sizes and viewport size, not to every
+  intermediate scroll offset. Selection may animate; resize reveals are immediate
+  and must not queue competing animations on successive run-loop turns.
+- Acceptance requires sequential frames during repeated fast shrink/expand and
+  direction reversals, with sidebar both visible and hidden and a trailing tab
+  selected. A settled screenshot or a passing build is not motion evidence.
+
 ### Toolbar height and editor top rule (owner direction 2026-10-25)
 
 - Use the native `unified` toolbar (52 pt), not `unifiedCompact` (40 pt), so

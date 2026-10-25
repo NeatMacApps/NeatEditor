@@ -10,8 +10,7 @@
 "Zoom In" = "Zoom In";
 "Zoom Out" = "Zoom Out";
 "Press" = "Press";
-"Use " = "Use ";
-" to close the current tab" = " to close the current tab";
+"Use %@ to close the current tab" = "Use %@ to close the current tab";
 "Got it" = "Got it";
 
 "No Document Selected" = "No Document Selected";

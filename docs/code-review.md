@@ -5,6 +5,43 @@ AppKit text synchronization, preferences, accessibility, and local/public
 release tooling. Behavior requirements are recorded before implementation in
 [editing-text-sync-test-cases.md](editing-text-sync-test-cases.md).
 
+## macOS 26 baseline (2026-10-25)
+
+Owner requirement: minimum supported runtime is macOS 26.0. App/test deployment
+settings, bundle metadata, CI and all supported-language install/build documents
+must agree. The minimum toolchain is Xcode 26.0; Swift 6 language mode remains.
+Universal Apple silicon/Intel distribution remains supported.
+
+The existing native toolbar and split controller already adopt Tahoe appearance.
+Reuse `WorkspaceSplitViewController.updatePinItem()` and Apple's inspected
+[WWDC25 toolbar example](https://developer.apple.com/videos/play/wwdc2025/310/):
+`NSToolbarItem.style = .prominent` indicates enabled pinning, `.plain` indicates
+disabled pinning. The property is available from macOS 26.0 in the installed
+Xcode 27.2 AppKit header. Preserve the native action, focus policy, 52 pt toolbar
+and owner-retained document tabs; no new glass wrapper or custom control.
+
+Review found that Shift+Enter manually removed one newline code unit, splitting
+CRLF and overlooking NEL/paragraph separators. Use Foundation's
+[`NSString.getLineStart(_:end:contentsEnd:for:)`](https://developer.apple.com/documentation/foundation/nsstring/getlinestart(_:end:contentsend:for:))
+to find the content end before inserting the existing LF. Existing terminators
+must remain intact; the shortcut must remain one undoable edit. The same review
+found LF-only gutter indexing despite native line-range drawing; its numbering
+and trailing-empty-line detection must use the same Foundation boundaries.
+
+TextKit 1 remains intentional: line-number layout and temporary search highlights
+use `NSLayoutManager`. Apple's [NSTextView documentation](https://developer.apple.com/documentation/appkit/nstextview)
+retains that compatibility path; changing construction alone would still fall
+back when those consumers access `layoutManager`. A TextKit 2 migration needs
+coordinated gutter/highlight/IME validation and is not a deployment-target edit.
+No obsolete runtime-availability fallback was found in current application code.
+
+A clean compile also identified macOS 26's deprecated `Text + Text` operator
+in the existing close-tab shortcut hint. Preserve its behavior and bold shortcut
+using Apple's [Text interpolation](https://developer.apple.com/documentation/swiftui/text),
+with a complete localizable sentence so translators can place the shortcut.
+
+Verification and distribution: pending current-artifact checks.
+
 ## Findings and disposition
 
 | Priority | Finding | Disposition |

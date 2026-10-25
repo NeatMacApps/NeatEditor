@@ -22,7 +22,9 @@
 		30257E6B79239E28AD1DFF2A /* EditorTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEE07E7303361F05267B1085 /* EditorTab.swift */; };
 		348B695F38A92793385342D0 /* WorkspaceStore+Preferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034DD46D84F8B203A8D6476F /* WorkspaceStore+Preferences.swift */; };
 		34C2AC68775F3BA373AC7357 /* WorkspaceSidebarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C50807406F37393832E921EC /* WorkspaceSidebarTests.swift */; };
+		3651C643249CE91F2F7AC409 /* EditorNewlineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E664E345AED01D4C6E486EB5 /* EditorNewlineTests.swift */; };
 		39BD2850BB05C043F8377344 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = EEC6A22F39D1E5EC9B13E1CB /* Localizable.strings */; };
+		3B6E495A74F54A444CE0B0B3 /* ConnectedTabGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D035068B3B78F2DD5BA7F66B /* ConnectedTabGeometryTests.swift */; };
 		3DF802EA09B2D431EB933049 /* WorkspaceStore+Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C04ABF5739CF2D974AA14F /* WorkspaceStore+Sidebar.swift */; };
 		40E4B08329E49913ADF40EFC /* EditorTextContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B3C22F933FC00FD61B5DAF0 /* EditorTextContainerView.swift */; };
 		4167662901A455448BDCB6DE /* WorkspaceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04E92B1CA43CA429B446891A /* WorkspaceStoreTests.swift */; };
@@ -110,11 +112,13 @@
 		CE02D7D1B8648861CEB95405 /* WorkspaceStore+Documents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Documents.swift"; sourceTree = "<group>"; };
 		CEE07E7303361F05267B1085 /* EditorTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTab.swift; sourceTree = "<group>"; };
 		CF92C7134BE1D41EE8E04730 /* EditorTextSyncState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextSyncState.swift; sourceTree = "<group>"; };
+		D035068B3B78F2DD5BA7F66B /* ConnectedTabGeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectedTabGeometryTests.swift; sourceTree = "<group>"; };
 		D088F960E365954BD66BC6A8 /* DocumentPersistenceServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPersistenceServiceTests.swift; sourceTree = "<group>"; };
 		D1A82D78D7CE0B95C71D0971 /* EditorChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorChrome.swift; sourceTree = "<group>"; };
 		D72DD6097751EF581EA256A3 /* EditorScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorScrollView.swift; sourceTree = "<group>"; };
 		E1674FE73DFD3A99700320E6 /* WorkspacePreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacePreferences.swift; sourceTree = "<group>"; };
 		E32406E8C86E9797FA92149D /* WorkspaceStore+StateRestoration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+StateRestoration.swift"; sourceTree = "<group>"; };
+		E664E345AED01D4C6E486EB5 /* EditorNewlineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorNewlineTests.swift; sourceTree = "<group>"; };
 		EB3020F5F688B0279A74579A /* TabStripLayoutModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabStripLayoutModel.swift; sourceTree = "<group>"; };
 		F4F0D88DC1A7D3B01D9DBBD6 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
 		F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacePreferencesTests.swift; sourceTree = "<group>"; };
@@ -209,7 +213,9 @@
 			isa = PBXGroup;
 			children = (
 				7E545B076D7BD325F2B4EF46 /* AutoSaveSchedulerTests.swift */,
+				D035068B3B78F2DD5BA7F66B /* ConnectedTabGeometryTests.swift */,
 				D088F960E365954BD66BC6A8 /* DocumentPersistenceServiceTests.swift */,
+				E664E345AED01D4C6E486EB5 /* EditorNewlineTests.swift */,
 				5A3812B102B3FA8E24D10FEE /* EditorTextSyncStateTests.swift */,
 				6B6594887CEEA1D1B0EF81A6 /* HoverFocusTopmostCheckTests.swift */,
 				F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */,
@@ -365,7 +371,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1620;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					1C9BAE22627CC45A5C456670 = {
 						DevelopmentTeam = SHZQ3MWP3B;
@@ -419,7 +425,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				1647932DE3AFF5096BA1A56C /* AutoSaveSchedulerTests.swift in Sources */,
+				3B6E495A74F54A444CE0B0B3 /* ConnectedTabGeometryTests.swift in Sources */,
 				1C0E2A1A871E5DD7BF4F3DA6 /* DocumentPersistenceServiceTests.swift in Sources */,
+				3651C643249CE91F2F7AC409 /* EditorNewlineTests.swift in Sources */,
 				49CA09DC3AAEE99AB71E569E /* EditorTextSyncStateTests.swift in Sources */,
 				7538ECC920EF461816EFFBF7 /* HoverFocusTopmostCheckTests.swift in Sources */,
 				97DF5482D6F249403D615719 /* WorkspacePreferencesTests.swift in Sources */,
@@ -507,7 +515,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.x0c.NeatEditorTests;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
@@ -526,7 +534,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.x0c.NeatEditor;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
@@ -570,7 +578,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -584,8 +592,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0.14;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0.15;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";
@@ -609,7 +617,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.x0c.NeatEditorTests;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
@@ -628,7 +636,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.x0c.NeatEditor;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
@@ -672,7 +680,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -692,8 +700,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0.14;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0.15;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

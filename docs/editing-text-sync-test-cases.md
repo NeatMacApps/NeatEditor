@@ -96,3 +96,15 @@ pinned by the unit tests above. If a future "lines disappear" report arrives,
 replay TC-01 slowly first: with the fix, any remaining loss must come from a
 new external writer of `tabs[].content` (search for assignments) rather than
 the bridge.
+
+## Shift+Enter line boundaries
+
+Shift+Enter inserts the existing LF newline at the current logical line's content
+end, leaving an existing LF, CR, CRLF, NEL, line separator or paragraph separator
+intact. UTF-16 selection positions (including emoji/CJK prefixes), an empty buffer
+and an unterminated last line follow the same rule. The insertion participates
+in native undo. Marked input continues to belong to the input method.
+
+The line-number gutter uses the same native logical-line boundaries, including
+CR-only and Unicode separators. CRLF counts once; a terminated final line has
+one empty trailing line. Number width and visible labels must agree.

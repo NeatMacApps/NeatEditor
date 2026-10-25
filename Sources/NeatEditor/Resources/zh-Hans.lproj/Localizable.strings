@@ -10,8 +10,7 @@
 "Zoom In" = "放大";
 "Zoom Out" = "缩小";
 "Press" = "按下";
-"Use " = "使用";
-" to close the current tab" = "以关闭当前标签页";
+"Use %@ to close the current tab" = "使用 %@ 以关闭当前标签页";
 "Got it" = "知道了";
 
 "No Document Selected" = "未选中任何文档";

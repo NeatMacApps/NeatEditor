@@ -240,6 +240,13 @@ struct EditorTabItemView: View {
         if isSelected {
             ConnectedTabFillShape(topInset: 6, topCornerRadius: 9, bottomJoinRadius: 9)
                 .fill(EditorChrome.editorSurface)
+                .overlay {
+                    // Keep the outline in the title's layout/scroll subtree,
+                    // never in a parent drawing from a delayed frame snapshot.
+                    ConnectedTabOutlineShape()
+                        .stroke(EditorChrome.tabOutline, lineWidth: EditorChrome.lineWidth)
+                        .allowsHitTesting(false)
+                }
         } else if isHovering {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(EditorChrome.hoverFill)

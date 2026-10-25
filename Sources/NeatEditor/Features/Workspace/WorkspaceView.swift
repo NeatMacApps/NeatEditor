@@ -315,11 +315,7 @@ private struct CloseTabShortcutHint: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
 
-            (
-                Text("Use ")
-                + Text("\u{2318}W").fontWeight(.semibold)
-                + Text(" to close the current tab")
-            )
+            Text("Use \(Text("\u{2318}W").fontWeight(.semibold)) to close the current tab")
             .font(.system(size: 12))
             .foregroundStyle(.primary)
 

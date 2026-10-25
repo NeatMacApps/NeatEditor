@@ -62,7 +62,7 @@ NeatEditor は、インターフェースのノイズを減らし、意識を文
 
 NeatEditor は、軽量な macOS 向けプレーンテキストエディタとしてすでに利用でき、`1.0.0` として公開されています。
 
-- 対応プラットフォーム: macOS 15.0+
+- 対応プラットフォーム: macOS 26.0+
 - 技術スタック: Swift 6、SwiftUI、AppKit bridge、Observation、XcodeGen
 - 現在の検証方法: `xcodebuild ... test`（単体テスト: テキスト同期、永続化、自動保存スケジューリング、ワークスペースの失敗経路、ネイティブ IME 確定処理、フォント設定）、ビルド確認と手動テスト
 - 現在の対象範囲: プレーンテキスト中心、リッチテキストやプラグイン、クロスプラットフォーム対応は未実装
@@ -71,8 +71,8 @@ NeatEditor は、軽量な macOS 向けプレーンテキストエディタと�
 
 ### 必要条件
 
-- macOS 15.0+
-- Xcode 16.2+
+- macOS 26.0+
+- Xcode 26.0+
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.44+
 
 ### クローンして開く
@@ -110,7 +110,7 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 - 署名済み公開リリースには署名済み DMG（初回インストール用）、署名済み Sparkle ZIP（アプリ内更新用）、`SHA256SUMS.txt` が含まれ、バイリンガルの説明は当該版の `CHANGELOG.md` 項目から取ります。
 - tag 起点の GitHub Actions は検証ビルド専用で、未署名パッケージはログイン必須のワークフロー成果物としてのみ保持します（公開リポジトリではアクセス権のあるログインユーザーは誰でも取得可能で、認証は秘匿化ではありません）。リリースとしてインストールしないでください。
 
-導入手順: Releases で Developer ID 署名 + 公証の記載がある版を選び、署名済みファイルのみ使います（v1.0.3 等の旧 `*-macOS-universal.*` は未署名 CI プレースホルダです）。`Applications` にドラッグ後、`open -a NeatEditor` で起動します。対応は macOS 15.0+ のみです。
+導入手順: Releases で Developer ID 署名 + 公証の記載がある版を選び、署名済みファイルのみ使います（v1.0.3 等の旧 `*-macOS-universal.*` は未署名 CI プレースホルダです）。`Applications` にドラッグ後、`open -a NeatEditor` で起動します。対応は macOS 26.0+ のみです。
 
 詳細は [RELEASING.md](./RELEASING.md) を参照してください。
 

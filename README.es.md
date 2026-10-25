@@ -62,7 +62,7 @@ Los atajos de texto nativos de macOS, como `Command + Z`, `Command + X`, `Comman
 
 NeatEditor ya está listo para usarse como un editor ligero de texto plano para macOS y se publica como `1.0.0`.
 
-- Plataforma objetivo: macOS 15.0+
+- Plataforma objetivo: macOS 26.0+
 - Stack: Swift 6, SwiftUI, AppKit bridge, Observation, XcodeGen
 - Validación actual: `xcodebuild ... test` (pruebas unitarias: sincronización de texto, persistencia, programación de autoguardado, rutas de fallo del workspace, commits de composición nativos, preferencias de tamaño de fuente), verificación de compilación y pruebas manuales
 - Alcance actual: flujo de texto plano, sin texto enriquecido, plugins ni soporte multiplataforma
@@ -71,8 +71,8 @@ NeatEditor ya está listo para usarse como un editor ligero de texto plano para 
 
 ### Requisitos
 
-- macOS 15.0+
-- Xcode 16.2+
+- macOS 26.0+
+- Xcode 26.0+
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.44+
 
 ### Clonar y abrir
@@ -110,7 +110,7 @@ Este repositorio publica mediante releases locales firmadas, no mediante CI.
 - Cada release pública firmada contiene el DMG firmado (primera instalación), el ZIP firmado de Sparkle (actualizaciones en la app) y `SHA256SUMS.txt`, con notas bilingües del `CHANGELOG.md` de la versión.
 - El flujo de GitHub Actions basado en tags solo compila para validar y conserva paquetes sin firmar como artefactos de workflow que requieren inicio de sesión (cualquier persona autenticada con acceso puede descargarlos); no los instales como release.
 
-Instalación: en Releases elige una versión cuyas notas indiquen firma Developer ID + notarización — instala solo archivos firmados (los `*-macOS-universal.*` antiguos, p. ej. en v1.0.3, son marcadores sin firmar). Arrástralo a `Applications` y luego `open -a NeatEditor`. Solo macOS 15.0+ es compatible.
+Instalación: en Releases elige una versión cuyas notas indiquen firma Developer ID + notarización — instala solo archivos firmados (los `*-macOS-universal.*` antiguos, p. ej. en v1.0.3, son marcadores sin firmar). Arrástralo a `Applications` y luego `open -a NeatEditor`. Solo macOS 26.0+ es compatible.
 
 Consulta [RELEASING.md](./RELEASING.md) para más detalles.
 

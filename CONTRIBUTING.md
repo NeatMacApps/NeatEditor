@@ -4,8 +4,8 @@ Thank you for your interest in contributing to NeatEditor.
 
 ## Development Environment
 
-- macOS 15.0+
-- Xcode 16.2+
+- macOS 26.0+
+- Xcode 26.0+
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.44+
 
 ## Setup

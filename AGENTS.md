@@ -54,11 +54,11 @@ macOS 纯文本编辑器（SwiftUI + AppKit）。
 如果项目内规则与外层工作区规则有冲突，以当前仓库内的 `AGENTS.md` 为准；外层文档作为通用基线。
 
 ## 适用范围
-- 平台：macOS 15.0+
+- 平台：macOS 26.0+
 - 语言：Swift 6
 - UI：SwiftUI
 - 工程管理：XcodeGen（`project.yml`）
-- Xcode：16.2+
+- Xcode：26.0+ (Swift 6.2 toolchain; Swift 6 language mode)
 
 ## 仓库结构
 - `project.yml`：XcodeGen 配置，是工程结构的真实来源。

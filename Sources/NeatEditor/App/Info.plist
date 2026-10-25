@@ -33,7 +33,7 @@
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.productivity</string>
     <key>LSMinimumSystemVersion</key>
-    <string>15.0</string>
+    <string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 x0c. Released under the MIT License.</string>
 	<key>SUAutomaticallyUpdate</key>

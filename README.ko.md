@@ -62,7 +62,7 @@ NeatEditor는 인터페이스의 소음을 줄이고 사용자의 집중을 다�
 
 NeatEditor는 가벼운 macOS 일반 텍스트 편집기로 이미 사용할 수 있으며 `1.0.0`으로 공개되고 있습니다.
 
-- 대상 플랫폼: macOS 15.0+
+- 대상 플랫폼: macOS 26.0+
 - 기술 스택: Swift 6, SwiftUI, AppKit bridge, Observation, XcodeGen
 - 현재 검증 방식: `xcodebuild ... test`(단위 테스트: 텍스트 동기화, 지속성, 자동 저장 스케줄링, 워크스페이스 실패 경로, 네이티브 IME 확정 처리, 글꼴 설정), 빌드 확인 및 수동 테스트
 - 현재 범위: 일반 텍스트 워크플로우 중심, 서식 있는 텍스트와 플러그인, 크로스 플랫폼 지원은 제외
@@ -71,8 +71,8 @@ NeatEditor는 가벼운 macOS 일반 텍스트 편집기로 이미 사용할 수
 
 ### 요구 사항
 
-- macOS 15.0+
-- Xcode 16.2+
+- macOS 26.0+
+- Xcode 26.0+
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.44+
 
 ### 클론 후 열기
@@ -110,7 +110,7 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 - 서명된 공개 릴리스에는 서명된 DMG(최초 설치용), 서명된 Sparkle ZIP(앱 내 업데이트용), `SHA256SUMS.txt`가 들어가며, 이중 언어 안내문은 해당 버전의 `CHANGELOG.md` 항목에서 가져옵니다.
 - 태그 기반 GitHub Actions는 검증 빌드 전용이며 미서명 패키지는 로그인이 필요한 워크플로 아티팩트로만 보관합니다(공개 저장소에서는 접근 권한이 있는 로그인 사용자라면 누구나 받을 수 있어 인증이 기밀성을 뜻하지는 않습니다). 릴리스로 설치하지 마세요.
 
-설치 흐름: Releases에서 Developer ID 서명 + 공증 표기가 있는 버전을 골라 서명된 파일만 사용하세요(v1.0.3 등의 오래된 `*-macOS-universal.*`은 미서명 CI 플레이스홀더입니다). `Applications`에 드래그한 뒤 `open -a NeatEditor`로 실행합니다. macOS 15.0+만 지원됩니다.
+설치 흐름: Releases에서 Developer ID 서명 + 공증 표기가 있는 버전을 골라 서명된 파일만 사용하세요(v1.0.3 등의 오래된 `*-macOS-universal.*`은 미서명 CI 플레이스홀더입니다). `Applications`에 드래그한 뒤 `open -a NeatEditor`로 실행합니다. macOS 26.0+만 지원됩니다.
 
 자세한 내용은 [RELEASING.md](./RELEASING.md)를 참고하세요.
 

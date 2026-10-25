@@ -155,21 +155,13 @@ final class ZoomableTextView: NSTextView {
     private func moveInsertionPointToNextLine() {
         let currentText = string as NSString
         let insertionLocation = min(selectedRange().location, currentText.length)
-        let currentLineRange = currentText.lineRange(
+        var lineEndWithoutNewline = insertionLocation
+        currentText.getLineStart(
+            nil,
+            end: nil,
+            contentsEnd: &lineEndWithoutNewline,
             for: NSRange(location: insertionLocation, length: 0)
         )
-        // Find the end of the current line without including the trailing newline.
-        let lineEnd = NSMaxRange(currentLineRange)
-        let lineEndWithoutNewline: Int
-        if lineEnd > 0 {
-            let lastChar = currentText.character(at: lineEnd - 1)
-            // 0x0A = LF, 0x0D = CR, 0x2028 = Unicode line separator
-            lineEndWithoutNewline = (lastChar == 0x0A || lastChar == 0x0D || lastChar == 0x2028)
-                ? lineEnd - 1
-                : lineEnd
-        } else {
-            lineEndWithoutNewline = lineEnd
-        }
         // Move the insertion point to the logical line end, then insert a newline.
         setSelectedRange(NSRange(location: lineEndWithoutNewline, length: 0))
         insertText("\n", replacementRange: selectedRange())
