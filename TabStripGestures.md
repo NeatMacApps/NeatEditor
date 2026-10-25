@@ -178,12 +178,13 @@ after lock are not transition evidence. No document text or window size changed.
   lower the tabs' visual weight. Owner follow-up: the 32 pt / 13 pt version
   felt empty; settle midway at 38 pt tall, bottom-aligned with the editor,
   8 pt corners, one fixed 184 pt slot width, 16 pt horizontal title padding.
-  The remaining top gutter is window chrome, not tab content; do not enlarge the toolbar or introduce another row.
+  The remaining top gutter is window chrome, not tab content; do not enlarge
+  the toolbar or introduce another row.
 - Filenames use a 14 pt system font, between the 13 pt macOS default (HIG
   body) and the rejected 15 pt, so navigation stays quieter than document text
-  and does not follow editor zoom. Selection
-  is expressed by color, not weight: the selected title uses the primary label
-  color, others the secondary label color, both regular weight. Reuse the
+  and does not follow editor zoom. Selection is expressed by color, not
+  weight: the selected title uses the primary label color, others the
+  secondary label color, both regular weight. Reuse the
   existing native `NSTextField` and center it by its `intrinsicContentSize`;
   no fixed title box or clipping of CJK glyphs/Latin descenders.
 - The selected tab's raised outline and the editor's top rule share one
