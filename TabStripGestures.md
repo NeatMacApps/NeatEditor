@@ -121,6 +121,22 @@ continues to follow the shared focus-ring policy.
   normal and narrow window widths, including a resized sidebar. Compare both
   action frames and screenshots against the native trailing margin.
 
+Installed alignment verification (`b5d5065`, 2026-10-25): the signed universal
+Release was installed at `/Applications/NeatEditor.app`; its executable hash
+matches `build/ToolbarAlignment`'s product. At 470 × 641 pt with the sidebar
+expanded, the native pin item's trailing edge is 4 pt from the window edge.
+The inspected `build/toolbar-alignment-logs/470-expanded-installed.png` removes
+the extra right-hand gap visible in the owner's capture. The arm64 suite passes
+92 tests, including the native spacer/order regression for both sidebar states;
+universal Debug analysis and Release compilation pass. Complete diagnostics are
+in `build/toolbar-alignment-logs/`; only the previously assessed AppIntents
+metadata-step warning remains (see `docs/code-review.md`). The analyzer command's
+ambiguous destination warning selected this Mac; explicit `ARCHS` compiled both
+slices. Native Intel execution is not established. The session locked after the
+first installed accessibility readback, so repeated button toggling, divider
+resizing and the collapsed-state screenshot were not accepted; static captures
+after lock are not transition evidence. No document text or window size changed.
+
 ### Live resize synchronization (owner report 2026-10-25)
 
 - During continuous window resize, the selected tab's filename, fill and raised
