@@ -89,8 +89,17 @@ CRLF/Unicode newline cases. Source files were unchanged during the checks; only
 documentation stayed dirty. Complete diagnostics:
 `build/macos26-review/final-universal.log` and `FinalUniversal.xcresult`;
 `build/macos26-review/post-alignment-test-2.log` and `PostAlignment2.xcresult`.
-Final release source and installation still require the publisher's
-current-artifact checks.
+Release 1.0.15 was published from `98784c7`. The notarized, stapled DMG and the
+Sparkle ZIP download anonymously byte-identical to the local artifacts
+(`SHA256SUMS.txt` verified); the live appcast carries build 15 with an EdDSA
+signature and `minimumSystemVersion` 26.0. The public DMG was mounted and installed
+at `/Applications/NeatEditor.app`: both slices and `LSMinimumSystemVersion` read
+back 26.0, Gatekeeper reports `Notarized Developer ID`, and the installed app
+opened the mixed-language fixture documents without a launch failure. Pixel
+inspection of the new tab widths could not run in this host because Screen
+Recording and Accessibility access are unavailable; the production control's
+geometry is covered by the passing native title-fit test, and the earlier pin and
+newline screenshots predate this title-sizing change.
 
 Installed native pin acceptance: the exact installed application PID was
 resolved by bundle path, activated, and its actual `Always on Top` toolbar
