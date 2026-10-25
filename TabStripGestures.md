@@ -171,10 +171,30 @@ after lock are not transition evidence. No document text or window size changed.
   the top-right New Document and pin actions with Corral's top bar; compact
   glass (24 pt tall) clamped the glyphs and read as cramped. The installed
   unified toolbar draws 36 pt glass, the same as the reference.
-- The document-tab strip fills that row and keeps the existing 32 pt tab shape
-  bottom-aligned, so the tab still meets the editor surface. Tabs sit about
-  10 pt lower than the traffic-light centres; shrinking the row again would
-  restore the cramped glass, so do not change the height without the owner.
+- Owner correction (2026-10-25): keep the native 52 pt row and its standard
+  glass controls, but increase the stepped tabs from 32 to 44 pt, bottom-aligned
+  with the editor. The remaining 8 pt top gutter is window chrome, not tab
+  content. Center filenames vertically in the taller tabs; do not enlarge the
+  toolbar or introduce another row.
+- Unselected tabs have no rounded-rectangle hover fill. The owner identified the
+  previous capsule as a leftover background; only the selected stepped tab owns
+  a fill and raised outline. Switching, scrolling and resizing must leave no
+  extra background behind an inactive filename.
+- Blank space within the custom toolbar item's bounds (above the tabs or after
+  the last tab) must hit-test through to native window chrome. AppKit owns its
+  double-click action and drag, including the user's Desktop & Dock preference.
+  Do not manually invoke zoom/miniaturize or emulate the preference.
+- Component reference inspected: `EditorTabStripView.layout/hitTest`,
+  `EditorTabItemView.draw/layout` and the owner's two captures. Reuse the local
+  `ConnectedTabGeometry` stepped curve and native toolbar; change height, field
+  centering and event ownership only. Apple's public
+  [NSView.hitTest](https://developer.apple.com/documentation/appkit/nsview/hittest(_:))
+  allows blank regions to return nil; its
+  [mouseDownCanMoveWindow](https://developer.apple.com/documentation/appkit/nsview/mousedowncanmovewindow)
+  keeps native window event propagation. Check these declarations in the
+  installed SDK. [Apple's window guide](https://support.apple.com/guide/mac-help/work-with-app-windows-mchlp2469/mac)
+  confirms titlebar double-click follows Desktop & Dock settings. Installed
+  acceptance must verify the actual blank regions, not a direct zoom call.
 - The editor column owns the full-width 1 pt top rule. It is not drawn when
   there are no tabs, and it leaves an open span under the selected tab's join.
   The tab strip draws only the raised tab outline; both strokes are measured
@@ -203,10 +223,11 @@ Official applicability and installed Xcode 27.2 SDK checked:
 ## Interaction contract
 
 - Single click selects immediately; no multi-click recognition delay.
-- A left drag beginning anywhere in the tab strip moves the window after a
-  4-point threshold. Native pointer tracking distinguishes a click from a drag;
-  only a completed drag suppresses the tab action. The inline rename field
-  remains a native text field and is not a window-drag surface.
+- A left drag beginning on a tab moves the window after a 4-point threshold.
+  Pointer tracking distinguishes a click from a drag; only a completed drag
+  suppresses the tab action. Blank strip space passes through to native chrome
+  for window dragging and double-click. The inline rename field remains a
+  native text field and is not a window-drag surface.
 - Double-click a tab that was already selected on the first click to rename
   inline. Double-clicking an inactive tab selects it without starting rename.
 - Enter, clicking outside or switching apps commits rename. Escape cancels it.
@@ -214,8 +235,8 @@ Official applicability and installed Xcode 27.2 SDK checked:
   Move to Trash where applicable. Middle-click closes the hit tab.
 - Scroll-wheel/trackpad tab stepping keeps the existing sensitivity and ignores
   momentum. Selection is revealed when clipped, including after a resize.
-- Outside the tab strip's recorded drag scope, native AppKit owns empty-titlebar
-  double-click and window dragging. Never
+- Native AppKit owns all blank-titlebar double-click and dragging, including
+  blank space within the tab toolbar item. Never
   separately call zoom/miniaturize for the same event: that caused the earlier
   enlarge-then-immediately-restore regression.
 - Pin changes the native window level. Existing topmost hover-focus protection
@@ -243,8 +264,11 @@ Use the installed `/Applications/NeatEditor.app`, not just a build/test result.
 3. Repeat at normal/minimum width; resize the native divider.
 4. Save, switch documents and refresh; sidebar filename order must remain stable.
 5. Drag from a tab and from empty tab-strip space; the window must follow the
-   pointer, and releasing must not select or rename the starting tab. Then click
-   the same tab and double-click it to confirm click and rename still work.
+   pointer, and releasing must not select or rename the starting tab. Double-click
+   the top gutter and trailing blank area: each must perform the native configured
+   action once, without an immediate restore. Then click the same tab and
+   double-click it to confirm click and rename still work. Inspect inactive tabs
+   after hover, selection changes and resize for any leftover rounded background.
 6. Exercise active/inactive double-click, rename commit/cancel, close/reopen,
    pin/unpin and search; verify no content changes cross document identities.
 7. Check light/dark appearances, Settings minimum size and keyboard selection.

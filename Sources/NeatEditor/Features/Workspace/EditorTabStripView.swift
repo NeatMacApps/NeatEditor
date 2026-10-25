@@ -23,6 +23,7 @@ final class EditorTabStripView: NSView {
 
     override var isFlipped: Bool { true }
     override var wantsDefaultClipping: Bool { false }
+    override var mouseDownCanMoveWindow: Bool { true }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -30,7 +31,6 @@ final class EditorTabStripView: NSView {
         wantsLayer = true
         layer?.masksToBounds = false
         scrollView.strip = self
-        canvas.strip = self
         scrollView.borderType = .noBorder
         scrollView.drawsBackground = false
         scrollView.hasVerticalScroller = false
@@ -195,7 +195,16 @@ final class EditorTabStripView: NSView {
         if delta != 0 { actions.onSelectRelative(delta > 0 ? -1 : 1) }
     }
 
-    override func mouseDown(with event: NSEvent) { trackPointer(event, tabID: nil) }
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        // The toolbar's native chrome must own blank-space double-click/drag.
+        // Only tab controls (including their rename field) consume events here.
+        guard let hit = super.hitTest(point),
+              tabViews.values.contains(where: { hit === $0 || hit.isDescendant(of: $0) }) else {
+            return nil
+        }
+        return hit
+    }
+
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
@@ -209,10 +218,7 @@ final class EditorTabStripView: NSView {
 }
 
 private final class EditorTabCanvas: NSView {
-    weak var strip: EditorTabStripView?
     override var isFlipped: Bool { true }
-    override func mouseDown(with event: NSEvent) { strip?.trackPointer(event, tabID: nil) }
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
 private final class EditorTabScrollView: NSScrollView {

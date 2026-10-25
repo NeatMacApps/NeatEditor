@@ -15,7 +15,7 @@ extension EditorTabStripView {
         }
     }
 
-    func trackPointer(_ mouseDown: NSEvent, tabID: UUID?) {
+    func trackPointer(_ mouseDown: NSEvent, tabID: UUID) {
         guard let window else { return }
         finishRename(commit: true)
         let startMouse = NSEvent.mouseLocation
@@ -26,8 +26,7 @@ extension EditorTabStripView {
             inMode: .eventTracking, dequeue: true
         ) {
             if event.type == .leftMouseUp {
-                if !dragged, let tabID,
-                   let tab = tabViews[tabID],
+                if !dragged, let tab = tabViews[tabID],
                    tab.bounds.contains(tab.convert(event.locationInWindow, from: nil)) {
                     handleClick(tabID: tabID, clickCount: mouseDown.clickCount)
                 }

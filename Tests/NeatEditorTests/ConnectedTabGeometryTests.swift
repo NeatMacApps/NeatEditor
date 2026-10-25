@@ -22,7 +22,7 @@ struct ConnectedTabGeometryTests {
     func sharedCurve() {
         for width: CGFloat in [160, 240, 400] {
             for origin in [CGPoint.zero, CGPoint(x: 71, y: 20)] {
-                let rect = CGRect(origin: origin, size: CGSize(width: width, height: 32))
+                let rect = CGRect(origin: origin, size: CGSize(width: width, height: EditorTabLayout.tabHeight))
                 let outline = ConnectedTabGeometry.outline(in: rect)
                 let fill = ConnectedTabGeometry.fill(in: rect)
                 #expect(components(of: outline) == components(of: fill))
@@ -55,12 +55,87 @@ struct ConnectedTabGeometryTests {
             #expect(gap.lowerBound >= 40)
             #expect(gap.upperBound <= 40 + width - 12)
             #expect(item.titleField.frame.midX == item.tabBounds.midX)
+            #expect(item.titleField.frame.midY == item.tabBounds.midY)
+            #expect(item.tabBounds.height == 44)
+            #expect(strip.convert(item.tabBounds, from: item).minY == 8)
         }
         let before = try #require(strip.selectedTabGap(in: rule))
         strip.setFrameOrigin(CGPoint(x: 300, y: 548))
         let after = try #require(strip.selectedTabGap(in: rule))
         #expect(abs(after.lowerBound - before.lowerBound - 60) < 0.000_001)
         #expect(abs(after.upperBound - before.upperBound - 60) < 0.000_001)
+    }
+
+    @Test("blank toolbar space passes through while tab and rename fields remain interactive")
+    func blankChromeHitTesting() throws {
+        let (window, strip, _) = makeStrip()
+        defer { strip.finishRename(commit: false); window.close() }
+        let tabs = ["One.md", "我的职业技术规划.txt"].map {
+            EditorTabDescriptor(id: UUID(), title: $0)
+        }
+        let first = try #require(tabs.first)
+        strip.update(tabs: tabs, selectedTabID: first.id, actions: EditorTabActions())
+        for width: CGFloat in [900, 600, 250, 900] {
+            strip.setFrameSize(CGSize(width: width, height: 52))
+            strip.layoutSubtreeIfNeeded()
+            for x in [CGFloat(10), width / 2, width - 1] {
+                let point = strip.convert(CGPoint(x: x, y: 4), to: strip.superview)
+                #expect(strip.hitTest(point) == nil)
+            }
+            let item = try #require(strip.tabViews[first.id])
+            let titlePoint = item.convert(CGPoint(x: item.tabBounds.midX, y: item.tabBounds.midY),
+                                          to: strip.superview)
+            #expect(strip.hitTest(titlePoint) === item)
+            #expect(strip.mouseDownCanMoveWindow)
+        }
+        let trailing = strip.convert(CGPoint(x: 850, y: 30), to: strip.superview)
+        #expect(strip.hitTest(trailing) == nil)
+        strip.beginRename(first.id)
+        let item = try #require(strip.tabViews[first.id])
+        let fieldPoint = item.convert(CGPoint(x: item.tabBounds.midX, y: item.tabBounds.midY),
+                                      to: strip.superview)
+        let hit = try #require(strip.hitTest(fieldPoint))
+        #expect(hit === item.titleField || hit.isDescendant(of: item.titleField))
+        strip.finishRename(commit: false)
+        strip.update(tabs: [], selectedTabID: nil, actions: EditorTabActions())
+        strip.layoutSubtreeIfNeeded()
+        #expect(strip.hitTest(trailing) == nil)
+    }
+
+    @Test("inactive tabs never acquire a hover capsule or retain the selected fill")
+    func noInactiveBackground() throws {
+        let (window, strip, _) = makeStrip()
+        defer { window.close() }
+        let first = EditorTabDescriptor(id: UUID(), title: "One.md")
+        let second = EditorTabDescriptor(id: UUID(), title: "我的职业技术规划.txt")
+        strip.update(tabs: [first, second], selectedTabID: first.id, actions: EditorTabActions())
+        strip.layoutSubtreeIfNeeded()
+        let item = try #require(strip.tabViews[second.id])
+        func renderedBackground() throws -> Data {
+            let image = NSImage(size: item.bounds.size, flipped: true) { rect in
+                NSColor.windowBackgroundColor.setFill()
+                rect.fill()
+                item.draw(rect)
+                return true
+            }
+            return try #require(image.tiffRepresentation)
+        }
+        let inactive = try renderedBackground()
+        func trackingEvent(_ type: NSEvent.EventType) throws -> NSEvent {
+            try #require(NSEvent.enterExitEvent(
+                with: type, location: .zero, modifierFlags: [], timestamp: 1,
+                windowNumber: window.windowNumber, context: nil, eventNumber: 0,
+                trackingNumber: 0, userData: nil
+            ))
+        }
+        item.mouseEntered(with: try trackingEvent(.mouseEntered))
+        #expect(try renderedBackground() == inactive)
+        item.update(descriptor: second, selected: true)
+        #expect(try renderedBackground() != inactive)
+        item.update(descriptor: second, selected: false)
+        #expect(try renderedBackground() == inactive)
+        item.mouseExited(with: try trackingEvent(.mouseExited))
+        #expect(try renderedBackground() == inactive)
     }
 
     @Test("native tab identities survive title updates and selection changes")

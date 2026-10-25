@@ -7,8 +7,6 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
     private(set) var descriptor: EditorTabDescriptor
     let titleField = NSTextField(labelWithString: "")
     private var isSelected = false
-    private var isHovering = false
-    private var hoverTracking: NSTrackingArea?
 
     var tabBounds: CGRect {
         CGRect(x: ConnectedTabGeometry.baselineOutset, y: 0,
@@ -60,7 +58,7 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
         super.layout()
         let rect = tabBounds
         titleField.frame = CGRect(x: rect.minX + EditorTabLayout.horizontalPadding,
-                                  y: 6,
+                                  y: rect.midY - 9,
                                   width: max(0, rect.width - 2 * EditorTabLayout.horizontalPadding),
                                   height: 18)
     }
@@ -75,10 +73,6 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
             context.setStrokeColor(NSColor.labelColor.withAlphaComponent(0.22).cgColor)
             context.setLineWidth(1)
             context.strokePath()
-        } else if isHovering {
-            NSColor.secondaryLabelColor.withAlphaComponent(0.08).setFill()
-            NSBezierPath(roundedRect: tabBounds.insetBy(dx: 2, dy: 4),
-                         xRadius: 8, yRadius: 8).fill()
         }
     }
 
@@ -113,26 +107,6 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
         else if event.keyCode == 124 { strip?.actions.onSelectRelative(1) }
         else if event.keyCode == 49 || event.keyCode == 36 { strip?.selectTab(id) }
         else { super.keyDown(with: event) }
-    }
-
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        if let hoverTracking { removeTrackingArea(hoverTracking) }
-        let area = NSTrackingArea(rect: .zero,
-                                  options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
-                                  owner: self)
-        addTrackingArea(area)
-        hoverTracking = area
-    }
-
-    override func mouseEntered(with event: NSEvent) {
-        isHovering = true
-        needsDisplay = true
-    }
-
-    override func mouseExited(with event: NSEvent) {
-        isHovering = false
-        needsDisplay = true
     }
 
     func setEditing(_ editing: Bool) {

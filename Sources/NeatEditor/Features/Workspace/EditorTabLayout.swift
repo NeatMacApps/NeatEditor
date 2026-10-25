@@ -29,7 +29,7 @@ struct EditorTabActions {
 
 enum EditorTabLayout {
     static let stripHeight: CGFloat = 52
-    static let tabHeight: CGFloat = 32
+    static let tabHeight: CGFloat = 44
     static let trailingPadding: CGFloat = 12
     static let fadeWidth: CGFloat = 16
     static let titleFontSize: CGFloat = 13
