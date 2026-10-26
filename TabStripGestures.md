@@ -159,11 +159,13 @@ SHA256: `55429d3b4caee89e7e1cbd66623b9a93cd9aacb4ee6b7051044251e5dabdfa1b`.
 
 ### Two-tone workspace surfaces (owner decision 2026-10-26)
 
-- Use a blue-gray tab band (`#29333F`) above a warm-black editor (`#211F1D`)
-  in dark appearance. The selected stepped tab uses the exact editor surface,
+- Owner correction: the initial gray-heavy blue read as cement, not useful
+  two-tone color. Use a clearly blue deep-navy tab band (`#163451`) above a
+  warm-black editor (`#211F1D`) in dark appearance. Keep an identifiable hue
+  rather than merely separating two near-neutral grays. The selected stepped tab uses the exact editor surface,
   making the color boundary follow its raised outline rather than cutting
   straight through it. Inactive tabs remain on the uninterrupted blue-gray band.
-- Light appearance keeps the same cool/warm relationship: blue-gray `#E3E9F0`
+- Light appearance keeps the same cool/warm relationship: clear pale blue `#DCEBFC`
   above warm off-white `#FAF8F5`. Follow the system appearance; do not add a
   theme picker. Preserve system label colors, focus policy and pin state tint.
 - Editor text background, gutter, empty editor and Settings content all share
@@ -184,6 +186,9 @@ SHA256: `55429d3b4caee89e7e1cbd66623b9a93cd9aacb4ee6b7051044251e5dabdfa1b`.
   Use the supplied appearance when resolving dynamic colors; layer CGColors
   must be refreshed for the owning view's appearance. Preserve the existing
   native compact titlebar and scoped stepped-tab exception.
+- Research scope: palette preference is the owner's subjective choice; keep the
+  previously verified native color APIs and inspected local components rather
+  than treating third-party palette recommendations as evidence of visual fit.
 - Acceptance checks the actual installed editor, selected/inactive tabs, gutter
   and overflow edge in light/dark appearances, sidebar open/closed and at 470 pt.
   A screenshot must show the joined selected tab and editor in one surface.

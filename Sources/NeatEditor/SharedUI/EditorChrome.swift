@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 enum EditorChrome {
-    static let tabBarBackgroundColor = adaptiveColor(name: "TabBand", light: 0xE3E9F0, dark: 0x29333F)
+    static let tabBarBackgroundColor = adaptiveColor(name: "TabBand", light: 0xDCEBFC, dark: 0x163451)
     static let tabBarBackground = Color(nsColor: tabBarBackgroundColor)
     static let editorSurfaceColor = adaptiveColor(name: "EditorSurface", light: 0xFAF8F5, dark: 0x211F1D)
     static let editorSurface = Color(editorSurfaceColor)
