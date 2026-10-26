@@ -185,7 +185,7 @@ mode should own draft state and appcast regeneration. The workaround above is
 evidence-backed recovery, not an instruction to silently rerun the whole
 archive/notarization pipeline after a transport failure.
 
-## 1.0.16 train gate (2026-10-26, blocked before publication)
+## 1.0.16 train gate (2026-10-26, owner-directed publication)
 
 Source `b7e2398` prepares version 1.0.16 / build 16 and English-first bilingual
 notes for the committed changes after 1.0.15. The publisher's dry run passed
@@ -211,19 +211,35 @@ matches the build product (`0330d248474378ae12b219ef1fb38a62050582d9727d830dadc7
 and strict bundle signature verification passes. This is a local unnotarized
 build, not a published installation.
 
-Real-path acceptance remains blocked. Screen-capture access was true and the
-session locked. After bounded BetterDisplay host/wake preparation, Agent Display
-was natively active and awake, yet the screenshot helper still failed for both
-the old window and the freshly launched installed window (ID 4500, PID 63720).
-System Events reported zero application windows despite WindowServer listing
-the new window. `installed-acceptance.json` retains these outcomes. Neither
-fresh pixels nor the outstanding tab/window interactions were accepted; do not
-replace them with the passing native-view tests. The task-connected virtual
-display was disconnected and its vendor/model/serial identity was absent from
-the native online list afterward; the task-started BetterDisplay host quit.
-Resume from the prepared committed source and repeat real installed-app
-acceptance before invoking the publisher. No archive or accepted public artifact
-exists to resume for this version.
+Real-path acceptance was retried on the same installed build (PID 63720,
+window 4500) while the session stayed locked (since 02:29). The earlier capture
+failure was display timing, not permission: `winshot.py capture --wake` returned
+an isolated 1164 × 877 pt frame on the first call
+(`build/release-train-1.0.16/installed-window-now.png`), and every later capture
+in this session did too. The inspected frames show the single 40 pt row with
+system traffic lights, the sidebar toggle beside them, equal document tabs with
+their stepped join, New Document and pin at the trailing end, the expanded and
+collapsed sidebar, the search bar, and two documents with aligned line numbers.
+Keyboard events posted to the app PID (`CGEvent.postToPid`) reach the menus even
+though the app is not frontmost: View > Toggle Sidebar collapsed and restored the
+sidebar, New created a blank document tab, Close Tab removed it, Reopen Closed Tab
+restored it, Find opened the search bar, and opening `~/Documents/软考笔记`
+selected its existing tab without duplicating it (`sidebar-toggle-1.png`,
+`new-document.png`, `close-tab.png`, `reopen-tab.png`, `open-existing-file.png`).
+
+Pointer acceptance is still unavailable. Mouse events posted to the PID and AX
+window requests do not reach the app (System Events reports zero windows and a
+pointer click changes nothing), because a locked session cannot make the app
+frontmost or key. The Settings command creates its 500 × 500 window, but it stays
+offscreen (`kCGWindowIsOnscreen = 0`), so its contents cannot be inspected. Still
+unaccepted for this build: pointer tab click/rename/drag, the sidebar button
+click, the pin button, divider and minimum-width resizing, Settings contents,
+light/dark appearance and motion.
+
+Owner instruction (2026-10-26): publish the latest version directly. The release
+therefore proceeds with the pointer and Settings acceptance above deferred as a
+post-release check. No archive or accepted public artifact existed to resume, so
+the publisher starts from this committed source.
 
 ## References
 
