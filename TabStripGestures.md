@@ -425,7 +425,7 @@ and signature match the build product. A Release from the intermediate
 `9f82c38` was also installed and used for the live close-fallback inspection
 below.
 
-The clean `c211fa7` archive passed 99 tests in 14 suites, including
+The clean final source archive passed 99 tests in 14 suites, including
 `WorkspaceSidebarRevealTests`, which hosts the real `WorkspaceSidebarView` with
 80 files and asserts: the restored bottom selection reveals at launch, an
 external selection of the top row scrolls up, a fully visible row does not move
