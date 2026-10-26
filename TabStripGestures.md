@@ -416,37 +416,38 @@ Use the installed `/Applications/NeatEditor.app`, not just a build/test result.
 
 ### Active-document reveal evidence (2026-10-26)
 
-Feature commit `0f7ac6e`. The final installed HEAD `9f82c38` (the concurrent
-thin-scroller commit on top) built as a universal Release from a clean
-`git archive`:
-`c7ed313c3ed5eef651b7e09bed154a8627d20751051c71457558f45ad9da8c56`.
+Feature commit `0f7ac6e`; final HEAD `b01d946`. The final installed Release was
+built from a clean `git archive` of HEAD:
+`2bec9be3389767506a03d728ce02b2d4080e28fb544a574db8b37702900e711d`.
 It is signed with the same Developer ID identity; the installed executable hash
-and signature match the build product. An earlier Release from `0f7ac6e`
-(`8d748b95…`) was installed and inspected before the concurrent task reinstalled
-its Debug build; the final HEAD Release replaced that Debug build.
+and signature match the build product. A Release from the intermediate
+`9f82c38` was also installed and used for the live close-fallback inspection
+below; `b01d946` differs only in comments, tests and documentation.
 
 The clean HEAD archive passed 99 tests in 14 suites, including
 `WorkspaceSidebarRevealTests`, which hosts the real `WorkspaceSidebarView` with
 80 files and asserts: the restored bottom selection reveals at launch, an
-external selection of the top row scrolls up, an external selection back down
-scrolls, preview changes do not move the list, and `openSidebarFile` (the
-sidebar binding path) does not move it. Debug analyze passed without compiler or
-static-analysis warnings; only the previously assessed AppIntents metadata-step
-note remains in test/build logs.
+external selection of the top row scrolls up, a fully visible row does not move
+the list, an external selection of a middle or bottom row scrolls down, preview
+changes do not move the list, and `openSidebarFile` (the sidebar binding path)
+does not move it. Debug analyze
+passed without compiler or static-analysis warnings; only the previously
+assessed AppIntents metadata-step note remains in test/build logs.
 
-An isolated copy of the same Release binary, re-signed only to use a separate
+An isolated copy of the Release binary, re-signed only to use a separate
 defaults domain, was inspected with a 60-file folder: the restored
 `note-01.txt` sat at the bottom of the list at launch, and Command-W selected
 `note-20.txt` and scrolled the sidebar to it. The Debug isolated run additionally
 used Command-Shift-T to reopen `note-01.txt` and return the sidebar to the
 bottom.
 
-The installed HEAD Release was then exercised directly: Command-W closed the
-active `scroller-long.txt` tab and selected `Untitled 18.txt`; the sidebar
-shifted just enough to make that partially visible row wholly visible. The
-workspace was restored to its pre-test snapshot afterwards. Evidence images are
-in the local `build/sidebar-reveal/evidence/` (Debug, isolated Release and
-installed Release runs).
+The installed Release was then exercised directly: Command-W closed the active
+`scroller-long.txt` tab and selected `Untitled 18.txt`; the sidebar shifted just
+enough to make that partially visible row wholly visible. The workspace was
+restored to its pre-test snapshot afterwards, and the final `b01d946` Release
+launched with the active sidebar row selected. Evidence images are in the local
+`build/sidebar-reveal/evidence/` (Debug, isolated Release and installed Release
+runs).
 
 Remaining limits: the session was locked, so pointer clicks on the top tab band
 or sidebar rows could not be synthesized. The hosted test covers the direct

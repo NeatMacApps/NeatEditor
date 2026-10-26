@@ -589,6 +589,13 @@ struct WorkspaceSidebarRevealTests {
         let topOffset = listScrollView.contentView.bounds.minY
         #expect(topOffset < initialOffset)
 
+        // A fully visible row already satisfies the reveal; switching to it
+        // must not move the list.
+        let visibleID = tabs[count - 3].id
+        store.selectedTabID = visibleID
+        try await settle(host)
+        #expect(abs(listScrollView.contentView.bounds.minY - topOffset) < 0.5)
+
         store.updateSidebarPreview(for: fileURLs[0], content: "edited")
         try await settle(host)
         #expect(abs(listScrollView.contentView.bounds.minY - topOffset) < 0.5)
