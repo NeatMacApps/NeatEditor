@@ -194,6 +194,10 @@ SHA256: `55429d3b4caee89e7e1cbd66623b9a93cd9aacb4ee6b7051044251e5dabdfa1b`.
 - Acceptance checks the actual installed editor, selected/inactive tabs, gutter
   and overflow edge in light/dark appearances, sidebar open/closed and at 470 pt.
   A screenshot must show the joined selected tab and editor in one surface.
+- Evidence (2026-10-26, c94a572): installed universal Release, dark and light
+  (`-NSRequiresAquaSystemAppearance YES`) windows captured with the warm band,
+  warm-tinted sidebar and joined selected tab. Narrow-window and overflow
+  captures were not repeated for this color-only change.
 
 ## Native implementation and reference
 
