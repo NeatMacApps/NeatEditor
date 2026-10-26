@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.16 - 2026-10-26
+
+### Changed
+
+- Use one native compact 40 pt top row, keeping the sidebar toggle beside the window controls and New Document and Always on Top aligned with the document tabs.
+- Reduce document tabs to equal 168 pt slots with 30 pt height, 13 pt regular titles and a lighter separator outline, preserving their stepped join to the editor.
+- Move documents-folder selection into Settings and remove the sidebar header's folder actions menu.
+- Give sidebar files consistent row heights and keep the selected tab and its connected content surface the same color.
+
+### Fixed
+
+- Repair editor rendering with TextKit 2 so inserting and deleting text no longer leaves stale line fragments; keep wrapped-line numbers, the final line and search highlights aligned with the displayed text.
+- Keep the tab strip's available width synchronized with window resizing so widening the window reveals tabs instead of leaving unused space.
+- Let blank top-row space use native window dragging and double-click behavior, while preserving tab selection and inline rename.
+
+### 简体中文
+
+- 使用原生 40 pt 紧凑单行顶部栏；侧边栏开关位于窗口控制按钮旁，新建文档与置顶按钮和文档标签保持对齐。
+- 文档标签统一为 168 pt 宽、30 pt 高，使用 13 pt 常规字重标题和更轻的分隔线轮廓，保留与编辑区相连的台阶造型。
+- 将文档文件夹选择移入设置，移除侧边栏头部的文件夹操作菜单。
+- 统一侧边栏文件行高，并让选中标签与其连接的内容区域保持相同背景色。
+- 使用 TextKit 2 修复编辑显示，插入或删除文字后不再残留旧行片段；自动换行行号、末行与搜索高亮保持和显示文字对齐。
+- 调整窗口大小时同步更新标签栏可用宽度，放大窗口后能显示更多标签，不再留下无法利用的空白。
+- 顶部栏空白区域交还系统处理拖窗与双击，同时保留标签选择和行内重命名。
+
 ## 1.0.15 - 2026-10-25
 
 ### Changed

@@ -49,6 +49,8 @@ struct WorkspaceTitlebarTests {
         let window = makeWindow()
         defer { window.close() }
         let toolbar = try #require(window.toolbar)
+        let delegate = try #require(toolbar.delegate)
+        #expect(delegate.responds(to: #selector(NSToolbarDelegate.toolbar(_:itemForItemIdentifier:willBeInsertedIntoToolbar:))))
         #expect(toolbar.items.isEmpty)
         #expect(window.toolbarStyle == .unifiedCompact)
         #expect(!toolbar.allowsUserCustomization && !toolbar.allowsDisplayModeCustomization)

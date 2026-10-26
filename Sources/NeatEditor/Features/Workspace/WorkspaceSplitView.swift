@@ -176,6 +176,12 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
 
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] { [] }
 
+    func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier,
+                 willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+        // AppKit requires the factory even when the toolbar has no items.
+        nil
+    }
+
     fileprivate static func titlebarButton(symbol: String, pointSize: CGFloat = 15) -> NSButton {
         let button = NSButton()
         button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)

@@ -42,6 +42,15 @@ only; sidebar, split view, window controls and editor remain native.
   accessories cannot make it taller; no public API gives a height in between
   without de-centring the traffic lights. The toolbar has no items, no
   customization and no display-mode menu. Traffic lights stay system-placed.
+- The programmatically created toolbar's delegate implements all three required
+  item methods, including an item factory returning `nil` for every identifier.
+  Empty identifier lists alone let Swift compile but AppKit rejects the delegate
+  at runtime (`invalid delegate ... does not implement all required methods`).
+  The release gate reproduced this in the native titlebar tests. Reuse the
+  existing `WorkspaceSplitViewController` toolbar and lists; supply only the
+  missing [native item factory](https://developer.apple.com/documentation/appkit/nstoolbardelegate/toolbar(_:itemforitemidentifier:willbeinsertedintotoolbar:)).
+  Apple's documentation and the installed Xcode 27.2 `NSToolbar.h` require it
+  even though the Objective-C protocol declares the method optional.
 - Sidebar toggle: a native borderless `NSButton` (`sidebar.left`) in a
   `.leading` `NSTitlebarAccessoryViewController`, so AppKit places it beside
   the traffic lights. It calls `NSSplitViewController.toggleSidebar(_:)`.
