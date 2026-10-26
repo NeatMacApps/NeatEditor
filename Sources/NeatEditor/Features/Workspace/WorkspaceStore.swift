@@ -90,6 +90,12 @@ final class WorkspaceStore {
     @ObservationIgnored
     var sidebarDiskFiles: [WorkspaceSidebarItem] = []
 
+    /// The row the user just chose in the sidebar. The sidebar consumes it to
+    /// avoid re-scrolling a row that is already on screen: `List`'s
+    /// `scrollTo` aligns the target at the top even when it is already visible.
+    @ObservationIgnored
+    var sidebarOriginatedSelectionURL: URL?
+
     init(
         persistenceService: DocumentPersistenceService = DocumentPersistenceService(),
         autoSaveScheduler: AutoSaveScheduler = AutoSaveScheduler(),

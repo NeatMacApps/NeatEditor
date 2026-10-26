@@ -143,11 +143,22 @@ extension WorkspaceStore {
     }
 
     func openSidebarFile(_ fileURL: URL) {
+        sidebarOriginatedSelectionURL = persistenceService.normalizedFileURL(for: fileURL)
         if let existingTabID = existingTabID(for: fileURL) {
             selectTab(existingTabID)
         } else {
             openFiles(at: [fileURL])
         }
+    }
+
+    /// Returns `true` when the active file was chosen in the sidebar, and
+    /// clears the mark so the next external selection reveals normally.
+    func consumeSidebarOriginatedSelection(_ fileURL: URL?) -> Bool {
+        defer { sidebarOriginatedSelectionURL = nil }
+        guard let fileURL, let origin = sidebarOriginatedSelectionURL else {
+            return false
+        }
+        return fileURL == origin
     }
 
     func updateSidebarPreview(for fileURL: URL, content: String) {

@@ -26,6 +26,12 @@ Owner corrections (2026-10-24):
   permission to replace native sidebar, toolbar, window controls or other UI.
   Fix continuous outlines without changing that design. Manual traffic-light
   placement remains prohibited.
+- Owner request (2026-10-26): the sidebar follows the active document. Switching
+  to a document whose sidebar row is scrolled out of view — for example from the
+  top tab band — scrolls the sidebar so that row is visible at the leading edge.
+  A row chosen directly in the sidebar never moves the list, and ordinary
+  refreshes, preview updates or typing never move it either. The restored
+  document is located once at launch and after the sidebar is expanded.
 
 ## Compact 40 pt top row (owner decision 2026-10-25, authoritative)
 
@@ -334,6 +340,30 @@ and two reserved preview lines, aligned to the same leading edge. The native
 sidebar list retains selection, scrolling, context menus and accessibility.
 Long filenames/previews truncate at the tail; content does not enlarge the row.
 
+### Active-document reveal
+
+The native `List(selection:)` remains the owner of selection styling and
+scrolling; `WorkspaceSidebarView` wraps it in `ScrollViewReader` and gives every
+row its normalized file URL as its scroll id. Reveal calls `scrollTo(url)` with
+no anchor. In this List, that places the row at the leading edge of the
+viewport; do not animate and do not center it, so locating a file is
+predictable and matches the tab band's instant reveal.
+
+Reveal is requested when the active document changes (tab band, menu command,
+external open, reopen, close fallback), when the sidebar expands, and once for
+the restored selection when the file list first becomes available. Because an
+open/new file may appear only after the asynchronous sidebar refresh, a pending
+reveal retries when the list's file URLs change. Preview-only updates must not
+trigger reveal, and a plain refresh must not pull a deliberately scrolled-away
+list back to the selection.
+
+A selection made directly in the sidebar is exempt: `WorkspaceStore.openSidebarFile`
+records `sidebarOriginatedSelectionURL`, and the sidebar consumes it when the
+active document changes. `List.scrollTo` would otherwise move an
+already-clicked row to the top under the pointer, which is exactly the
+disruption this exemption prevents. The marker is transient view/session state
+and is not persisted with the workspace snapshot.
+
 Inspected reference: the existing `WorkspaceSidebarView` native `List(selection:)`
 and its filename/preview `VStack`. Reuse that row, not a replacement list or a
 custom selection background. Always include the preview `Text`, with common
@@ -377,6 +407,11 @@ Use the installed `/Applications/NeatEditor.app`, not just a build/test result.
 6. Exercise active/inactive double-click, rename commit/cancel, close/reopen,
    pin/unpin and search; verify no content changes cross document identities.
 7. Check light/dark appearances, Settings minimum size and keyboard selection.
+8. Scroll a long sidebar away from the active file, then select an offscreen
+   file from the tab band: its row must become visible at the leading edge,
+   without animation. Click a visible sidebar row near an edge: the list must not
+   jump. Type in the editor: preview updates must not move the list. Expand the
+   sidebar after switching tabs while collapsed: the active row must be revealed.
 
 ### Consistency repair evidence and remaining limits
 

@@ -4,13 +4,42 @@ struct WorkspaceSidebarView: View {
     @Environment(WorkspaceStore.self) private var workspaceStore
     @State private var renamingItem: WorkspaceSidebarItem?
     @State private var renameDraft = ""
+    /// A reveal is pending until the list can resolve the active row; opening
+    /// a file updates the selection before the asynchronous refresh adds it.
+    @State private var isRevealPending = true
 
     var body: some View {
+        ScrollViewReader { proxy in
+            sidebarList
+                .onAppear {
+                    revealSelectedFileIfPossible(using: proxy)
+                }
+                .onChange(of: workspaceStore.selectedSidebarFileURL) { _, selectedURL in
+                    if workspaceStore.consumeSidebarOriginatedSelection(selectedURL) {
+                        // The row the user clicked is already on screen; moving
+                        // it to the top would shift the list under the pointer.
+                        isRevealPending = false
+                        return
+                    }
+                    requestSelectedFileReveal(using: proxy)
+                }
+                .onChange(of: sidebarFileURLs) { _, _ in
+                    revealSelectedFileIfPossible(using: proxy)
+                }
+                .onChange(of: workspaceStore.preferences.isSidebarVisible) { _, isVisible in
+                    guard isVisible else { return }
+                    requestSelectedFileReveal(using: proxy)
+                }
+        }
+    }
+
+    private var sidebarList: some View {
         List(selection: selection) {
             Section {
                 ForEach(workspaceStore.sidebarFiles) { item in
                     WorkspaceSidebarFileRow(title: item.title, preview: item.preview)
                     .tag(item.fileURL)
+                    .id(item.fileURL)
                     .contextMenu {
                         sidebarItemMenu(for: item)
                     }
@@ -65,6 +94,30 @@ struct WorkspaceSidebarView: View {
         } message: { item in
             Text(item.title)
         }
+    }
+
+    /// File identity only: preview text changes while typing and must never
+    /// move the list.
+    private var sidebarFileURLs: [URL] {
+        workspaceStore.sidebarFiles.map(\.fileURL)
+    }
+
+    private func requestSelectedFileReveal(using proxy: ScrollViewProxy) {
+        isRevealPending = true
+        revealSelectedFileIfPossible(using: proxy)
+    }
+
+    /// `List`'s unanchored `scrollTo` aligns the target at the leading edge.
+    /// Sidebar-originated selections are filtered out before reaching here.
+    private func revealSelectedFileIfPossible(using proxy: ScrollViewProxy) {
+        guard isRevealPending,
+              let selectedURL = workspaceStore.selectedSidebarFileURL,
+              workspaceStore.sidebarFiles.contains(where: { $0.fileURL == selectedURL })
+        else {
+            return
+        }
+        isRevealPending = false
+        proxy.scrollTo(selectedURL)
     }
 
     private var selection: Binding<URL?> {

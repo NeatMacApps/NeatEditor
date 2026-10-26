@@ -506,3 +506,112 @@ struct WorkspaceDocumentsFolderTests {
         )
     }
 }
+
+@MainActor
+struct WorkspaceSidebarRevealTests {
+    private func settle(_ host: NSHostingView<some View>) async throws {
+        for _ in 0..<8 {
+            try await Task.sleep(for: .milliseconds(40))
+            host.layoutSubtreeIfNeeded()
+        }
+    }
+
+    private func collectScrollViews(in view: NSView, into result: inout [NSScrollView]) {
+        if let scrollView = view as? NSScrollView {
+            result.append(scrollView)
+        }
+        for subview in view.subviews {
+            collectScrollViews(in: subview, into: &result)
+        }
+    }
+
+    @Test("switching to an offscreen document reveals its sidebar row")
+    func revealOffscreenSelection() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeatEditorSidebarReveal-\(UUID())", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let count = 80
+        var fileURLs: [URL] = []
+        for index in 0..<count {
+            let fileURL = directory.appendingPathComponent(String(format: "note-%03d.txt", index))
+            try "line \(index)".write(to: fileURL, atomically: true, encoding: .utf8)
+            fileURLs.append(fileURL)
+        }
+
+        let suite = "NeatEditorSidebarReveal-\(UUID())"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = WorkspaceStore(
+            persistenceService: DocumentPersistenceService(defaultDirectory: directory),
+            userDefaults: defaults
+        )
+        defer {
+            store.pendingSaveStateTask?.cancel()
+            store.commitEditorChanges = nil
+        }
+
+        let tabs = fileURLs.map { store.persistenceService.openDocumentLazily(at: $0) }
+        store.tabs = tabs
+        // Restored selection sits at the bottom, outside the initial viewport.
+        store.selectedTabID = tabs.first?.id
+        store.refreshSidebarFiles()
+        for _ in 0..<200 where store.isRefreshingSidebar {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(!store.isRefreshingSidebar)
+        #expect(store.sidebarFiles.count == count)
+
+        let host = NSHostingView(rootView: WorkspaceSidebarView().environment(store))
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 260, height: 280),
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentView = host
+        window.orderFrontRegardless()
+        defer { window.close() }
+        try await settle(host)
+
+        var scrollViews: [NSScrollView] = []
+        collectScrollViews(in: host, into: &scrollViews)
+        let listScrollView = try #require(scrollViews.first, "SwiftUI List scroll view")
+        // Sidebar files are ordered descending, so note-079 is the top row and
+        // note-000 the bottom row.
+        let initialOffset = listScrollView.contentView.bounds.minY
+        #expect(initialOffset > 0, "restored selection must be revealed at launch")
+
+        let topID = try #require(tabs.last?.id)
+        store.selectedTabID = topID
+        try await settle(host)
+        let topOffset = listScrollView.contentView.bounds.minY
+        #expect(topOffset < initialOffset)
+
+        store.updateSidebarPreview(for: fileURLs[0], content: "edited")
+        try await settle(host)
+        #expect(abs(listScrollView.contentView.bounds.minY - topOffset) < 0.5)
+
+        let middleID = try #require(tabs[count / 2].id)
+        store.selectedTabID = middleID
+        try await settle(host)
+        let middleOffset = listScrollView.contentView.bounds.minY
+        #expect(middleOffset > topOffset)
+
+        // A row the user chose in the sidebar is already visible; selecting a
+        // far row through that path must not shift the list.
+        let beforeSidebarChoice = listScrollView.contentView.bounds.minY
+        let sidebarURL = fileURLs[count / 4]
+        store.openSidebarFile(sidebarURL)
+        try await settle(host)
+        #expect(store.selectedSidebarFileURL == store.persistenceService.normalizedFileURL(for: sidebarURL))
+        #expect(abs(listScrollView.contentView.bounds.minY - beforeSidebarChoice) < 0.5)
+
+        // The next external selection still reveals normally.
+        let bottomID = try #require(tabs.first?.id)
+        store.selectedTabID = bottomID
+        try await settle(host)
+        #expect(listScrollView.contentView.bounds.minY > middleOffset)
+    }
+}
