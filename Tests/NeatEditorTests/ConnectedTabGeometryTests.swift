@@ -263,7 +263,7 @@ struct ConnectedTabGeometryTests {
     func twoToneSurfaces(appearanceName: NSAppearance.Name) throws {
         let appearance = try #require(NSAppearance(named: appearanceName))
         let dark = appearanceName == .darkAqua
-        let expectedBand: [CGFloat] = dark ? [22, 52, 81] : [220, 235, 252]
+        let expectedBand: [CGFloat] = dark ? [45, 41, 37] : [238, 232, 224]
         let expectedSurface: [CGFloat] = dark ? [33, 31, 29] : [250, 248, 245]
         let band = EditorChrome.resolvedColor(EditorChrome.tabBarBackgroundColor, for: appearance)
         let surface = EditorChrome.resolvedColor(EditorChrome.editorSurfaceColor, for: appearance)

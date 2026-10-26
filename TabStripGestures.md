@@ -159,15 +159,17 @@ SHA256: `55429d3b4caee89e7e1cbd66623b9a93cd9aacb4ee6b7051044251e5dabdfa1b`.
 
 ### Two-tone workspace surfaces (owner decision 2026-10-26)
 
-- Owner correction: the initial gray-heavy blue read as cement, not useful
-  two-tone color. Use a clearly blue deep-navy tab band (`#163451`) above a
-  warm-black editor (`#211F1D`) in dark appearance. Keep an identifiable hue
-  rather than merely separating two near-neutral grays. The selected stepped tab uses the exact editor surface,
+- Owner direction: the two tones must be coordinated, not contrasting. A
+  cool blue-gray band read as cement and a deep-navy band read as a clash
+  (it also tinted the translucent sidebar). Use one warm hue family at two
+  depths: a warm charcoal tab band (`#2D2925`) above the warm-black editor
+  (`#211F1D`) in dark appearance, and oat (`#EEE8E0`) above warm off-white
+  (`#FAF8F5`) in light appearance. Separate the layers by depth, not by a
+  second hue. The selected stepped tab uses the exact editor surface,
   making the color boundary follow its raised outline rather than cutting
-  straight through it. Inactive tabs remain on the uninterrupted blue-gray band.
-- Light appearance keeps the same cool/warm relationship: clear pale blue `#DCEBFC`
-  above warm off-white `#FAF8F5`. Follow the system appearance; do not add a
-  theme picker. Preserve system label colors, focus policy and pin state tint.
+  straight through it. Inactive tabs remain on the uninterrupted band.
+  Follow the system appearance; do not add a theme picker. Preserve system
+  label colors, focus policy and pin state tint.
 - Editor text background, gutter, empty editor and Settings content all share
   `EditorChrome.editorSurfaceColor`. A footer using that existing token inherits
   the surface automatically. Keep the boundary at 1 pt with a quieter outline;
