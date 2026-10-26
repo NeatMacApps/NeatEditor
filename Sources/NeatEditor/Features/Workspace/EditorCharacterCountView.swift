@@ -14,8 +14,5 @@ struct EditorCharacterCountView: View {
             .padding(.trailing, EditorCharacterCountLayout.trailingInset)
             .padding(.bottom, EditorCharacterCountLayout.bottomInset)
             .allowsHitTesting(false)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text("status.characterCount"))
-            .accessibilityValue(characters.formatted())
     }
 }
