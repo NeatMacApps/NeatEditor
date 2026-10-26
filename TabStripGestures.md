@@ -416,15 +416,16 @@ Use the installed `/Applications/NeatEditor.app`, not just a build/test result.
 
 ### Active-document reveal evidence (2026-10-26)
 
-Feature commit `0f7ac6e`; final HEAD `b01d946`. The final installed Release was
-built from a clean `git archive` of HEAD:
+Feature commit `0f7ac6e`. The installed Release was built from `b01d946`, the
+last code-affecting commit; the later commits on this branch are tests and
+documentation only. Release hash:
 `2bec9be3389767506a03d728ce02b2d4080e28fb544a574db8b37702900e711d`.
 It is signed with the same Developer ID identity; the installed executable hash
 and signature match the build product. A Release from the intermediate
 `9f82c38` was also installed and used for the live close-fallback inspection
-below; `b01d946` differs only in comments, tests and documentation.
+below.
 
-The clean HEAD archive passed 99 tests in 14 suites, including
+The clean `c211fa7` archive passed 99 tests in 14 suites, including
 `WorkspaceSidebarRevealTests`, which hosts the real `WorkspaceSidebarView` with
 80 files and asserts: the restored bottom selection reveals at launch, an
 external selection of the top row scrolls up, a fully visible row does not move
