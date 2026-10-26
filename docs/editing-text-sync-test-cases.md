@@ -93,7 +93,7 @@ and disappears for Settings. Keep diagnostics and actual-path evidence under
 
 Acceptance (2026-10-27): 107 tests in 16 suites, analyze and the universal
 Release build passed; the only diagnostics were the existing AppIntents metadata
-warnings. The Developer ID Release from `5aeba02` was installed at
+warnings. The Developer ID Release from `139bdce` was installed at
 `/Applications`. In the installed app the count updated across tab switches,
 stayed above the search bar, disappeared in Settings and remained inside the
 editor at 470 × 510 points. With a 1,157-character document at maximum scroll,
