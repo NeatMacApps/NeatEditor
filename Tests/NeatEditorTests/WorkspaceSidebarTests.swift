@@ -620,5 +620,27 @@ struct WorkspaceSidebarRevealTests {
         store.selectedTabID = bottomID
         try await settle(host)
         #expect(listScrollView.contentView.bounds.minY > middleOffset)
+
+        // A new file is active before the asynchronous refresh lists it; the
+        // pending reveal must succeed when the row appears.
+        let lateURL = directory.appendingPathComponent("zzz-late.txt")
+        try "late".write(to: lateURL, atomically: true, encoding: .utf8)
+        let lateTab = store.persistenceService.openDocumentLazily(at: lateURL)
+        store.tabs.append(lateTab)
+        let bottomOffset = listScrollView.contentView.bounds.minY
+        store.selectedTabID = lateTab.id
+        try await settle(host)
+        #expect(abs(listScrollView.contentView.bounds.minY - bottomOffset) < 0.5)
+        store.refreshSidebarFiles()
+        for _ in 0..<200 where store.isRefreshingSidebar {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        try await settle(host)
+        #expect(
+            store.sidebarFiles.contains {
+                $0.fileURL == store.persistenceService.normalizedFileURL(for: lateURL)
+            }
+        )
+        #expect(listScrollView.contentView.bounds.minY < bottomOffset)
     }
 }

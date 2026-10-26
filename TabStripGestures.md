@@ -430,10 +430,11 @@ The clean `c211fa7` archive passed 99 tests in 14 suites, including
 80 files and asserts: the restored bottom selection reveals at launch, an
 external selection of the top row scrolls up, a fully visible row does not move
 the list, an external selection of a middle or bottom row scrolls down, preview
-changes do not move the list, and `openSidebarFile` (the sidebar binding path)
-does not move it. Debug analyze passed without compiler or static-analysis
-warnings; only the previously assessed AppIntents metadata-step note remains in
-test/build logs.
+changes do not move the list, `openSidebarFile` (the sidebar binding path) does
+not move it, and a file selected before the asynchronous refresh lists it is
+revealed once the row appears. Debug analyze passed without compiler or
+static-analysis warnings; only the previously assessed AppIntents
+metadata-step note remains in test/build logs.
 
 An isolated copy of the Release binary, re-signed only to use a separate
 defaults domain, was inspected with a 60-file folder: the restored
