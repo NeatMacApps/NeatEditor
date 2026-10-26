@@ -140,6 +140,14 @@ recovery decisions (credential/account states, retry vs abort). The
 script never decides product scope and never touches public Releases
 outside the R4 draft flow.
 
+Owner-directed publication is time-sensitive. Bound the pre-trigger
+acceptance to one fresh installed window frame plus the command-driven
+flows the locked session can exercise, record any pointer/Settings limits
+as deferred, and start the train; do not spend tens of minutes on
+unattended acceptance attempts. The 1.0.16 release spent about 30 minutes
+on pre-trigger acceptance for a roughly 7-minute publication, and the owner
+asked for direct publication to move faster.
+
 ## Coordinator handoff
 
 ```bash
@@ -309,7 +317,11 @@ The owner's deferred pointer tab selection/rename/drag, sidebar-button click,
 pin, divider/minimum-width resizing, Settings, appearance variants and motion
 checks remain deferred. The temporary fixture tab was closed, the original
 document/sidebar state restored and the task-mounted DMG ejected. No virtual
-display was connected.
+display was connected. Quitting and relaunching the installed published app
+restored the persisted selection (`软考笔记`) together with its content; an
+initial look at the cropped top row suggested the first tab was highlighted, but
+the bold title and lighter tab background show `软考笔记` selected, so no content
+crossed document identities.
 
 ## References
 
