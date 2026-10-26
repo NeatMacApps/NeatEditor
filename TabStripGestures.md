@@ -157,6 +157,37 @@ SHA256: `55429d3b4caee89e7e1cbd66623b9a93cd9aacb4ee6b7051044251e5dabdfa1b`.
   installed settings surface. This does not clear earlier unrelated motion,
   blank-chrome drag or Settings-color acceptance limits below.
 
+### Two-tone workspace surfaces (owner decision 2026-10-26)
+
+- Use a blue-gray tab band (`#29333F`) above a warm-black editor (`#211F1D`)
+  in dark appearance. The selected stepped tab uses the exact editor surface,
+  making the color boundary follow its raised outline rather than cutting
+  straight through it. Inactive tabs remain on the uninterrupted blue-gray band.
+- Light appearance keeps the same cool/warm relationship: blue-gray `#E3E9F0`
+  above warm off-white `#FAF8F5`. Follow the system appearance; do not add a
+  theme picker. Preserve system label colors, focus policy and pin state tint.
+- Editor text background, gutter, empty editor and Settings content all share
+  `EditorChrome.editorSurfaceColor`. A footer using that existing token inherits
+  the surface automatically. Keep the boundary at 1 pt with a quieter outline;
+  use solid surfaces, not decorative gradients. Existing overflow edge fades
+  remain functional and must resolve against the new tab-band color.
+- Reuse the inspected `EditorChrome`, `EditorTabStripView.draw/geometryDidChange`,
+  `EditorTabItemView.draw`, `EditorTextContainerView.updateTextViewColors` and
+  `LineNumberGutterView.draw/updateColors`. Native sidebar material and native
+  traffic lights are not replaced or manually positioned. The expanded native
+  sidebar retains its full-height material rather than gaining a painted cap.
+- Public API applicability checked against Apple and the installed Xcode 27.2
+  headers: [dynamic NSColor](https://developer.apple.com/documentation/appkit/nscolor/init(name:dynamicprovider:)),
+  [drawing appearance](https://developer.apple.com/documentation/appkit/nsappearance/performascurrentdrawingappearance(_:)),
+  [window background](https://developer.apple.com/documentation/appkit/nswindow/backgroundcolor)
+  and [transparent titlebar](https://developer.apple.com/documentation/appkit/nswindow/titlebarappearstransparent).
+  Use the supplied appearance when resolving dynamic colors; layer CGColors
+  must be refreshed for the owning view's appearance. Preserve the existing
+  native compact titlebar and scoped stepped-tab exception.
+- Acceptance checks the actual installed editor, selected/inactive tabs, gutter
+  and overflow edge in light/dark appearances, sidebar open/closed and at 470 pt.
+  A screenshot must show the joined selected tab and editor in one surface.
+
 ## Native implementation and reference
 
 `WorkspaceSplitViewController` uses `NSSplitViewController`, a full-height

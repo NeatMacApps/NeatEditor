@@ -153,6 +153,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         attachedWindow = window
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
+        window.backgroundColor = EditorChrome.tabBarBackgroundColor
         // The connected tab outline owns this boundary; a native full-width
         // separator would draw a second line through the selected tab's join.
         window.titlebarSeparatorStyle = .none

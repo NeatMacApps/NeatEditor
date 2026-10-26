@@ -65,7 +65,7 @@ final class LineNumberGutterView: NSView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        NSColor.controlBackgroundColor.setFill()
+        EditorChrome.editorSurfaceColor.setFill()
         dirtyRect.fill()
 
         guard let scrollView else {
@@ -175,7 +175,9 @@ final class LineNumberGutterView: NSView {
     }
 
     func updateColors() {
-        layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
+        layer?.backgroundColor = EditorChrome.resolvedColor(
+            EditorChrome.editorSurfaceColor, for: effectiveAppearance
+        ).cgColor
         needsDisplay = true
     }
 

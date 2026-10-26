@@ -160,7 +160,7 @@ final class EditorTabStripView: NSView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        NSColor.windowBackgroundColor.setFill()
+        EditorChrome.tabBarBackgroundColor.setFill()
         bounds.fill()
     }
 
@@ -186,14 +186,15 @@ final class EditorTabStripView: NSView {
         let offset = scrollView.contentView.bounds.minX
         let width = scrollView.contentView.bounds.width
         let originX = scrollView.frame.minX
-        let color = NSColor.windowBackgroundColor.cgColor
+        let background = EditorChrome.resolvedColor(EditorChrome.tabBarBackgroundColor, for: effectiveAppearance)
+        let color = background.cgColor
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         leadingFade.frame = CGRect(x: originX, y: 0, width: EditorTabLayout.fadeWidth, height: bounds.height)
         trailingFade.frame = CGRect(x: originX + max(0, width - EditorTabLayout.fadeWidth), y: 0,
                                     width: EditorTabLayout.fadeWidth, height: bounds.height)
-        leadingFade.colors = [color, NSColor.windowBackgroundColor.withAlphaComponent(0).cgColor]
-        trailingFade.colors = [NSColor.windowBackgroundColor.withAlphaComponent(0).cgColor, color]
+        leadingFade.colors = [color, background.withAlphaComponent(0).cgColor]
+        trailingFade.colors = [background.withAlphaComponent(0).cgColor, color]
         leadingFade.isHidden = offset < 1
         trailingFade.isHidden = offset + width >= canvas.bounds.width - 1
         CATransaction.commit()

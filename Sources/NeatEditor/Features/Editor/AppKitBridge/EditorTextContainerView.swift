@@ -464,7 +464,7 @@ final class EditorTextContainerView: NSView {
             for: effectiveAppearance,
             textSoftness: textSoftness
         )
-        let backgroundColor = NSColor.controlBackgroundColor
+        let backgroundColor = EditorChrome.resolvedColor(EditorChrome.editorSurfaceColor, for: effectiveAppearance)
         let insertionPointColor = NSColor.labelColor
 
         // Reassigning textColor walks the entire NSTextStorage to re-attribute

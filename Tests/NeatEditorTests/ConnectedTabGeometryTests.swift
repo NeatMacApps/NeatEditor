@@ -258,6 +258,43 @@ struct ConnectedTabGeometryTests {
         }
     }
 
+    @Test("two-tone surfaces follow the owning appearance and keep editor and gutter identical",
+          arguments: [NSAppearance.Name.aqua, .darkAqua])
+    func twoToneSurfaces(appearanceName: NSAppearance.Name) throws {
+        let appearance = try #require(NSAppearance(named: appearanceName))
+        let dark = appearanceName == .darkAqua
+        let expectedBand: [CGFloat] = dark ? [41, 51, 63] : [227, 233, 240]
+        let expectedSurface: [CGFloat] = dark ? [33, 31, 29] : [250, 248, 245]
+        let band = EditorChrome.resolvedColor(EditorChrome.tabBarBackgroundColor, for: appearance)
+        let surface = EditorChrome.resolvedColor(EditorChrome.editorSurfaceColor, for: appearance)
+        for (component, expected) in zip([band.redComponent, band.greenComponent, band.blueComponent], expectedBand) {
+            #expect(abs(component - expected / 255) < 0.0001)
+        }
+        for (component, expected) in zip([surface.redComponent, surface.greenComponent, surface.blueComponent], expectedSurface) {
+            #expect(abs(component - expected / 255) < 0.0001)
+        }
+        #expect(band != surface)
+
+        let container = EditorTextContainerView()
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 400, height: 300),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        window.contentView = container
+        window.appearance = appearance
+        container.applyEditorTextAttributes()
+        #expect(container.textView.backgroundColor == surface)
+        let gutter = try #require(container.subviews.compactMap { $0 as? LineNumberGutterView }.first)
+        gutter.updateColors()
+        let gutterColor = try #require(gutter.layer?.backgroundColor).converted(
+            to: try #require(CGColorSpace(name: CGColorSpace.sRGB)), intent: .defaultIntent, options: nil
+        )
+        #expect(try #require(gutterColor?.components).prefix(3).elementsEqual(
+            [surface.redComponent, surface.greenComponent, surface.blueComponent],
+            by: { abs($0 - $1) < 0.0001 }
+        ))
+    }
+
     @Test("overflow offsets are bounded and long selected titles are centered")
     func boundedOffsets() {
         #expect(EditorTabLayout.revealedOffset(selectedFrame: nil, viewportWidth: 500,
