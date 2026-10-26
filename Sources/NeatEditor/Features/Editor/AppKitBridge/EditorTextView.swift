@@ -17,7 +17,7 @@ struct EditorTextView: NSViewRepresentable {
     let onDecreaseFontSize: () -> Void
     let onOpenFiles: ([URL]) -> Void
     let onRegisterCommitHandler: (@escaping @MainActor (UUID) -> Void) -> Void
-    var onStatusChange: (UUID, String, NSRange) -> Void = { _, _, _ in }
+    var onCharacterCountChange: (UUID, String) -> Void = { _, _ in }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -50,7 +50,7 @@ struct EditorTextView: NSViewRepresentable {
         containerView.applyFontSize(fontSize)
 
         context.coordinator.registerCommitHandler(for: textView)
-        context.coordinator.scheduleStatusReport(for: textView)
+        context.coordinator.scheduleCharacterCountReport(for: textView)
 
         return containerView
     }
@@ -58,7 +58,7 @@ struct EditorTextView: NSViewRepresentable {
     func updateNSView(_ containerView: EditorTextContainerView, context: Context) {
         let coordinator = context.coordinator
         let textView = containerView.textView
-        var needsStatusReport = coordinator.parent.tabID != tabID || coordinator.parent.isEditable != isEditable
+        var needsCharacterCountReport = coordinator.parent.tabID != tabID || coordinator.parent.isEditable != isEditable
 
         // A tab switch reuses this view for a different binding. Uncommitted
         // IME text (e.g. pinyin awaiting a candidate) is not document content,
@@ -89,7 +89,7 @@ struct EditorTextView: NSViewRepresentable {
         case .keepTextView:
             break
         case .pushToTextView(let newText):
-            needsStatusReport = true
+            needsCharacterCountReport = true
             coordinator.isSyncingFromSwiftUI = true
             textView.string = newText
             coordinator.isSyncingFromSwiftUI = false
@@ -104,8 +104,8 @@ struct EditorTextView: NSViewRepresentable {
             )
         }
 
-        if needsStatusReport {
-            coordinator.scheduleStatusReport(for: textView)
+        if needsCharacterCountReport {
+            coordinator.scheduleCharacterCountReport(for: textView)
         }
 
         containerView.applyFontSize(fontSize)
@@ -150,7 +150,7 @@ struct EditorTextView: NSViewRepresentable {
         var lastAppliedSearchQuery = ""
         var lastAppliedIsRegex = false
         var lastSearchWasPresented = false
-        private var pendingStatusReport: Task<Void, Never>?
+        private var pendingCharacterCountReport: Task<Void, Never>?
 
         init(parent: EditorTextView) {
             self.parent = parent
@@ -196,21 +196,16 @@ struct EditorTextView: NSViewRepresentable {
             return true
         }
 
-        func textViewDidChangeSelection(_ notification: Notification) {
-            guard !isSyncingFromSwiftUI, let textView = notification.object as? NSTextView else { return }
-            scheduleStatusReport(for: textView)
-        }
-
         /// Defer observation writes until after NSViewRepresentable's update, and
-        /// read the live selection only when the queued report still owns this tab.
-        func scheduleStatusReport(for textView: NSTextView) {
-            pendingStatusReport?.cancel()
+        /// report the live buffer only when the queued update still owns this tab.
+        func scheduleCharacterCountReport(for textView: NSTextView) {
+            pendingCharacterCountReport?.cancel()
             let tabID = parent.tabID
-            pendingStatusReport = Task { @MainActor [weak self, weak textView] in
+            pendingCharacterCountReport = Task { @MainActor [weak self, weak textView] in
                 guard !Task.isCancelled, let self, let textView,
                       parent.tabID == tabID, sync.boundTabID == tabID,
                       textView.isEditable, !textView.hasMarkedText() else { return }
-                parent.onStatusChange(tabID, textView.string, textView.selectedRange())
+                parent.onCharacterCountChange(tabID, textView.string)
             }
         }
 
@@ -233,7 +228,7 @@ struct EditorTextView: NSViewRepresentable {
                 )
             }
 
-            scheduleStatusReport(for: textView)
+            scheduleCharacterCountReport(for: textView)
             parent.onTextChange(isComposing)
             containerView.refreshLineNumbers()
         }
@@ -250,7 +245,7 @@ struct EditorTextView: NSViewRepresentable {
                 isPresented: lastSearchWasPresented
             )
             containerView.applyEditorTextAttributes()
-            scheduleStatusReport(for: textView)
+            scheduleCharacterCountReport(for: textView)
             parent.onCompositionEnd()
         }
 

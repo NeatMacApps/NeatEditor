@@ -12,7 +12,7 @@ struct WorkspaceView: View {
     @FocusState private var isSearchFieldFocused: Bool
     @State private var isCloseTabShortcutHintVisible = false
     @State private var isWindowPinned = false
-    @State private var editorStatus = EditorStatusModel()
+    @State private var editorCharacterCount = EditorCharacterCountModel()
 
     var body: some View {
         WorkspaceSplitView(
@@ -107,21 +107,6 @@ struct WorkspaceView: View {
             if workspaceStore.searchState.isPresented {
                 searchBar
             }
-
-            if let tab = workspaceStore.tabs.first(where: { $0.id == workspaceStore.selectedTabID }),
-               !tab.isSettings, tab.isContentLoaded {
-                EditorStatusBar(
-                    snapshot: editorStatus.tabID == tab.id ? editorStatus.snapshot : nil,
-                    fontSize: workspaceStore.preferences.editorFontSize,
-                    onIncreaseFontSize: workspaceStore.increaseEditorFontSize,
-                    onDecreaseFontSize: workspaceStore.decreaseEditorFontSize,
-                    onResetFontSize: {
-                        workspaceStore.updateEditorFontSize(
-                            by: WorkspacePreferences.defaultEditorFontSize - workspaceStore.preferences.editorFontSize
-                        )
-                    }
-                )
-            }
         }
     }
 
@@ -130,41 +115,49 @@ struct WorkspaceView: View {
             if tab.isSettings {
                 SettingsView()
             } else {
-                EditorTextView(
-                    tabID: tab.id,
-                    text: Self.textBinding(for: tab.id, in: workspaceStore),
-                    fontSize: workspaceStore.preferences.editorFontSize,
-                    isEditable: tab.isContentLoaded,
-                    tabBehavior: workspaceStore.preferences.tabBehavior,
-                    textSoftness: workspaceStore.preferences.editorTextSoftness,
-                    searchState: workspaceStore.searchState,
-                    onTextChange: { isComposing in
-                        if isComposing {
-                            workspaceStore.cancelAutoSave(for: selectedTabID)
-                        } else {
+                ZStack(alignment: .bottomTrailing) {
+                    EditorTextView(
+                        tabID: tab.id,
+                        text: Self.textBinding(for: tab.id, in: workspaceStore),
+                        fontSize: workspaceStore.preferences.editorFontSize,
+                        isEditable: tab.isContentLoaded,
+                        tabBehavior: workspaceStore.preferences.tabBehavior,
+                        textSoftness: workspaceStore.preferences.editorTextSoftness,
+                        searchState: workspaceStore.searchState,
+                        onTextChange: { isComposing in
+                            if isComposing {
+                                workspaceStore.cancelAutoSave(for: selectedTabID)
+                            } else {
+                                workspaceStore.queueAutoSave(for: selectedTabID)
+                            }
+                        },
+                        onCompositionEnd: {
                             workspaceStore.queueAutoSave(for: selectedTabID)
+                        },
+                        onIncreaseFontSize: {
+                            workspaceStore.increaseEditorFontSize()
+                        },
+                        onDecreaseFontSize: {
+                            workspaceStore.decreaseEditorFontSize()
+                        },
+                        onOpenFiles: { urls in
+                            workspaceStore.openFiles(at: urls)
+                        },
+                        onRegisterCommitHandler: { handler in
+                            workspaceStore.commitEditorChanges = handler
+                        },
+                        onCharacterCountChange: { tabID, text in
+                            guard workspaceStore.selectedTabID == tabID else { return }
+                            editorCharacterCount.update(tabID: tabID, text: text)
                         }
-                    },
-                    onCompositionEnd: {
-                        workspaceStore.queueAutoSave(for: selectedTabID)
-                    },
-                    onIncreaseFontSize: {
-                        workspaceStore.increaseEditorFontSize()
-                    },
-                    onDecreaseFontSize: {
-                        workspaceStore.decreaseEditorFontSize()
-                    },
-                    onOpenFiles: { urls in
-                        workspaceStore.openFiles(at: urls)
-                    },
-                    onRegisterCommitHandler: { handler in
-                        workspaceStore.commitEditorChanges = handler
-                    },
-                    onStatusChange: { tabID, text, selection in
-                        guard workspaceStore.selectedTabID == tabID else { return }
-                        editorStatus.update(tabID: tabID, text: text, selection: selection)
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    if tab.isContentLoaded,
+                       let characters = editorCharacterCount.count(for: tab.id) {
+                        EditorCharacterCountView(characters: characters)
                     }
-                )
+                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()
                 .background(EditorChrome.editorSurface)

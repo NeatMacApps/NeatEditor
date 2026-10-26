@@ -63,46 +63,32 @@ Historical acceptance for 1.0.8 (8), before the owner removed Text Softness: Eng
 Historical 1.0.8 diagnostics: 51 tests in six suites passed; the scheduler suite passed again after its weak-reference warning was repaired. Release build and analyze passed. The ineffective Sparkle delegate `@preconcurrency` annotation was removed. The remaining Xcode App Intents metadata-extraction warning comes from the build tool finding no AppIntents dependency in this target: this settings change adds no intents, metadata is not required for these controls, and existing editor behavior is unaffected. Reassess the warning when an App Intents capability is introduced; no diagnostic was suppressed. The Developer ID-signed, stapled universal 1.0.8 app was installed and its Settings tab inspected again. The public [1.0.8 release](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.8) contains the notarized DMG, signed ZIP and SHA256SUMS; all three downloaded bytes matched, and its release-time Sparkle feed served build 8. A transient SSH transport failure was recovered from the existing verified artifacts without rebuilding or resubmitting notarization. Distribution requirements remain in `RELEASING.md`.
 - Zoom commands belong to the existing native View menu, using `CommandGroup`; the app must not create a second View menu. Existing zoom shortcuts remain available.
 
-## Borderless editor status bar (2026-10-26)
+## Floating character count (2026-10-26, owner simplification)
 
-Owner-approved direction: a quiet, single-row footer belongs only to the document
-editor column. It shares `EditorChrome.editorSurface`, with no divider, shadow,
-glass, capsule or contrasting panel. Use a 26 pt row, small readable secondary
-text and monospaced digits. The sidebar remains full-height; Settings and an
-empty workspace show no editor footer. Search appears above the footer.
+Owner direction supersedes the earlier full-width footer: show only a character
+count, floating at the document editor's bottom-right. There is no status row,
+divider, panel, background, capsule, icon, hover target or statistics popover.
+The count never reserves or covers the left line-number gutter, which keeps its
+full height. Font commands stay in the native View menu and Command +/-, and
+Settings or an empty workspace shows no count.
 
-The leading group shows character and logical-line counts. A selection replaces
-the character label with selected/total characters. The trailing group shows the
-one-based logical line and character column, then the actual font size with a
-native menu using the existing 10–36 pt, per-file font preference. Narrow layouts
-drop total lines and then the font menu before hiding character/position values.
-Clicking the count opens a native popover with characters, non-whitespace
-characters, words and lines. Characters are extended grapheme clusters, including
-spaces and line breaks; CRLF is one break, a final break adds an empty line,
-soft wrapping does not add lines, and tabs occupy one character column. Word
-segmentation uses Foundation's word enumeration, not whitespace splitting.
+The overlay uses 11 pt secondary text with monospaced digits, 16 pt trailing and
+6 pt bottom inset from the editor edge. It is non-interactive and passes clicks
+through to the text. The editor reserves 24 pt at the bottom of its scroll
+content so the final line rests above the count at the document end; the label
+still follows the editor through scrolling. Counts are extended grapheme
+clusters, including spaces and line breaks, with locale grouping separators.
 
-Statistics are read-only and computed away from the main actor. Superseded work
-must not publish after edits or tab switches. Marked IME text is excluded by
-retaining the latest committed snapshot until composition ends; reporting status
-must not commit text, alter selection/undo, save files or access legacy TextKit.
+The count is computed away from the main actor and coalesced. It uses the
+committed buffer, never marked IME text; superseded work must not publish after
+edits or tab switches. Reporting must not change text, selection, undo, saves,
+line numbers or TextKit layout.
 
-Inspected reference: CotEditor's `StatusBar.swift` / `EditorCountView`
-([source](https://github.com/coteditor/CotEditor/blob/main/CotEditor/Sources/Document%20Window/Content%20View/StatusBar.swift)).
-Reuse its single-row grouping, secondary labels and monospaced digits, not its
-encoding/line-ending controls, donation UI or dependencies. Keep NeatEditor's
-existing `WorkspaceView` and native `NSTextView` ownership. Public APIs checked
-against Apple documentation and the installed Xcode 27.2 SDK:
-[`textViewDidChangeSelection`](https://developer.apple.com/documentation/appkit/nstextviewdelegate/textviewdidchangeselection(_:)),
-[`Menu`](https://developer.apple.com/documentation/swiftui/menu),
-[`ViewThatFits`](https://developer.apple.com/documentation/swiftui/viewthatfits)
-and SwiftUI's standard popover presentation.
-
-Acceptance: exercise typing, selections, Unicode/emoji, all supported native line
-breaks, tab switches, composition, search and remembered font changes. Inspect the
-installed Release at wide/narrow sizes in light/dark and English/Chinese, including
-selected/empty text and Settings. Keep diagnostics and actual-path evidence under
-`build/status-bar/`; a hosted view test does not substitute for the installed UI.
+Acceptance: type, switch tabs, compose with IME, search and resize wide/narrow;
+inspect light/dark and English/Chinese. Verify the count updates live, remains
+readable over the editor, leaves the final line fully visible at maximum scroll,
+and disappears for Settings. Keep diagnostics and actual-path evidence under
+`build/character-count/`; a hosted view test does not substitute for the installed UI.
 
 ## Text synchronization history
 
