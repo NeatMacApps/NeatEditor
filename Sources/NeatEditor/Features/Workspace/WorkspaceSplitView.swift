@@ -15,6 +15,16 @@ struct WorkspaceSplitView: NSViewControllerRepresentable {
     let onSidebarVisibilityChange: (Bool) -> Void
     let onTogglePin: () -> Void
 
+    static let sidebarMinimumWidth: CGFloat = 200
+    static let editorMinimumWidth: CGFloat = 240
+    static let settingsMinimumWidth: CGFloat = 500
+
+    static func minimumWindowWidth(sidebarVisible: Bool, settingsSelected: Bool) -> CGFloat {
+        let detail = settingsSelected ? settingsMinimumWidth : editorMinimumWidth
+        let sidebar = sidebarVisible ? sidebarMinimumWidth + 1 : 0
+        return max(EditorTabLayout.minimumWindowEdge, detail + sidebar)
+    }
+
     func makeNSViewController(context: Context) -> WorkspaceSplitViewController {
         WorkspaceSplitViewController(configuration: self)
     }
@@ -62,14 +72,15 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         splitView.dividerStyle = .thin
 
         let sidebar = NSSplitViewItem(sidebarWithViewController: sidebarController)
-        sidebar.minimumThickness = 200
+        sidebar.minimumThickness = WorkspaceSplitView.sidebarMinimumWidth
         sidebar.maximumThickness = 360
         sidebar.allowsFullHeightLayout = true
         sidebar.isCollapsed = !configuration.isSidebarVisible
         addSplitViewItem(sidebar)
 
         let detail = NSSplitViewItem(viewController: detailController)
-        detail.minimumThickness = configuration.isSettingsSelected ? 500 : 300
+        detail.minimumThickness = configuration.isSettingsSelected
+            ? WorkspaceSplitView.settingsMinimumWidth : WorkspaceSplitView.editorMinimumWidth
         addSplitViewItem(detail)
 
         let sidebarLabel = String(localized: "Toggle Sidebar")
@@ -122,7 +133,8 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         guard isViewLoaded else { return }
         isApplyingConfiguration = true
         splitViewItems.first?.isCollapsed = !configuration.isSidebarVisible
-        splitViewItems.last?.minimumThickness = configuration.isSettingsSelected ? 500 : 300
+        splitViewItems.last?.minimumThickness = configuration.isSettingsSelected
+            ? WorkspaceSplitView.settingsMinimumWidth : WorkspaceSplitView.editorMinimumWidth
         isApplyingConfiguration = false
         updatePinButton()
     }
@@ -157,7 +169,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     private func updatePinButton() {
         let pinned = configuration.isWindowPinned
         pinButton.image = NSImage(
-            systemSymbolName: pinned ? "pin.fill" : "pin",
+            systemSymbolName: "square.3.layers.3d.top.filled",
             accessibilityDescription: String(localized: "Always on Top")
         )
         pinButton.contentTintColor = pinned ? .controlAccentColor : .secondaryLabelColor
@@ -182,7 +194,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         nil
     }
 
-    fileprivate static func titlebarButton(symbol: String, pointSize: CGFloat = 15) -> NSButton {
+    fileprivate static func titlebarButton(symbol: String) -> NSButton {
         let button = NSButton()
         button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
         button.isBordered = false
@@ -190,10 +202,10 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         button.contentTintColor = .secondaryLabelColor
         button.focusRingType = .none
         // Keeps the image's symbol configuration across later image swaps.
-        button.symbolConfiguration = .init(pointSize: pointSize, weight: .regular)
+        button.symbolConfiguration = .init(pointSize: EditorTabLayout.actionSymbolSize, weight: .regular)
         // Frame-sized: titlebar accessories are placed by AppKit, and an
         // Auto Layout width here displaced them onto the traffic lights.
-        button.frame.size = CGSize(width: 40, height: EditorTabLayout.stripHeight)
+        button.frame.size = CGSize(width: EditorTabLayout.newDocumentSlotWidth, height: EditorTabLayout.stripHeight)
         return button
     }
 }
@@ -205,9 +217,7 @@ private final class WorkspaceEditorViewController: NSViewController {
     let topRule = EditorTabTopRuleView()
     let strip = EditorTabStripView()
     /// Peer of the strip's New Document button: same size, colour and centre line.
-    let pinButton = WorkspaceSplitViewController.titlebarButton(
-        symbol: "pin", pointSize: EditorTabLayout.titleFontSize
-    )
+    let pinButton = WorkspaceSplitViewController.titlebarButton(symbol: "square.3.layers.3d.top.filled")
     /// Titlebar accessory views whose frames the tab band must not cover.
     var accessoryViews: [NSView] = [] {
         didSet {
@@ -270,9 +280,10 @@ private final class WorkspaceEditorViewController: NSViewController {
         strip.frame = CGRect(x: 0, y: view.bounds.height - band, width: view.bounds.width, height: band)
         let slot = EditorTabLayout.newDocumentSlotWidth
         let trailingSlot = slot + EditorTabLayout.trailingMargin
-        // Bottom-aligned like the tabs, so its centre matches the titles and +.
-        pinButton.frame = CGRect(x: view.bounds.width - trailingSlot, y: strip.frame.minY,
-                                 width: slot, height: EditorTabLayout.tabHeight)
+        // All controls follow the native traffic-light axis, not the tab's join.
+        pinButton.frame = CGRect(x: view.bounds.width - trailingSlot,
+                                 y: strip.frame.maxY - EditorTabLayout.contentCenterY - EditorTabLayout.actionHeight / 2,
+                                 width: slot, height: EditorTabLayout.actionHeight)
         var insets = accessoryInsets()
         insets.right = max(insets.right, trailingSlot)
         strip.contentInsets = insets

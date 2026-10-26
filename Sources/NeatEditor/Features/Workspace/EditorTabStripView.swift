@@ -101,8 +101,8 @@ final class EditorTabStripView: NSView {
 
     private func configureNewDocumentButton() {
         let label = String(localized: "New Document")
-        newDocumentButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: label)?
-            .withSymbolConfiguration(.init(pointSize: 13, weight: .regular))
+        newDocumentButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: label)
+        newDocumentButton.symbolConfiguration = .init(pointSize: EditorTabLayout.actionSymbolSize, weight: .regular)
         newDocumentButton.isBordered = false
         newDocumentButton.imagePosition = .imageOnly
         newDocumentButton.contentTintColor = .secondaryLabelColor
@@ -151,8 +151,8 @@ final class EditorTabStripView: NSView {
         // Directly after the last tab; pinned to the viewport end on overflow.
         let tabsEnd = viewportX + min(viewportWidth, x - offset)
         newDocumentButton.frame = CGRect(
-            x: tabsEnd, y: bounds.height - EditorTabLayout.tabHeight,
-            width: EditorTabLayout.newDocumentSlotWidth, height: EditorTabLayout.tabHeight
+            x: tabsEnd, y: EditorTabLayout.contentCenterY - EditorTabLayout.actionHeight / 2,
+            width: EditorTabLayout.newDocumentSlotWidth, height: EditorTabLayout.actionHeight
         )
         geometryDidChange()
     }

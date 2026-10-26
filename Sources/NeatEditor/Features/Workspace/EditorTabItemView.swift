@@ -58,7 +58,7 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
         let rect = tabBounds
         let titleHeight = ceil(titleField.intrinsicContentSize.height)
         titleField.frame = CGRect(x: rect.minX + EditorTabLayout.horizontalPadding,
-                                  y: rect.midY - titleHeight / 2,
+                                  y: EditorTabLayout.tabTitleCenterY - titleHeight / 2,
                                   width: max(0, rect.width - 2 * EditorTabLayout.horizontalPadding),
                                   height: titleHeight)
     }

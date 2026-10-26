@@ -32,7 +32,10 @@ struct NeatEditorApp: App {
         Window("NeatEditor", id: "main") {
             WorkspaceView()
                 .frame(
-                    minWidth: settingsSelected ? max(500, EditorTabStripView.minimumWindowEdge) : EditorTabStripView.minimumWindowEdge,
+                    minWidth: WorkspaceSplitView.minimumWindowWidth(
+                        sidebarVisible: workspaceStore.preferences.isSidebarVisible,
+                        settingsSelected: settingsSelected
+                    ),
                     minHeight: settingsSelected ? max(440, EditorTabStripView.minimumWindowEdge) : EditorTabStripView.minimumWindowEdge
                 )
                 .environment(workspaceStore)

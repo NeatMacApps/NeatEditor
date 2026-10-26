@@ -31,11 +31,16 @@ struct EditorTabActions {
 enum EditorTabLayout {
     /// Native compact row height; the band is reserved at least this tall.
     static let stripHeight: CGFloat = 40
-    static let tabHeight: CGFloat = 30
+    static let tabHeight: CGFloat = 36
+    /// Shared axis for native chrome, actions and filenames, measured from the top.
+    static let contentCenterY: CGFloat = stripHeight / 2
+    static let actionHeight: CGFloat = 32
+    static let actionSymbolSize: CGFloat = 13
+    static let tabTitleCenterY: CGFloat = tabHeight - contentCenterY
     /// Trailing slot after the tabs that holds the New Document button.
     static let newDocumentSlotWidth: CGFloat = 32
     /// Keeps the trailing pin clear of the window's rounded corner.
-    static let trailingMargin: CGFloat = 6
+    static let trailingMargin: CGFloat = 8
     static let fadeWidth: CGFloat = 16
     static let titleFontSize: CGFloat = 13
     static let horizontalPadding: CGFloat = 12

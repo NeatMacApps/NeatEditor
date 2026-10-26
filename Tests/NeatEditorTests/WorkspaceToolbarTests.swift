@@ -9,26 +9,29 @@ import Testing
 @MainActor
 struct WorkspaceTitlebarTests {
     private func makeWindow(sidebarVisible: Bool = true, pinned: Bool = false,
+                            width: CGFloat = 900, settingsSelected: Bool = false,
+                            titles: [String] = ["One.md"],
                             styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable,
                                                              .resizable, .fullSizeContentView]) -> NSWindow {
+        let tabs = titles.map { EditorTabDescriptor(id: UUID(), title: $0) }
         let controller = WorkspaceSplitViewController(configuration: WorkspaceSplitView(
             sidebar: AnyView(EmptyView()),
             detail: AnyView(EmptyView()),
-            tabs: [EditorTabDescriptor(id: UUID(), title: "One.md")],
-            selectedTabID: nil,
+            tabs: tabs,
+            selectedTabID: tabs.first?.id,
             tabActions: EditorTabActions(),
             isSidebarVisible: sidebarVisible,
-            isSettingsSelected: false,
+            isSettingsSelected: settingsSelected,
             isWindowPinned: pinned,
             onSidebarVisibilityChange: { _ in },
             onTogglePin: {}
         ))
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 900, height: 500),
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: width, height: 500),
                               styleMask: styleMask,
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentViewController = controller
-        window.setContentSize(CGSize(width: 900, height: 500))
+        window.setContentSize(CGSize(width: width, height: 500))
         window.layoutIfNeeded()
         return window
     }
@@ -71,13 +74,23 @@ struct WorkspaceTitlebarTests {
         #expect(sidebar.focusRingType == .none && pin.focusRingType == .none)
         #expect(!sidebar.isBordered && !pin.isBordered)
         #expect(pin.symbolConfiguration == NSImage.SymbolConfiguration(
-            pointSize: EditorTabLayout.titleFontSize, weight: .regular))
+            pointSize: EditorTabLayout.actionSymbolSize, weight: .regular))
         let strip = try #require(window.contentView.flatMap(findStrip))
         let plus = try #require(strip.subviews.compactMap { $0 as? NSButton }.first)
         let plusFrame = plus.convert(plus.bounds, to: nil)
         let pinFrame = pin.convert(pin.bounds, to: nil)
         #expect(abs(plusFrame.midY - pinFrame.midY) < 0.5)
         #expect(plusFrame.height == pinFrame.height)
+        #expect(sidebar.symbolConfiguration == pin.symbolConfiguration)
+        #expect(plus.symbolConfiguration == pin.symbolConfiguration)
+        let close = try #require(window.standardWindowButton(.closeButton))
+        let axis = close.convert(close.bounds, to: nil).midY
+        for control in [sidebar, plus, pin] {
+            #expect(abs(control.convert(control.bounds, to: nil).midY - axis) < 0.5)
+        }
+        for tab in strip.tabViews.values {
+            #expect(abs(tab.titleField.convert(tab.titleField.bounds, to: nil).midY - axis) < 0.5)
+        }
     }
 
     @Test("pin button reflects the pinned state", arguments: [false, true])
@@ -110,6 +123,51 @@ struct WorkspaceTitlebarTests {
         } else {
             #expect(strip.contentInsets.left == 0)
         }
+    }
+
+    @Test("minimum windows contain the split and all actions with sidebar open or closed",
+          arguments: [true, false], [CGFloat(470), 600, 1100])
+    func narrowWindowContainment(sidebarVisible: Bool, width: CGFloat) throws {
+        for titles in [[], ["短.txt", "我的职业技术规划以及未来五年的详细规划.txt", "Readme.md"]] {
+            let window = makeWindow(sidebarVisible: sidebarVisible, width: width, titles: titles)
+            defer { window.close() }
+            window.contentView?.layoutSubtreeIfNeeded()
+            let content = try #require(window.contentView)
+            let visible = content.convert(content.bounds, to: nil)
+            let strip = try #require(findStrip(in: content))
+            let pin = try pinButton(window)
+            let plus = try #require(strip.subviews.compactMap { $0 as? NSButton }.first)
+            let column = try #require(strip.superview)
+            let columnFrame = column.convert(column.bounds, to: nil)
+            #expect(columnFrame.minX >= visible.minX - 0.5)
+            #expect(columnFrame.maxX <= visible.maxX + 0.5)
+            for action in [plus, pin] {
+                let frame = action.convert(action.bounds, to: nil)
+                #expect(frame.minX >= columnFrame.minX)
+                #expect(frame.maxX <= visible.maxX - EditorTabLayout.trailingMargin + 0.5)
+            }
+            let plusFrame = plus.convert(plus.bounds, to: nil)
+            let pinFrame = pin.convert(pin.bounds, to: nil)
+            #expect(plusFrame.maxX <= pinFrame.minX + 0.5)
+            #expect(abs(visible.maxX - pinFrame.maxX - EditorTabLayout.trailingMargin) < 0.5)
+        }
+    }
+
+    @Test("Settings minimum includes the visible sidebar instead of overflowing the window",
+          arguments: [true, false])
+    func settingsMinimum(sidebarVisible: Bool) throws {
+        let width = WorkspaceSplitView.minimumWindowWidth(sidebarVisible: sidebarVisible, settingsSelected: true)
+        #expect(width == (sidebarVisible ? 701 : 500))
+        #expect(WorkspaceSplitView.minimumWindowWidth(sidebarVisible: sidebarVisible, settingsSelected: false) == 470)
+        let window = makeWindow(sidebarVisible: sidebarVisible, width: width, settingsSelected: true)
+        defer { window.close() }
+        window.contentView?.layoutSubtreeIfNeeded()
+        let strip = try #require(window.contentView.flatMap(findStrip))
+        let column = try #require(strip.superview)
+        #expect(column.bounds.width >= WorkspaceSplitView.settingsMinimumWidth)
+        let content = try #require(window.contentView)
+        let pin = try pinButton(window)
+        #expect(pin.convert(pin.bounds, to: nil).maxX <= content.convert(content.bounds, to: nil).maxX)
     }
 
     @Test("without a titlebar safe area (full screen) the band is still reserved above the editor")

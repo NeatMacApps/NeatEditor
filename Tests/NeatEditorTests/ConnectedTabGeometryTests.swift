@@ -55,9 +55,9 @@ struct ConnectedTabGeometryTests {
             #expect(gap.lowerBound >= 40)
             #expect(gap.upperBound <= 40 + width - 32)
             #expect(item.titleField.frame.midX == item.tabBounds.midX)
-            #expect(item.titleField.frame.midY == item.tabBounds.midY)
-            #expect(item.tabBounds.height == 30)
-            #expect(strip.convert(item.tabBounds, from: item).minY == 10)
+            #expect(strip.convert(item.titleField.bounds, from: item.titleField).midY == EditorTabLayout.contentCenterY)
+            #expect(item.tabBounds.height == EditorTabLayout.tabHeight)
+            #expect(strip.convert(item.tabBounds, from: item).minY == 4)
         }
         let before = try #require(strip.selectedTabGap(in: rule))
         strip.setFrameOrigin(CGPoint(x: 300, y: 548))
@@ -79,7 +79,7 @@ struct ConnectedTabGeometryTests {
             strip.setFrameSize(CGSize(width: width, height: 40))
             strip.layoutSubtreeIfNeeded()
             for x in [CGFloat(10), width / 2, width - 1] {
-                let point = strip.convert(CGPoint(x: x, y: 4), to: strip.superview)
+                let point = strip.convert(CGPoint(x: x, y: 2), to: strip.superview)
                 #expect(strip.hitTest(point) == nil)
             }
             let item = try #require(strip.tabViews[first.id])
@@ -114,7 +114,8 @@ struct ConnectedTabGeometryTests {
         strip.layoutSubtreeIfNeeded()
         let button = try #require(strip.subviews.compactMap { $0 as? NSButton }.first)
         #expect(button.frame.minX == 2 * EditorTabLayout.tabWidth)
-        #expect(button.frame.maxY == strip.bounds.maxY)
+        #expect(button.frame.midY == EditorTabLayout.contentCenterY)
+        #expect(button.frame.height == EditorTabLayout.actionHeight)
         #expect(strip.hitTest(strip.convert(CGPoint(x: button.frame.midX, y: button.frame.midY),
                                             to: strip.superview)) === button)
         button.performClick(nil)
@@ -247,7 +248,7 @@ struct ConnectedTabGeometryTests {
                 #expect(field.frame.width == 144)
                 #expect(field.font?.pointSize == 13)
                 #expect(field.frame.height >= field.intrinsicContentSize.height)
-                #expect(field.frame.midY == item.tabBounds.midY)
+                #expect(strip.convert(field.bounds, from: field).midY == EditorTabLayout.contentCenterY)
                 #expect(field.lineBreakMode == .byTruncatingTail)
                 #expect(field.usesSingleLineMode)
                 #expect(field.stringValue == tab.title)

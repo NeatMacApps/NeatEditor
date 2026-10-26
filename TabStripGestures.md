@@ -86,6 +86,40 @@ only; sidebar, split view, window controls and editor remain native.
   toolbar gave 40 pt; content views in the titlebar band receive hits). Apple [NSTitlebarAccessoryViewController](https://developer.apple.com/documentation/appkit/nstitlebaraccessoryviewcontroller)
   `layoutAttribute` supports bottom, leading and trailing.
 
+### Top-row alignment and narrow windows (owner correction 2026-10-26)
+
+- Keep the native 40 pt compact row and system-placed traffic lights. Sidebar,
+  New Document, Always on Top and tab filenames use the same 20 pt vertical
+  content axis; do not align actions to the bottom of a shorter tab.
+- Use 13 pt regular SF Symbols and 32 pt action slots throughout. Leave 8 pt
+  after the trailing slot. The existing stepped tabs remain equal 168 pt slots
+  with 13 pt titles, now 36 pt tall with a 4 pt top gutter; title placement follows
+  the row axis rather than the shape's editor-join extension.
+- Replace the thin pin silhouette with `square.3.layers.3d.top.filled`, a compact
+  top-layer symbol. Keep the existing Always on Top action, accessible name and
+  tooltips; gray when off, accent when on, without a capsule or focus ring.
+- The 470 pt minimum window must fit the native split: 200 pt sidebar plus a
+  240 pt editor minimum and the divider. The former 300 pt editor minimum
+  exceeded the available width with the sidebar visible and pushed trailing
+  controls outside the window. Settings retain their 500 pt detail minimum;
+  the window minimum includes the visible sidebar and divider in that state.
+- Inspected reference: this repository's `WorkspaceSplitView` titlebar accessory,
+  `EditorTabStripView.layout`, and `EditorTabItemView.layout`, compared with both
+  owner captures (empty row and 470 pt expanded sidebar). Reuse the native
+  `NSButton`, `NSTitlebarAccessoryViewController`, empty `.unifiedCompact`
+  `NSToolbar`, native split constraints and existing stepped-tab exception;
+  no replacement toolbar or manual traffic-light placement.
+- Public APIs checked in the installed Xcode 27.2 SDK and Apple's documentation:
+  [button symbol configuration](https://developer.apple.com/documentation/appkit/nsbutton/symbolconfiguration),
+  [compact toolbar](https://developer.apple.com/documentation/appkit/nswindow/toolbarstyle-swift.enum/unifiedcompact),
+  and [split minimum thickness](https://developer.apple.com/documentation/appkit/nssplitviewitem/minimumthickness).
+  These product dimensions are not Apple-prescribed constants. This correction
+  supersedes the 30 pt tabs, 15 pt sidebar icon and bottom-aligned action policy
+  above; the 40 pt row and native ownership remain unchanged.
+- Acceptance includes empty and mixed-title tabs, sidebar open/closed, 470 pt
+  and normal widths, overflow selection, pin toggling and Settings minimum size.
+  Check actual installed-window screenshots and native frame containment.
+
 ## Native implementation and reference
 
 `WorkspaceSplitViewController` uses `NSSplitViewController`, a full-height
