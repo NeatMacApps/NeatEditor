@@ -119,6 +119,13 @@ only; sidebar, split view, window controls and editor remain native.
 - Acceptance includes empty and mixed-title tabs, sidebar open/closed, 470 pt
   and normal widths, overflow selection, pin toggling and Settings minimum size.
   Check actual installed-window screenshots and native frame containment.
+- Installed overflow acceptance exposed a separate redraw issue: after resizing
+  or toggling the sidebar, New Document still accepted a click at its correct
+  frame but its symbol was absent until selection changed. Complete the strip's
+  layout synchronously with the editor column and invalidate the native button's
+  display after moving it; do not add delayed geometry callbacks. Include the
+  button in the tab group's explicit accessibility children so the actual native
+  action and frame can be verified without guessing a pixel target.
 
 ## Native implementation and reference
 

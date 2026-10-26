@@ -45,6 +45,7 @@ final class EditorTabStripView: NSView {
         scrollView.documentView = canvas
         addSubview(scrollView)
         configureNewDocumentButton()
+        setAccessibilityChildren([newDocumentButton])
         for fade in [leadingFade, trailingFade] {
             fade.zPosition = 100
             fade.startPoint = CGPoint(x: 0, y: 0.5)
@@ -91,7 +92,7 @@ final class EditorTabStripView: NSView {
             }
             item.update(descriptor: tab, selected: tab.id == selectedTabID)
         }
-        setAccessibilityChildren(tabs.compactMap { tabViews[$0.id] })
+        setAccessibilityChildren(tabs.compactMap { tabViews[$0.id] } + [newDocumentButton])
         if let selectedTabID, let selected = tabViews[selectedTabID] {
             canvas.addSubview(selected, positioned: .above, relativeTo: nil)
         }
@@ -154,6 +155,7 @@ final class EditorTabStripView: NSView {
             x: tabsEnd, y: EditorTabLayout.contentCenterY - EditorTabLayout.actionHeight / 2,
             width: EditorTabLayout.newDocumentSlotWidth, height: EditorTabLayout.actionHeight
         )
+        newDocumentButton.needsDisplay = true
         geometryDidChange()
     }
 

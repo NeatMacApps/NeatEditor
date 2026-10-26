@@ -120,6 +120,7 @@ struct ConnectedTabGeometryTests {
                                             to: strip.superview)) === button)
         button.performClick(nil)
         #expect(created == 1)
+        #expect(strip.accessibilityChildren()?.contains { ($0 as? NSButton) === button } == true)
 
         strip.contentInsets = NSEdgeInsets(top: 0, left: 120, bottom: 0, right: 40)
         strip.layoutSubtreeIfNeeded()

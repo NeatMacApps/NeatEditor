@@ -287,6 +287,7 @@ private final class WorkspaceEditorViewController: NSViewController {
         var insets = accessoryInsets()
         insets.right = max(insets.right, trailingSlot)
         strip.contentInsets = insets
+        strip.layoutSubtreeIfNeeded()
     }
 
     /// Accessory frames are read at layout time in window coordinates.
