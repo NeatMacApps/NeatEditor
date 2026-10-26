@@ -143,8 +143,10 @@ SHA256: `55429d3b4caee89e7e1cbd66623b9a93cd9aacb4ee6b7051044251e5dabdfa1b`.
 - Installed 470 pt window: inspected the expanded sidebar, collapsed sidebar and
   overflow selection with short, long CJK and empty-file fixtures. New Document
   and Always on Top remained visible and separate. Actual accessibility frames
-  expose both buttons; the narrow-window New Document pointer click created a
-  new tab. The native Always on Top accessibility press returned 1 then 0.
+  expose both buttons. A pre-redraw-fix pointer check created a new tab at the
+  invisible symbol's correct location, distinguishing redraw from hit testing;
+  the final installed captures verify its visible symbol in both sidebar states.
+  The final native Always on Top accessibility press returned 1 then 0.
 - Inspected the same mixed-title group at 1000 pt, with equal slot widths and
   native tail truncation. Fixture tabs were closed without changing their contents.
   Screenshot evidence: `/tmp/neateditor-titlebar-final-{overflow,collapsed,wide}.png`;
