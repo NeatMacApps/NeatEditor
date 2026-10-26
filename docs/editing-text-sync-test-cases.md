@@ -91,6 +91,16 @@ readable over the editor, leaves the final line fully visible at maximum scroll,
 and disappears for Settings. Keep diagnostics and actual-path evidence under
 `build/character-count/`; a hosted view test does not substitute for the installed UI.
 
+Acceptance (2026-10-27): 107 tests in 16 suites, analyze and the universal
+Release build passed; the only diagnostics were the existing AppIntents metadata
+warnings. The Developer ID Release from `5aeba02` was installed at
+`/Applications`. In the installed app the count updated across tab switches,
+stayed above the search bar, disappeared in Settings and remained inside the
+editor at 470 × 510 points. With a 1,157-character document at maximum scroll,
+the final wrapped line ended above the count; no full-width row covered the
+line-number gutter. Diagnostics, install hashes and screenshots are under
+`build/character-count/`.
+
 ## Text synchronization history
 
 1. **Stale-snapshot overwrite** — `updateNSView` used to assign
