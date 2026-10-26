@@ -127,6 +127,34 @@ only; sidebar, split view, window controls and editor remain native.
   button in the tab group's explicit accessibility children so the actual native
   action and frame can be verified without guessing a pixel target.
 
+### Installed alignment acceptance (2026-10-26)
+
+Implementation `62e8b0b` was installed as a same-identity Developer ID-signed
+universal Release at `/Applications/NeatEditor.app`. Installed/build executable
+SHA256: `55429d3b4caee89e7e1cbd66623b9a93cd9aacb4ee6b7051044251e5dabdfa1b`.
+
+- Full arm64 suite: 101 tests in 14 suites. Universal Release build and Debug
+  analysis passed, including recompilation of the changed views for both slices.
+  Complete diagnostics: `build/titlebar-polish/logs/final-{tests,release,analyze}.log`.
+  No Swift compiler or analyzer warnings. The retained AppIntents metadata-step
+  diagnostic remains assessed in `docs/code-review.md`; no framework was added
+  merely to suppress it. Final commands specify the arm64 destination while
+  explicitly building both application architectures, avoiding destination ambiguity.
+- Installed 470 pt window: inspected the expanded sidebar, collapsed sidebar and
+  overflow selection with short, long CJK and empty-file fixtures. New Document
+  and Always on Top remained visible and separate. Actual accessibility frames
+  expose both buttons; the narrow-window New Document pointer click created a
+  new tab. The native Always on Top accessibility press returned 1 then 0.
+- Inspected the same mixed-title group at 1000 pt, with equal slot widths and
+  native tail truncation. Fixture tabs were closed without changing their contents.
+  Screenshot evidence: `/tmp/neateditor-titlebar-final-{overflow,collapsed,wide}.png`;
+  these are actual desktop-context captures, not a composed mockup.
+- Limits: installed visual checks covered dark appearance on macOS 27.2. Light
+  appearance, native Intel execution and a macOS 26 runtime were not exercised.
+  Settings minimum width was checked in native-window tests, not through its
+  installed settings surface. This does not clear earlier unrelated motion,
+  blank-chrome drag or Settings-color acceptance limits below.
+
 ## Native implementation and reference
 
 `WorkspaceSplitViewController` uses `NSSplitViewController`, a full-height
