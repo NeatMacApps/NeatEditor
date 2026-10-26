@@ -360,10 +360,10 @@ list back to the selection.
 
 A selection made directly in the sidebar is exempt: `WorkspaceStore.openSidebarFile`
 records `sidebarOriginatedSelectionURL`, and the sidebar consumes it when the
-active document changes. `List.scrollTo` would otherwise move an
-already-clicked row to the top under the pointer, which is exactly the
-disruption this exemption prevents. The marker is transient view/session state
-and is not persisted with the workspace snapshot.
+active document changes. An unanchored `scrollTo` may still shift a partially
+visible clicked row to make it whole, which would move the list under the
+pointer; the exemption prevents exactly that. The marker is transient
+view/session state and is not persisted with the workspace snapshot.
 
 Inspected reference: the existing `WorkspaceSidebarView` native `List(selection:)`
 and its filename/preview `VStack`. Reuse that row, not a replacement list or a
@@ -431,9 +431,9 @@ The clean `c211fa7` archive passed 99 tests in 14 suites, including
 external selection of the top row scrolls up, a fully visible row does not move
 the list, an external selection of a middle or bottom row scrolls down, preview
 changes do not move the list, and `openSidebarFile` (the sidebar binding path)
-does not move it. Debug analyze
-passed without compiler or static-analysis warnings; only the previously
-assessed AppIntents metadata-step note remains in test/build logs.
+does not move it. Debug analyze passed without compiler or static-analysis
+warnings; only the previously assessed AppIntents metadata-step note remains in
+test/build logs.
 
 An isolated copy of the Release binary, re-signed only to use a separate
 defaults domain, was inspected with a 60-file folder: the restored
