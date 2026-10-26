@@ -12,6 +12,7 @@ struct WorkspaceView: View {
     @FocusState private var isSearchFieldFocused: Bool
     @State private var isCloseTabShortcutHintVisible = false
     @State private var isWindowPinned = false
+    @State private var editorStatus = EditorStatusModel()
 
     var body: some View {
         WorkspaceSplitView(
@@ -106,6 +107,21 @@ struct WorkspaceView: View {
             if workspaceStore.searchState.isPresented {
                 searchBar
             }
+
+            if let tab = workspaceStore.tabs.first(where: { $0.id == workspaceStore.selectedTabID }),
+               !tab.isSettings, tab.isContentLoaded {
+                EditorStatusBar(
+                    snapshot: editorStatus.tabID == tab.id ? editorStatus.snapshot : nil,
+                    fontSize: workspaceStore.preferences.editorFontSize,
+                    onIncreaseFontSize: workspaceStore.increaseEditorFontSize,
+                    onDecreaseFontSize: workspaceStore.decreaseEditorFontSize,
+                    onResetFontSize: {
+                        workspaceStore.updateEditorFontSize(
+                            by: WorkspacePreferences.defaultEditorFontSize - workspaceStore.preferences.editorFontSize
+                        )
+                    }
+                )
+            }
         }
     }
 
@@ -143,6 +159,10 @@ struct WorkspaceView: View {
                     },
                     onRegisterCommitHandler: { handler in
                         workspaceStore.commitEditorChanges = handler
+                    },
+                    onStatusChange: { tabID, text, selection in
+                        guard workspaceStore.selectedTabID == tabID else { return }
+                        editorStatus.update(tabID: tabID, text: text, selection: selection)
                     }
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

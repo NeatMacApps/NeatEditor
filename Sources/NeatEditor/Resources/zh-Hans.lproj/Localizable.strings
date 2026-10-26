@@ -88,3 +88,19 @@
 "Choose the folder to list in the sidebar." = "选择要在侧边栏中显示的文件夹。";
 "Folder Unavailable" = "文件夹不可用";
 "The selected folder no longer exists." = "所选文件夹已不存在。";
+
+"status.bar" = "编辑状态";
+"status.statistics" = "文本统计";
+"status.characters" = "%@ 字符";
+"status.selection" = "已选 %@ / %@ 字符";
+"status.lines" = "%@ 行";
+"status.position" = "第 %@ 行，第 %@ 列";
+"status.fontSize" = "%@ pt";
+"status.font" = "字号";
+"status.defaultFontSize" = "默认字号";
+"status.totalCharacters" = "字符数";
+"status.nonWhitespaceCharacters" = "去空白字符数";
+"status.words" = "词数";
+"status.totalLines" = "行数";
+"status.selectedCharacters" = "选中字符数";
+"status.done" = "完成";

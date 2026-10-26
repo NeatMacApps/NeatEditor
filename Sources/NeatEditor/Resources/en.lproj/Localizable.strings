@@ -88,3 +88,19 @@
 "Choose the folder to list in the sidebar." = "Choose the folder to list in the sidebar.";
 "Folder Unavailable" = "Folder Unavailable";
 "The selected folder no longer exists." = "The selected folder no longer exists.";
+
+"status.bar" = "Editor Status";
+"status.statistics" = "Text Statistics";
+"status.characters" = "Chars: %@";
+"status.selection" = "Selected: %@ / %@";
+"status.lines" = "Lines: %@";
+"status.position" = "Ln %@, Col %@";
+"status.fontSize" = "%@ pt";
+"status.font" = "Font Size";
+"status.defaultFontSize" = "Default Font Size";
+"status.totalCharacters" = "Characters";
+"status.nonWhitespaceCharacters" = "Without Whitespace";
+"status.words" = "Words";
+"status.totalLines" = "Lines";
+"status.selectedCharacters" = "Selected Characters";
+"status.done" = "Done";
