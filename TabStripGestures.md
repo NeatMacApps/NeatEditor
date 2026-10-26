@@ -28,10 +28,10 @@ Owner corrections (2026-10-24):
   placement remains prohibited.
 - Owner request (2026-10-26): the sidebar follows the active document. Switching
   to a document whose sidebar row is scrolled out of view — for example from the
-  top tab band — scrolls the sidebar so that row is visible at the leading edge.
-  A row chosen directly in the sidebar never moves the list, and ordinary
-  refreshes, preview updates or typing never move it either. The restored
-  document is located once at launch and after the sidebar is expanded.
+  top tab band — scrolls the sidebar until that row is visible. A row chosen
+  directly in the sidebar never moves the list, and ordinary refreshes, preview
+  updates or typing never move it either. The restored document is located once
+  at launch and after the sidebar is expanded.
 
 ## Compact 40 pt top row (owner decision 2026-10-25, authoritative)
 
@@ -345,8 +345,9 @@ Long filenames/previews truncate at the tail; content does not enlarge the row.
 The native `List(selection:)` remains the owner of selection styling and
 scrolling; `WorkspaceSidebarView` wraps it in `ScrollViewReader` and gives every
 row its normalized file URL as its scroll id. Reveal calls `scrollTo(url)` with
-no anchor. In this List, that places the row at the leading edge of the
-viewport; do not animate and do not center it, so locating a file is
+no anchor. SwiftUI List scrolls the minimum needed to make the row wholly
+visible: a partially visible row shifts slightly, while a far row settles at the
+leading edge. Do not animate or center the reveal, so locating a file stays
 predictable and matches the tab band's instant reveal.
 
 Reveal is requested when the active document changes (tab band, menu command,
@@ -408,10 +409,52 @@ Use the installed `/Applications/NeatEditor.app`, not just a build/test result.
    pin/unpin and search; verify no content changes cross document identities.
 7. Check light/dark appearances, Settings minimum size and keyboard selection.
 8. Scroll a long sidebar away from the active file, then select an offscreen
-   file from the tab band: its row must become visible at the leading edge,
-   without animation. Click a visible sidebar row near an edge: the list must not
-   jump. Type in the editor: preview updates must not move the list. Expand the
-   sidebar after switching tabs while collapsed: the active row must be revealed.
+   file from the tab band: its row must become visible, without animation. Click
+   a visible sidebar row near an edge: the list must not jump. Type in the
+   editor: preview updates must not move the list. Expand the sidebar after
+   switching tabs while collapsed: the active row must be revealed.
+
+### Active-document reveal evidence (2026-10-26)
+
+Feature commit `0f7ac6e`. The final installed HEAD `9f82c38` (the concurrent
+thin-scroller commit on top) built as a universal Release from a clean
+`git archive`:
+`c7ed313c3ed5eef651b7e09bed154a8627d20751051c71457558f45ad9da8c56`.
+It is signed with the same Developer ID identity; the installed executable hash
+and signature match the build product. An earlier Release from `0f7ac6e`
+(`8d748b95…`) was installed and inspected before the concurrent task reinstalled
+its Debug build; the final HEAD Release replaced that Debug build.
+
+The clean HEAD archive passed 99 tests in 14 suites, including
+`WorkspaceSidebarRevealTests`, which hosts the real `WorkspaceSidebarView` with
+80 files and asserts: the restored bottom selection reveals at launch, an
+external selection of the top row scrolls up, an external selection back down
+scrolls, preview changes do not move the list, and `openSidebarFile` (the
+sidebar binding path) does not move it. Debug analyze passed without compiler or
+static-analysis warnings; only the previously assessed AppIntents metadata-step
+note remains in test/build logs.
+
+An isolated copy of the same Release binary, re-signed only to use a separate
+defaults domain, was inspected with a 60-file folder: the restored
+`note-01.txt` sat at the bottom of the list at launch, and Command-W selected
+`note-20.txt` and scrolled the sidebar to it. The Debug isolated run additionally
+used Command-Shift-T to reopen `note-01.txt` and return the sidebar to the
+bottom.
+
+The installed HEAD Release was then exercised directly: Command-W closed the
+active `scroller-long.txt` tab and selected `Untitled 18.txt`; the sidebar
+shifted just enough to make that partially visible row wholly visible. The
+workspace was restored to its pre-test snapshot afterwards. Evidence images are
+in the local `build/sidebar-reveal/evidence/` (Debug, isolated Release and
+installed Release runs).
+
+Remaining limits: the session was locked, so pointer clicks on the top tab band
+or sidebar rows could not be synthesized. The hosted test covers the direct
+`selectedTabID` path and sidebar-origin suppression; the installed-app run
+covered a real close-fallback selection through the same
+`selectedSidebarFileURL` observer. The exact scroll amount for a far row is
+SwiftUI List's own minimum-scroll behavior; the test asserts visibility, not a
+specific anchor offset.
 
 ### Consistency repair evidence and remaining limits
 

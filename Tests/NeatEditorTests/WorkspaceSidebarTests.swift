@@ -593,7 +593,7 @@ struct WorkspaceSidebarRevealTests {
         try await settle(host)
         #expect(abs(listScrollView.contentView.bounds.minY - topOffset) < 0.5)
 
-        let middleID = try #require(tabs[count / 2].id)
+        let middleID = tabs[count / 2].id
         store.selectedTabID = middleID
         try await settle(host)
         let middleOffset = listScrollView.contentView.bounds.minY

@@ -107,8 +107,10 @@ struct WorkspaceSidebarView: View {
         revealSelectedFileIfPossible(using: proxy)
     }
 
-    /// `List`'s unanchored `scrollTo` aligns the target at the leading edge.
-    /// Sidebar-originated selections are filtered out before reaching here.
+    /// Unanchored `scrollTo` reveals the target: SwiftUI List scrolls the
+    /// minimum needed, so far rows settle at the leading edge and a partially
+    /// visible row shifts slightly. Sidebar-originated selections are filtered
+    /// out before reaching here.
     private func revealSelectedFileIfPossible(using proxy: ScrollViewProxy) {
         guard isRevealPending,
               let selectedURL = workspaceStore.selectedSidebarFileURL,
