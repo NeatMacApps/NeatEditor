@@ -6,6 +6,8 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## 1.0.16 - 2026-10-26
 
+Release: hold installed tab/window interaction acceptance is outstanding (RELEASING.md, 1.0.16 train gate)
+
 ### Changed
 
 - Use one native compact 40 pt top row, keeping the sidebar toggle beside the window controls and New Document and Always on Top aligned with the document tabs.
