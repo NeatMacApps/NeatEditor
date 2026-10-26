@@ -1,6 +1,13 @@
 import SwiftUI
 
 @main
+enum NeatEditorEntry {
+    static func main() {
+        MacScrollerPreference.install()
+        NeatEditorApp.main()
+    }
+}
+
 struct NeatEditorApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     private let workspaceStore: WorkspaceStore

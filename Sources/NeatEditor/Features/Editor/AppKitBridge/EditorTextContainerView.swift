@@ -415,6 +415,9 @@ final class EditorTextContainerView: NSView {
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
+        // Keep the thin, auto-hiding knob even if the system prefers legacy
+        // scrollers; the editor must not reserve a permanent scrollbar column.
+        scrollView.scrollerStyle = .overlay
         scrollView.contentView.postsBoundsChangedNotifications = true
         scrollView.focusRingType = .none
     }
