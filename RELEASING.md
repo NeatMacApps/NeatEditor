@@ -191,7 +191,7 @@ Source `b7e2398` prepares version 1.0.16 / build 16 and English-first bilingual
 notes for the committed changes after 1.0.15. The publisher's dry run passed
 certificate, notary credentials and version checks. The full publisher was not
 started: no 1.0.16 tag, notarization submission, public assets or appcast change
-was created by this attempt. The last public release remains 1.0.15.
+was created by that gate attempt. At that point, the last public release was 1.0.15.
 
 The gate found an AppKit runtime error that successful tests had not rejected:
 the empty toolbar delegate lacked its required item factory. The existing native
@@ -240,6 +240,76 @@ Owner instruction (2026-10-26): publish the latest version directly. The release
 therefore proceeds with the pointer and Settings acceptance above deferred as a
 post-release check. No archive or accepted public artifact existed to resume, so
 the publisher starts from this committed source.
+
+## 1.0.16 publication evidence (2026-10-26)
+
+Published [v1.0.16](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.16)
+from immutable source `4632fdd2bd438bc4ac78f3d67de50439474a0e85` (version
+1.0.16 / build 16). This includes the owner-authorized scope through `8f8c801`
+and only the release taskboard claim afterward. The prepared version and
+English-first, complete Simplified Chinese CHANGELOG notes were reused; no app
+source or dependency changed. The appcast commit is `0c5f8a4`.
+
+Fresh clean Debug and Release builds and static analysis compiled all 37 app
+Swift sources for arm64 and x86_64. The complete arm64 suite passed: 98 tests,
+116 parameter-expanded executions, zero skipped or failed. Complete gate logs,
+input/environment fingerprints and structured XCTest results are retained in
+`build/release-train-publish-1.0.16/`. Xcode 27.2 (27B5028f), macOS 27.2
+(26B5112a), Swift 6 mode, deployment target 26.0 and pinned Sparkle 2.9.5 were
+used. The only build/archive diagnostic was the AppIntents metadata notice
+individually assessed in [code-review.md](docs/code-review.md#sidebar-review-2026-10-24).
+No Swift compiler or static-analysis issue was reported. Intel execution and
+minimum-macOS runtime coverage remain unverified.
+
+The maintained publisher completed archive/export, nested Developer ID and
+hardened-runtime checks, both notarizations, app/DMG stapling, draft asset
+byte comparison, publication and the appcast push. Its complete log is
+`build/release-logs/publish-20261026-134700.log`. Apple accepted app submission
+`6d83d72a-42a3-4b5f-b087-ad12228daeb6` and DMG submission
+`d24a9692-9a58-46c4-b93e-556d4eb3e56b`.
+
+Independent anonymous full downloads confirmed exactly three published assets,
+matching local bytes and SHA256SUMS. SHA256 fingerprints:
+
+| Asset | SHA256 |
+|---|---|
+| `NeatEditor-1.0.16.dmg` | `20ff7f84483c8b07345f951dd0be3a72f7036ff64f7c5a54a4b7bc5020503e50` |
+| `NeatEditor-1.0.16.zip` | `17ccd24da0eab005febe2f078857d3868730750cafeec86132f8cf2b66f311c0` |
+
+The normal anonymous SUFeedURL returned build 16 with the correct enclosure URL,
+length and bilingual notes. The release body matches the CHANGELOG. The ZIP's
+Ed25519 signature verified against the installed app's public key; changing one
+byte made verification fail. The latest-release route identifies v1.0.16.
+
+The app from that exact DMG was installed at `/Applications/NeatEditor.app`,
+retaining the same Developer ID identity, and launched there as PID 59849.
+The installed executable SHA256 is
+`e889f7bb797329e06cbc4b57513c95350fd1f52498473abbad0778923bbce061`.
+Strict nested signature and stapled-ticket validation passed. `spctl` returned
+`source=Notarized Developer ID`, with `override=security disabled`: signatures
+and tickets are verified, but this Mac does not establish normal Gatekeeper
+enforcement. No security setting was changed. Final readback used PID 78415
+at the same installed path with the same executable fingerprint.
+
+Fresh isolated screenshots of windows 5377 and 5428 were inspected: the compact row,
+system window controls, sidebar toggle, stepped tabs, New Document and pin are
+present. Opening a temporary mixed English/Chinese file rendered its new text,
+wrapped logical line 6, following line numbers and final empty line correctly.
+Close Tab removed that fixture; opening the previously selected document
+restored its existing tab. The actual View > Toggle Sidebar accessibility menu
+action collapsed and restored the sidebar with matching captures. The original
+`invalid delegate` diagnostic was absent from the new process log. Evidence is
+in the same gate directory (`installed-window.png`, `installed-fixture.png`,
+`installed-closed-fixture.png`, `installed-sidebar-menu.png`,
+`installed-restored.png`, installation/public-verification receipts).
+
+The session stayed locked. These are live file-open/menu-action and isolated
+window checks, not physical keyboard/pointer or desktop-composited acceptance.
+The owner's deferred pointer tab selection/rename/drag, sidebar-button click,
+pin, divider/minimum-width resizing, Settings, appearance variants and motion
+checks remain deferred. The temporary fixture tab was closed, the original
+document/sidebar state restored and the task-mounted DMG ejected. No virtual
+display was connected.
 
 ## References
 
