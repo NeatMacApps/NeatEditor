@@ -185,6 +185,46 @@ mode should own draft state and appcast regeneration. The workaround above is
 evidence-backed recovery, not an instruction to silently rerun the whole
 archive/notarization pipeline after a transport failure.
 
+## 1.0.16 train gate (2026-10-26, blocked before publication)
+
+Source `b7e2398` prepares version 1.0.16 / build 16 and English-first bilingual
+notes for the committed changes after 1.0.15. The publisher's dry run passed
+certificate, notary credentials and version checks. The full publisher was not
+started: no 1.0.16 tag, notarization submission, public assets or appcast change
+was created by this attempt. The last public release remains 1.0.15.
+
+The gate found an AppKit runtime error that successful tests had not rejected:
+the empty toolbar delegate lacked its required item factory. The existing native
+controller now supplies that method; the compact-row regression checks that
+AppKit can call it. The same 98-test arm64 suite passes without the original
+`invalid delegate` runtime diagnostic. Universal Debug and Release build/analyze
+pass, including both arm64 and x86_64 compilation. Complete logs and structured
+results are in `build/release-train-1.0.16/`. The sole retained diagnostic is the
+AppIntents metadata notice individually assessed in
+[code-review.md](docs/code-review.md#sidebar-review-2026-10-24); no Swift compiler
+or static-analysis issue was reported. Toolchain: Xcode 27.2 (27B5028f), macOS
+27.2 (26B5112a). Intel and minimum-macOS runtime execution remain unverified.
+
+The committed Developer ID-signed universal Release was installed at
+`/Applications/NeatEditor.app` and launched from there. Its executable SHA256
+matches the build product (`0330d248474378ae12b219ef1fb38a62050582d9727d830dadc736c5395db252`),
+and strict bundle signature verification passes. This is a local unnotarized
+build, not a published installation.
+
+Real-path acceptance remains blocked. Screen-capture access was true and the
+session locked. After bounded BetterDisplay host/wake preparation, Agent Display
+was natively active and awake, yet the screenshot helper still failed for both
+the old window and the freshly launched installed window (ID 4500, PID 63720).
+System Events reported zero application windows despite WindowServer listing
+the new window. `installed-acceptance.json` retains these outcomes. Neither
+fresh pixels nor the outstanding tab/window interactions were accepted; do not
+replace them with the passing native-view tests. The task-connected virtual
+display was disconnected and its vendor/model/serial identity was absent from
+the native online list afterward; the task-started BetterDisplay host quit.
+Resume from the prepared committed source and repeat real installed-app
+acceptance before invoking the publisher. No archive or accepted public artifact
+exists to resume for this version.
+
 ## References
 
 - Apple: [Notarizing macOS software before distribution](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
