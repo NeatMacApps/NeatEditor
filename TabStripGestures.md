@@ -329,10 +329,11 @@ Inspected reference: the existing `WorkspaceSidebarView` native `List(selection:
 and its filename/preview `VStack`. Reuse that row, not a replacement list or a
 custom selection background. Always include the preview `Text`, with common
 18 pt title and 28 pt preview slots using public `frame(height:alignment:)` and
-`@ScaledMetric` for text-size adaptation. Native `lineLimit(2, reservesSpace: true)`
-was tested but left an empty preview 11 pt shorter; a newline substitute instead
-made it 1 pt taller on Xcode 27.2/macOS 27.2. Shared slot heights, not filler text
-or a relaxed equality assertion, establish the row contract.
+`@ScaledMetric` for text-size adaptation. The measured empty-preview reservation
+failure and the scalable-slot remedy are recorded in the shared
+[peer-consistency guide](~/.config/agentsync/docs/UI_DESIGN_GUIDE.md#peer-consistency).
+Keep this product's slot dimensions here; do not use filler text or relax the
+height-equality assertion.
 [Native tail truncation](https://developer.apple.com/documentation/swiftui/view/truncationmode(_:))
 preserves equal peer geometry. Verify empty, one-line, multiline and long CJK
 content together at narrow and wide sidebar widths.
@@ -367,6 +368,35 @@ Use the installed `/Applications/NeatEditor.app`, not just a build/test result.
 6. Exercise active/inactive double-click, rename commit/cancel, close/reopen,
    pin/unpin and search; verify no content changes cross document identities.
 7. Check light/dark appearances, Settings minimum size and keyboard selection.
+
+### Consistency repair evidence and remaining limits
+
+The consistency repair (`b7112f6`) passed 95 tests in 13 suites on arm64,
+including equal tab widths, 15 pt title layout at that revision, native tail
+truncation, no inactive fill, blank-region hit-testing and equal sidebar-row
+heights for empty/short/multiline/long content at 160/240/340 pt widths.
+Universal Debug analysis and Release compilation passed on Xcode 27.2; native
+Intel test execution was not established. Complete diagnostics are retained in
+`build/TallerTabs/logs/consistency-{final-test,analyze,release}.log`. Only the
+previously assessed AppIntents metadata-step warning remained (see
+`docs/code-review.md`); no Swift compiler/static-analysis warning was found.
+
+That signed Release was committed, pushed and installed; installed/product
+executable SHA256 matched. The inspected
+`/tmp/neateditor-consistency-installed.png` shows the installed expanded sidebar,
+equal tab slots and row rhythm at 1284 × 777 pt. It is a static document-tab
+capture, not Settings light/dark color or double-click/drag acceptance.
+The later owner-approved compact top-row sizes above supersede that revision's
+44 pt / 15 pt / 200 pt geometry and were not rolled back during closure.
+
+Still unaccepted: actual blank-region double-click/drag, latest Settings color
+matching in both appearances, and post-correction motion. Locked-session AX
+window routing/input prevented those interactions; subsequent capture retries
+also failed despite capture permission and bounded display preparation. Native
+window replay without a visibly attached toolbar did not establish a zoom pass.
+Do not treat unit hit-testing or the earlier static capture as resolving these
+items. The task-connected Agent Display was disconnected and its native
+vendor/model/serial identity removed; the task-started BetterDisplay host quit.
 
 The rejected two-row 1.0.10 draft has no assets and remains unpublished.
 The corrected release uses a new immutable version, never a moved tag.
