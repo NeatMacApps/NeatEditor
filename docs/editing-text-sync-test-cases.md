@@ -74,10 +74,11 @@ Settings or an empty workspace shows no count.
 
 The overlay uses 11 pt secondary text with monospaced digits, 16 pt trailing and
 6 pt bottom inset from the editor edge. It is non-interactive and passes clicks
-through to the text. The editor reserves 24 pt at the bottom of its scroll
-content so the final line rests above the count at the document end; the label
-still follows the editor through scrolling. Counts are extended grapheme
-clusters, including spaces and line breaks, with locale grouping separators.
+through to the text. The editor's scroll viewport ends 24 pt above its bottom,
+leaving a clear bottom band for the count; the line-number gutter still spans the
+full height, and no text line can render behind the count at any scroll position.
+Counts are extended grapheme clusters, including spaces and line breaks, with
+locale grouping separators.
 
 The count is computed away from the main actor and coalesced. It uses the
 committed buffer, never marked IME text; superseded work must not publish after

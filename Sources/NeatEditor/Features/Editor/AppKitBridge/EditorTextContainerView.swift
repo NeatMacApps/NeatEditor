@@ -415,15 +415,6 @@ final class EditorTextContainerView: NSView {
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
-        // The floating character count sits over the editor's lower-right
-        // corner; reserve matching scrollable space so the final line can
-        // still scroll clear of it.
-        scrollView.contentInsets = NSEdgeInsets(
-            top: 0,
-            left: 0,
-            bottom: EditorCharacterCountLayout.reservedBottomInset,
-            right: 0
-        )
         // Keep the thin, auto-hiding knob even if the system prefers legacy
         // scrollers; the editor must not reserve a permanent scrollbar column.
         scrollView.scrollerStyle = .overlay
@@ -460,7 +451,12 @@ final class EditorTextContainerView: NSView {
             scrollView.leadingAnchor.constraint(equalTo: separatorView.trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: topAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            // Keep the document viewport above the floating character count
+            // so no line can ever render behind it.
+            scrollView.bottomAnchor.constraint(
+                equalTo: bottomAnchor,
+                constant: -EditorCharacterCountLayout.reservedBottomInset
+            )
         ])
     }
 
