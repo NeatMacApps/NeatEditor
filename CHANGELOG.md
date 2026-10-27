@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.23 - 2026-10-27
+
+### Fixed
+
+- Restore double-click to zoom and drag on the empty top row above the sidebar and beside the window controls, which stopped working in 1.0.21.
+- Keep the whole top row in the tab bar color without the white area that appeared above the sidebar in 1.0.19 and 1.0.20.
+- Use the light editor color for everything below the tab bar line, including the margins around the sidebar.
+
+### 简体中文
+
+- 恢复侧边栏上方以及红绿灯按钮旁边空白处的双击缩放和拖动，该功能在 1.0.21 中失效。
+- 顶部整行保持标签栏颜色，不再出现 1.0.19、1.0.20 中侧边栏上方的白色区域。
+- 标签栏线条以下统一使用编辑区的浅色，包括侧边栏周围的边距。
+
 ## 1.0.22 - 2026-10-27
 
 ### Fixed
