@@ -206,13 +206,23 @@ struct WorkspaceTitlebarTests {
         let pinFrame = pin.convert(pin.bounds, to: nil)
         let sidebar = try sidebarButton(window)
         let sidebarFrame = sidebar.convert(sidebar.bounds, to: nil)
-        let points = [
+        let tab = try #require(strip.tabViews.values.first)
+        let tabFrame = tab.convert(tab.bounds, to: nil)
+        let bandPoints = [
             NSPoint(x: stripFrame.midX, y: stripFrame.maxY - 2),
             NSPoint(x: (plusFrame.maxX + pinFrame.minX) / 2, y: plusFrame.midY),
-            NSPoint(x: sidebarFrame.midX, y: stripFrame.maxY - 2)
+            // The gutter above a tab is still titlebar, not product content.
+            NSPoint(x: tabFrame.midX, y: stripFrame.maxY - 1)
         ]
+        let sidebarPoint = NSPoint(x: sidebarFrame.midX, y: stripFrame.maxY - 2)
         #expect(!window.titlebarAppearsTransparent)
-        for point in points {
+        for point in bandPoints {
+            // The accessory container would otherwise eat blank clicks; the
+            // frame view owns native drag and the system double-click action.
+            let hit = try #require(root.hitTest(root.convert(point, from: nil)))
+            #expect(hit === root)
+        }
+        for point in [sidebarPoint] {
             let hit = try #require(root.hitTest(root.convert(point, from: nil)))
             #expect(hit !== content && !hit.isDescendant(of: content))
             #expect(hit !== strip.superview && !hit.isDescendant(of: strip))
@@ -221,7 +231,6 @@ struct WorkspaceTitlebarTests {
             let point = button.convert(NSPoint(x: button.bounds.midX, y: button.bounds.midY), to: nil)
             #expect(root.hitTest(root.convert(point, from: nil)) === button)
         }
-        let tab = try #require(strip.tabViews.values.first)
         let titlePoint = tab.convert(NSPoint(x: tab.tabBounds.midX, y: tab.tabBounds.midY), to: nil)
         let titleHit = try #require(root.hitTest(root.convert(titlePoint, from: nil)))
         #expect(titleHit === tab || titleHit.isDescendant(of: tab))
@@ -238,6 +247,12 @@ struct WorkspaceTitlebarTests {
         #expect(window.titlebarAccessoryViewControllers.count == 1)
         #expect(strip.isDescendant(of: try #require(window.contentView)))
         #expect(strip.superview?.superview === topRule.superview)
+        let content = try #require(window.contentView)
+        let root = try #require(content.superview)
+        let blankPoint = strip.convert(NSPoint(x: strip.bounds.width - 10, y: strip.bounds.midY), to: nil)
+        let blankHit = root.hitTest(root.convert(blankPoint, from: nil))
+        // No native titlebar exists in full screen: the frame view must not own it.
+        #expect(blankHit !== root)
         NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
         window.layoutIfNeeded()
         window.contentView?.layoutSubtreeIfNeeded()

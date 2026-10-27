@@ -437,16 +437,13 @@ Do not emulate the system preference or invoke a second zoom action.
 
 Reference and API choice: reuse the existing sidebar's
 `NSTitlebarAccessoryViewController` mechanism for the tab band as a trailing
-accessory. AppKit owns the containing titlebar; the opaque native titlebar
-(`titlebarAppearsTransparent = false`) prevents blank clicks from falling through
-to the full-size content hosts. The accessory's product view only hit-tests tab
-controls, + and pin. Keep its width aligned with the editor column and retain
-the content-band fallback when full screen hides the titlebar. Official
-[NSTitlebarAccessoryViewController](https://developer.apple.com/documentation/appkit/nstitlebaraccessoryviewcontroller)
-and [titlebar transparency](https://developer.apple.com/documentation/appkit/nswindow/titlebarappearstransparent)
-were checked against the installed Xcode 27.2 SDK headers. No private titlebar
-subviews or preference emulation are used. The SwiftUI scene uses `.titleBar`,
-not `.hiddenTitleBar`: a real SwiftUI Scene probe showed the latter resetting
+accessory. AppKit owns the containing titlebar. The accessory's container still
+claims blank hits before the titlebar sees them, so blank `hitTest` results are
+handed to the window's frame view (`contentView.superview`). The frame view is
+the native owner of titlebar drag and the system double-click action, so no
+preference emulation or manual zoom call is needed. Only tab controls, + and pin
+consume events inside the band. The SwiftUI scene uses `.titleBar`, not
+`.hiddenTitleBar`: a real SwiftUI Scene probe showed the latter resetting
 `titlebarAppearsTransparent` to true after AppKit attachment. The normal scene
 style preserves native opaque chrome while `titleVisibility = .hidden` still
 hides the title. An `NSHostingController` fixture alone misses this Scene-level
@@ -454,9 +451,21 @@ reset. With the old Scene style, the installed editor's full-size content also
 covered the accessory's selected-tab fill and trailing buttons; installed visual
 acceptance must retain those controls and the open join.
 
-Move the same controls to the content
-band only after full-screen entry succeeds, and restore the accessory after
-full-screen exit succeeds; failed transitions must not strand hidden controls.
+Official
+[NSTitlebarAccessoryViewController](https://developer.apple.com/documentation/appkit/nstitlebaraccessoryviewcontroller)
+and [titlebar transparency](https://developer.apple.com/documentation/appkit/nswindow/titlebarappearstransparent)
+were checked against the installed Xcode 27.2 SDK headers. Inspecting the
+installed AppKit hierarchy showed the titlebar's double-click recognizers on the
+theme frame and titlebar container; a hit test that stopped at the accessory
+container never reached them. No private titlebar subviews, private selectors or
+preference emulation are used.
+
+Keep the band width aligned with the editor column and retain the content-band
+fallback when full screen hides the titlebar. The frame-view redirect is disabled
+in that fallback because full screen has no native titlebar. Move the same
+controls to the content band only after full-screen entry succeeds, and restore
+the accessory after full-screen exit succeeds; failed transitions must not strand
+hidden controls.
 
 Verification: 114 tests in 17 suites pass on arm64, including complete-window
 hit-testing with and without a SwiftUI host/sidebar, button/tab targets,

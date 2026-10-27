@@ -392,7 +392,14 @@ private final class WorkspaceTabBandView: NSView {
 
     override func hitTest(_ point: NSPoint) -> NSView? {
         let hit = super.hitTest(point)
-        return hit === self ? nil : hit
+        guard hit === self else { return hit }
+        // An accessory container consumes blank clicks before the titlebar sees
+        // them. Hand blank hits to the window frame so native drag and the
+        // system's double-click action still run. In full screen the band lives
+        // in the content view and has no native titlebar to fall back to.
+        guard window?.titlebarAccessoryViewControllers.contains(where: { $0.view === self }) == true,
+              let frameView = window?.contentView?.superview else { return nil }
+        return frameView
     }
 }
 
