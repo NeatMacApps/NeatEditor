@@ -173,13 +173,18 @@ final class EditorTabStripView: NSView {
 
     /// Evaluated at drawing time, after native layout. Never a copied frame.
     func selectedTabGap(in rule: NSView) -> ClosedRange<CGFloat>? {
+        selectedTabJoin(in: rule)?.gap
+    }
+
+    /// The selected tab's shape bounds and its visible join span in `rule`.
+    func selectedTabJoin(in rule: NSView) -> (tabBounds: CGRect, gap: ClosedRange<CGFloat>)? {
         guard let window, rule.window === window, !isHiddenOrHasHiddenAncestor,
               let selectedTabID, let tab = tabViews[selectedTabID] else { return nil }
         let tabFrame = rule.convert(tab.tabBounds, from: tab)
         let viewport = rule.convert(scrollView.contentView.bounds, from: scrollView.contentView)
         let lower = max(tabFrame.minX - ConnectedTabGeometry.baselineOutset, viewport.minX)
         let upper = min(tabFrame.maxX + ConnectedTabGeometry.baselineOutset, viewport.maxX)
-        return lower < upper ? lower...upper : nil
+        return lower < upper ? (tabFrame, lower...upper) : nil
     }
 
     private func geometryDidChange() {

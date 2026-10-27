@@ -42,10 +42,9 @@ enum EditorTabLayout {
     /// Keeps the trailing pin clear of the window's rounded corner.
     static let trailingMargin: CGFloat = 8
     static let fadeWidth: CGFloat = 16
-    /// Keeps the first tab's join foot inside the viewport, with a short run of
-    /// the editor's top rule before it, so the outline never ends mid-curve at
-    /// the sidebar edge.
-    static let tabsLeadingInset: CGFloat = 8
+    /// Exactly the first tab's join foot, so its arc completes at the column
+    /// edge instead of being clipped mid-curve beside the sidebar.
+    static let tabsLeadingInset: CGFloat = ConnectedTabGeometry.baselineOutset
     static let titleFontSize: CGFloat = 13
     static let horizontalPadding: CGFloat = 12
     static let tabWidth: CGFloat = 168

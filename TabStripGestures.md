@@ -500,47 +500,41 @@ build or hit-testing results alone.
   so the bottom arcs can reach the 1 pt rule. The first slot began exactly at the
   scroll viewport's leading edge, which is the editor-column boundary; the clip
   view removed those 3 pt, cutting the descending arc before its horizontal
-  tangent and ending the rule at the column edge.
-- Direction: keep the stepped shape, equal slots and editor-column start. Reserve
-  a small leading clearance inside the strip so the first tab's foot is fully
-  visible and a short run of the top rule meets it. Do not add a rail, gutter or
-  separate connector, and do not change the slot width or rule ownership.
-- Implementation: `EditorTabLayout.tabsLeadingInset` (8 pt, matching
-  `trailingMargin`) offsets the tab sequence inside the scroll canvas. The rule
-  gap still comes from live tab and viewport geometry in `selectedTabGap(in:)`;
-  reveal offsets remain bounded by the scrolled content. The inset is layout
-  spacing, not `contentInsets`, which is reserved for titlebar accessories.
-- Acceptance: in the installed app, select the first tab with the sidebar
-  expanded and collapsed at minimum and normal widths. The foot must stay wholly
-  inside the editor column, the rule must visibly run from the column edge into
-  the join, and no curve may be clipped. Repeat with overflow and a middle tab
-  selected after scrolling; the join must stay continuous.
-- Regression coverage: a native test asserts the first tab's outline bounds stay
-  inside the scroll viewport and that the selected gap leaves a nonzero leading
-  rule run at rest.
+  tangent.
+- Owner correction after 1.0.19 (2026-10-27): the shipped 8 pt clearance looked
+  wrong in the active window. The floating sidebar's glass titlebar region sits
+  directly left of the band, so the clearance read as a stray band-colored column
+  between the glass and the tab. Superseded: `tabsLeadingInset` now equals
+  `baselineOutset` (3 pt), the foot's own width, so the arc finishes its
+  horizontal tangent exactly at the column edge with no extra band-colored run.
+  Do not add a rail, gutter or separate connector, and do not change the slot
+  width.
+- Regression coverage: a native test asserts the first tab's outline stays inside
+  the scroll viewport and that its foot ends exactly at the viewport edge.
 
-### First-tab join evidence (2026-10-27)
+### Bottom-corner joins inside the opaque titlebar (owner report 2026-10-27)
 
-- Fix commit `c08f65b`, shipped in the 1.0.19 release (`6b219ee`, tag `v1.0.19`,
-  [published release](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.19)).
-- Full arm64 suite: 115 tests in 17 suites, including
-  `ConnectedTabGeometryTests.firstTabJoinClearance`. Debug static analysis and
-  the universal arm64/x86_64 Release build passed; only the
-  [assessed AppIntents metadata notice](docs/code-review.md#verification)
-  remained.
-- The notarized 1.0.19 export was installed at `/Applications/NeatEditor.app`;
-  its executable SHA-256 `91ef4af48a665c35…` matches the export.
-- Inspected the installed window at 792 × 714 pt with five open tabs (overflow)
-  and the first tab selected: with the sidebar expanded and collapsed, the foot
-  stays wholly inside the editor column and a short run of the 1 pt rule joins
-  the sidebar edge into the arc, with no clipped curve. Captures:
-  `build/tab-join/evidence/release-expanded.png`,
-  `release-collapsed.png` and the join close-up `release-crop-big.png`
-  (local, untracked).
-- Limits: the session was locked, so first-tab selection and sidebar state were
-  driven through the saved workspace state and PID-posted menu key equivalents
-  rather than a physical pointer. Light appearance was inspected; the change is
-  geometry-only, and dark appearance was not recaptured.
+- Owner report on installed 1.0.19: the curves at every selected tab's lower
+  left and lower right corners break before they reach the editor's top rule.
+- Cause: the 1.0.19 routing repair moved the band into a native titlebar
+  accessory with opaque chrome. The outline's last row (centre `maxY + 0.5`)
+  lies 1 pt below the band, which the titlebar clips, while the rule is drawn
+  in the content column below the titlebar. The arcs therefore stopped 1 pt
+  short of the rule. The inactive window hid this because the separator color
+  composited close to the band; the active window showed the gap.
+- Rule ownership stays as above: the editor column owns the rule below the opaque
+  titlebar (moving it up would hide it under the titlebar beside the traffic
+  lights when the sidebar is collapsed). `EditorTabTopRuleView` additionally
+  strokes the selected tab's `ConnectedTabGeometry.outline`, converted from the
+  live tab view and clipped to the visible viewport span, inside its own 1 pt row.
+  The strip and the rule therefore draw one path split exactly at the titlebar
+  edge. Do not move the band out of the accessory; that would regress blank
+  titlebar routing.
+- Acceptance: magnify both lower corners of a selected first, middle and overflow
+  tab with the sidebar expanded and collapsed; the arc must continue into the rule
+  without a gap. Window captures under a locked session are inactive-window
+  pixels; the owner's active-window report must be rechecked when an unlocked
+  active capture is available.
 
 ## Interaction contract
 

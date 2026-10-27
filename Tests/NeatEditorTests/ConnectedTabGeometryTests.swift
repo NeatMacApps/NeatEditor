@@ -135,7 +135,7 @@ struct ConnectedTabGeometryTests {
         #expect(abs(button.frame.maxX - (400 - 40)) < 0.001)
     }
 
-    @Test("the first tab's join foot stays inside the viewport with a leading rule run")
+    @Test("the first tab's join foot ends exactly at the viewport edge")
     func firstTabJoinClearance() throws {
         let (window, strip, rule) = makeStrip()
         defer { window.close() }
@@ -152,11 +152,33 @@ struct ConnectedTabGeometryTests {
                 == insets.left + EditorTabLayout.tabsLeadingInset)
             let viewportMinX = strip.convert(CGPoint(x: insets.left, y: 0), to: rule).x
             let gap = try #require(strip.selectedTabGap(in: rule))
-            #expect(gap.lowerBound == viewportMinX + EditorTabLayout.tabsLeadingInset
-                - ConnectedTabGeometry.baselineOutset)
-            #expect(gap.lowerBound - viewportMinX
-                == EditorTabLayout.tabsLeadingInset - ConnectedTabGeometry.baselineOutset)
+            #expect(gap.lowerBound == viewportMinX)
         }
+    }
+
+    @Test("the rule draws the selected outline's clipped lowest row at both corners")
+    func ruleCarriesCornerFeet() throws {
+        let (window, strip, rule) = makeStrip()
+        defer { window.close() }
+        let tabs = ["One.md", "Two.md", "Three.md"].map { EditorTabDescriptor(id: UUID(), title: $0) }
+        strip.update(tabs: tabs, selectedTabID: tabs[1].id, actions: EditorTabActions())
+        strip.layoutSubtreeIfNeeded()
+        let item = try #require(strip.tabViews[tabs[1].id])
+        let frame = rule.convert(item.tabBounds, from: item)
+        let bitmap = try #require(rule.bitmapImageRepForCachingDisplay(in: rule.bounds))
+        rule.cacheDisplay(in: rule.bounds, to: bitmap)
+        let scale = CGFloat(bitmap.pixelsWide) / rule.bounds.width
+        func alpha(atX x: CGFloat) -> CGFloat {
+            bitmap.colorAt(x: Int((x * scale).rounded(.down)), y: 0)?.alphaComponent ?? 0
+        }
+        let footReach = ConnectedTabGeometry.bottomJoinRadius - ConnectedTabGeometry.topInset
+        // Inside each foot's arc (1 pt from its outer end) the rule now carries the stroke.
+        #expect(alpha(atX: frame.minX - footReach + 1) > 0)
+        #expect(alpha(atX: frame.maxX + footReach - 1.5) > 0)
+        // Under the tab body the join stays open to the editor surface.
+        #expect(alpha(atX: frame.midX) == 0)
+        // Outside the gap the full rule is unchanged.
+        #expect(alpha(atX: frame.minX - footReach - 4) > 0)
     }
 
     @Test("inactive tabs never acquire a hover capsule or retain the selected fill")
