@@ -490,6 +490,35 @@ establishing that the event now reaches the native frame view; it is not a
 substitute for physical pointer acceptance. Do not clear the owner's report on
 build or hit-testing results alone.
 
+## First-tab join clearance (owner report 2026-10-27)
+
+- Owner report: with the sidebar expanded, the selected tab's outline stops
+  mid-curve where the editor column meets the sidebar, so the tab band reads as
+  a broken line instead of joining the editor's top rule.
+- Cause: the selected fill and open outline extend
+  `ConnectedTabGeometry.baselineOutset` (3 pt) past the 168 pt slot on each side
+  so the bottom arcs can reach the 1 pt rule. The first slot began exactly at the
+  scroll viewport's leading edge, which is the editor-column boundary; the clip
+  view removed those 3 pt, cutting the descending arc before its horizontal
+  tangent and ending the rule at the column edge.
+- Direction: keep the stepped shape, equal slots and editor-column start. Reserve
+  a small leading clearance inside the strip so the first tab's foot is fully
+  visible and a short run of the top rule meets it. Do not add a rail, gutter or
+  separate connector, and do not change the slot width or rule ownership.
+- Implementation: `EditorTabLayout.tabsLeadingInset` (8 pt, matching
+  `trailingMargin`) offsets the tab sequence inside the scroll canvas. The rule
+  gap still comes from live tab and viewport geometry in `selectedTabGap(in:)`;
+  reveal offsets remain bounded by the scrolled content. The inset is layout
+  spacing, not `contentInsets`, which is reserved for titlebar accessories.
+- Acceptance: in the installed app, select the first tab with the sidebar
+  expanded and collapsed at minimum and normal widths. The foot must stay wholly
+  inside the editor column, the rule must visibly run from the column edge into
+  the join, and no curve may be clipped. Repeat with overflow and a middle tab
+  selected after scrolling; the join must stay continuous.
+- Regression coverage: a native test asserts the first tab's outline bounds stay
+  inside the scroll viewport and that the selected gap leaves a nonzero leading
+  rule run at rest.
+
 ## Interaction contract
 
 - Single click selects immediately; no multi-click recognition delay.

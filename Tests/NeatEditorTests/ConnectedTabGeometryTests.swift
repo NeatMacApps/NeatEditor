@@ -113,7 +113,8 @@ struct ConnectedTabGeometryTests {
         strip.update(tabs: tabs, selectedTabID: tabs[0].id, actions: actions)
         strip.layoutSubtreeIfNeeded()
         let button = try #require(strip.subviews.compactMap { $0 as? NSButton }.first)
-        #expect(button.frame.minX == 2 * EditorTabLayout.tabWidth)
+        #expect(button.frame.minX == EditorTabLayout.tabsLeadingInset
+            + 2 * EditorTabLayout.tabWidth)
         #expect(button.frame.midY == EditorTabLayout.contentCenterY)
         #expect(button.frame.height == EditorTabLayout.actionHeight)
         #expect(strip.hitTest(strip.convert(CGPoint(x: button.frame.midX, y: button.frame.midY),
@@ -125,12 +126,37 @@ struct ConnectedTabGeometryTests {
         strip.contentInsets = NSEdgeInsets(top: 0, left: 120, bottom: 0, right: 40)
         strip.layoutSubtreeIfNeeded()
         let first = try #require(strip.tabViews[tabs[0].id])
-        #expect(strip.convert(first.tabBounds, from: first).minX == 120)
-        #expect(button.frame.minX == 120 + 2 * EditorTabLayout.tabWidth)
+        #expect(strip.convert(first.tabBounds, from: first).minX == 120 + EditorTabLayout.tabsLeadingInset)
+        #expect(button.frame.minX == 120 + EditorTabLayout.tabsLeadingInset
+            + 2 * EditorTabLayout.tabWidth)
 
         strip.setFrameSize(CGSize(width: 400, height: 40))
         strip.layoutSubtreeIfNeeded()
         #expect(abs(button.frame.maxX - (400 - 40)) < 0.001)
+    }
+
+    @Test("the first tab's join foot stays inside the viewport with a leading rule run")
+    func firstTabJoinClearance() throws {
+        let (window, strip, rule) = makeStrip()
+        defer { window.close() }
+        let first = EditorTabDescriptor(id: UUID(), title: "One.md")
+        let second = EditorTabDescriptor(id: UUID(), title: "Two.md")
+        strip.update(tabs: [first, second], selectedTabID: first.id, actions: EditorTabActions())
+        for insets: NSEdgeInsets in [NSEdgeInsets(),
+                                     NSEdgeInsets(top: 0, left: 120, bottom: 0, right: 40)] {
+            strip.contentInsets = insets
+            strip.layoutSubtreeIfNeeded()
+            let item = try #require(strip.tabViews[first.id])
+            #expect(strip.convert(item.bounds, from: item).minX >= insets.left)
+            #expect(strip.convert(item.tabBounds, from: item).minX
+                == insets.left + EditorTabLayout.tabsLeadingInset)
+            let viewportMinX = strip.convert(CGPoint(x: insets.left, y: 0), to: rule).x
+            let gap = try #require(strip.selectedTabGap(in: rule))
+            #expect(gap.lowerBound == viewportMinX + EditorTabLayout.tabsLeadingInset
+                - ConnectedTabGeometry.baselineOutset)
+            #expect(gap.lowerBound - viewportMinX
+                == EditorTabLayout.tabsLeadingInset - ConnectedTabGeometry.baselineOutset)
+        }
     }
 
     @Test("inactive tabs never acquire a hover capsule or retain the selected fill")

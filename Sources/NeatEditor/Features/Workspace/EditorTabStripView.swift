@@ -125,7 +125,7 @@ final class EditorTabStripView: NSView {
         // One extra point carries the tab's join into the editor's top rule.
         scrollView.frame = CGRect(x: viewportX, y: 0, width: viewportWidth, height: bounds.height + 1)
         scrollView.tile()
-        var x: CGFloat = 0
+        var x = EditorTabLayout.tabsLeadingInset
         for tab in tabs {
             let width = EditorTabLayout.tabWidth
             tabViews[tab.id]?.frame = CGRect(
