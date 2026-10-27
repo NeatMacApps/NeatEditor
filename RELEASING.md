@@ -495,6 +495,30 @@ Remaining limit: still no key-window capture. Inactive pixels show the run over
 the sidebar slightly darker (the system's own sidebar edge line overlaps it
 only when inactive).
 
+## 1.0.23 native titlebar gestures restored (2026-10-27)
+
+1.0.21 and 1.0.22 regressed double-click zoom above the sidebar and behind the
+traffic lights (transparent titlebar plus content-side frame-view redirect; see
+"Top band color, light surface and native titlebar gestures" in
+[TabStripGestures.md](TabStripGestures.md)). [v1.0.23](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.23)
+returns to the opaque titlebar, paints the full-width band over AppKit's section
+backgrounds and makes the window base the light surface. Source `f192200`;
+appcast commit `02f5703`; Apple submissions `5cfce233-e90c-4906-8bb3-6a3b0a35c30f`
+(app) and `611204ae-feda-4cc0-8895-c47af64646d8` (DMG). Anonymous downloads
+matched SHA256SUMS and local bytes; DMG
+`c43e5153e61675f7c95cc37002e5fa7fd1cee85a2105408af3bd298e99b4aabf`, ZIP
+`acee444e2fb5972d3f38b1d488e561a2cb3f87f730d56c3cb1bf476109206042`; repo and raw
+appcast serve build 23. Installed from the public DMG; executable SHA256
+`6c12bde6449e03b976b6ce2ab72b6a1bc274a70887eebd5ab31c37791f02b25d`.
+117 tests. Live-scene hit tests (debuggable copy of the same source): blank
+points above the sidebar and beside the traffic lights hit `NSToolbarView`, as
+in 1.0.20. Installed inactive pixels: band color across the top row, continuous
+full-width line, light editor and sidebar.
+
+Lesson: in-process double-click replays never resized the window, even at the
+working tab band, so they prove nothing about titlebar double-click. Do not
+change the titlebar's hit owner without physical double-click acceptance.
+
 ## References
 
 - Apple: [Notarizing macOS software before distribution](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
