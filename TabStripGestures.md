@@ -535,6 +535,15 @@ build or hit-testing results alone.
   `EditorChrome.editorSurfaceColor`, so the light surface shows around the
   floating sidebar. Do not reintroduce a transparent titlebar or content-side
   titlebar hit routing for this.
+- Owner correction after 1.0.23 (2026-10-27): the light sidebar looked wrong.
+  The sidebar column (its list background and the margins around the floating
+  panel) uses the band color, the same as the top row; only the editor column is
+  the light surface. Superseded: "everything below the line is the light
+  surface". Implementation: `WorkspaceSidebarView` hides the list's scroll
+  background and paints `EditorChrome.tabBarBackground`; the window background
+  returns to `EditorChrome.tabBarBackgroundColor`. The full-width line still runs
+  across the sidebar. This is an owner exception to keeping the native sidebar
+  material visible.
 - Pending owner decision: the owner asked for a top margin between the line and
   the floating sidebar panel equal to its bottom margin. The native sidebar
   panel's placement has no public API (checked `NSSplitViewItem` /

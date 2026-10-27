@@ -166,9 +166,9 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         // Native chrome must receive blank clicks: an opaque titlebar's toolbar view
         // owns double-click and drag. A transparent one hands them to content.
         window.titlebarAppearsTransparent = false
-        // Below the band everything is the light surface, including the margins
-        // around the floating sidebar; the band itself is painted by the split view.
-        window.backgroundColor = EditorChrome.editorSurfaceColor
+        // The band color also shows around the floating sidebar panel; the
+        // editor column paints its own light surface.
+        window.backgroundColor = EditorChrome.tabBarBackgroundColor
         // The connected tab outline owns this boundary; a native full-width
         // separator would draw a second line through the selected tab's join.
         window.titlebarSeparatorStyle = .none

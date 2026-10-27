@@ -239,8 +239,8 @@ struct WorkspaceTitlebarTests {
         let sidebarPoint = NSPoint(x: sidebarFrame.midX, y: stripFrame.maxY - 2)
         // Opaque: the native toolbar view owns blank double-click and drag there.
         #expect(!window.titlebarAppearsTransparent)
-        // Below the band the window base is the light editor surface.
-        #expect(window.backgroundColor == EditorChrome.editorSurfaceColor)
+        // The sidebar column, margins included, shares the band color.
+        #expect(window.backgroundColor == EditorChrome.tabBarBackgroundColor)
         let zoom = try #require(window.standardWindowButton(.zoomButton))
         let zoomFrame = zoom.convert(zoom.bounds, to: nil)
         // Expanded: sidebar column beside the button. Collapsed: editor column
