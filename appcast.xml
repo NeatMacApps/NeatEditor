@@ -3,6 +3,41 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.18</title>
+            <pubDate>Tue, 27 Oct 2026 10:25:24 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>18</sparkle:version>
+            <sparkle:shortVersionString>1.0.18</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.18
+
+
+### Changed
+
+- Replace the full-width editor status bar with a non-interactive floating character count; keep the final text line clear of the count and preserve the full-height line-number gutter.
+- Count committed characters off the main actor, including spaces, line breaks and composed emoji, and expose the visible count to accessibility.
+- Separate sidebar file discovery, bounded previews and legacy migration from core document persistence, and share collision-safe naming across first saves and file duplication.
+- Adopt the approved blue rolled-paper app icon with a serif N, its lower third hidden behind the roller.
+
+### Fixed
+
+- Keep legacy document migration retryable when a file copy fails instead of marking an incomplete migration finished. Preserve existing destination files and legacy originals.
+- Add regression coverage for numbered copies, extensionless and Unicode filenames, bounded collision retries and immediate propagation of non-collision errors.
+- Refuse dirty release checkouts instead of automatically committing another session's unfinished work.
+
+### 简体中文
+
+- 将编辑器整行状态栏改为不可交互的悬浮字数显示；为末行文字保留空间，行号栏仍保持全高。
+- 在主线程之外统计已上屏的字符，包含空格、换行和组合表情，并向辅助功能提供当前可见的字数。
+- 将侧边栏文件发现、有界预览和旧文档迁移从核心持久化逻辑拆分，首次保存与文件复制共用防覆盖的重名处理。
+- 采用已确认的蓝底卷纸图标，纸面为衬线 N，字母下方三分之一由滚轴遮挡。
+- 修复文件复制失败后旧文档迁移仍被标记为完成的问题，允许后续重试，同时保留目标目录已有文件和旧目录原件。
+- 增加编号副本、无扩展名及中文文件名、重名重试上限和非重名错误立即返回的回归测试。
+- 发布时拒绝包含未提交改动的工作区，不再自动提交其他会话尚未完成的工作。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.18/NeatEditor-1.0.18.zip" length="3670887" type="application/octet-stream" sparkle:edSignature="ehB+J7su3lBASfejcWITA6y/MMH789SjlCrAAGa/E5iNsEBFAfYeoxESUSUoKXBYNy0nIUClRLWwCJbLlkgFBQ=="/>
+        </item>
+        <item>
             <title>1.0.16</title>
             <pubDate>Mon, 26 Oct 2026 13:48:13 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
