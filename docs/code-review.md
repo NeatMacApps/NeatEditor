@@ -5,6 +5,41 @@ AppKit text synchronization, preferences, accessibility, and local/public
 release tooling. Behavior requirements are recorded before implementation in
 [editing-text-sync-test-cases.md](editing-text-sync-test-cases.md).
 
+## Persistence cleanup (2026-10-27)
+
+Preserve the existing service facade and all editor/UI contracts. Core save,
+rename, path resolution and naming remain in `DocumentPersistenceService.swift`;
+`DocumentPersistenceService+Sidebar.swift` owns file discovery, bounded previews,
+legacy migration and sidebar file actions. This reuses the existing no-clobber
+staging/link implementation rather than introducing a dependency or a parallel
+filesystem service. First-save publication and disk/live-buffer duplication now
+share `publishFile(named:in:using:)`: at most 1000 candidates, extension retained,
+only file-exists errors retried. Exhaustion identifies the last attempted target.
+Apple documents the no-overwrite behavior of
+[`copyItem(at:to:)`](https://developer.apple.com/documentation/foundation/filemanager/copyitem(at:to:));
+[`linkItem(at:to:)`](https://developer.apple.com/documentation/foundation/filemanager/linkitem(at:to:))
+remains the existing complete-inode publication mechanism.
+
+A regression reproduced legacy-copy failure returning a non-nil count, which
+`WorkspaceStore.refreshSidebarFiles()` treated as migration completion. Migration
+now attempts remaining files but returns nil after any non-collision copy error,
+so the existing completion-marker gate stays false. A concurrently claimed target
+is left untouched. The failing regression passes after the fix and verifies the
+original bytes, a later successful copy and an idempotent retry. Graph inspection
+found one migration implementation and one completion-marker consumer in this
+repository; no duplicate implementation required repair.
+
+Full clean Debug and Release build/analyze passed for arm64 and x86_64. The
+native arm64 suite passed **112 tests / 142 parameter-expanded executions**, with
+zero failures, skips or runtime warnings in the structured result. Complete logs,
+source-input SHA256, environment identity and XCTest results are retained under
+`build/refactor-1.0.17/`. Environment: Xcode 27.2 (27B5028f), macOS 27.2 (26B118),
+Swift 6 mode, pinned Sparkle 2.9.5 and deployment target 26.0. The sole retained
+diagnostic is the AppIntents metadata-step notice individually assessed under
+[Sidebar review](#sidebar-review-2026-10-24); no Swift compiler or analyzer warning
+was found. Native Intel and minimum-macOS execution remain unverified. Release
+and installed-path evidence are maintained in [RELEASING.md](../RELEASING.md).
+
 ## macOS 26 baseline (2026-10-25)
 
 Owner requirement: minimum supported runtime is macOS 26.0. App/test deployment

@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.17 - 2026-10-27
+
+### Changed
+
+- Replace the full-width editor status bar with a non-interactive floating character count; keep the final text line clear of the count and preserve the full-height line-number gutter.
+- Count committed characters off the main actor, including spaces, line breaks and composed emoji, and expose the visible count to accessibility.
+- Separate sidebar file discovery, bounded previews and legacy migration from core document persistence, and share collision-safe naming across first saves and file duplication.
+
+### Fixed
+
+- Keep legacy document migration retryable when a file copy fails instead of marking an incomplete migration finished. Preserve existing destination files and legacy originals.
+- Add regression coverage for numbered copies, extensionless and Unicode filenames, bounded collision retries and immediate propagation of non-collision errors.
+
+### 简体中文
+
+- 将编辑器整行状态栏改为不可交互的悬浮字数显示；为末行文字保留空间，行号栏仍保持全高。
+- 在主线程之外统计已上屏的字符，包含空格、换行和组合表情，并向辅助功能提供当前可见的字数。
+- 将侧边栏文件发现、有界预览和旧文档迁移从核心持久化逻辑拆分，首次保存与文件复制共用防覆盖的重名处理。
+- 修复文件复制失败后旧文档迁移仍被标记为完成的问题，允许后续重试，同时保留目标目录已有文件和旧目录原件。
+- 增加编号副本、无扩展名及中文文件名、重名重试上限和非重名错误立即返回的回归测试。
+
 ## 1.0.16 - 2026-10-26
 
 ### Changed

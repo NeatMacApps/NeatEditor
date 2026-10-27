@@ -253,6 +253,27 @@ struct WorkspaceSidebarTests {
         #expect(service.migrateLegacyAppDocumentsIfNeeded(into: destination) == 0)
     }
 
+    @Test("failed legacy copies remain retryable without losing their originals")
+    func failedLegacyCopiesCanRetry() throws {
+        let (service, directory) = try makeService()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let destination = directory.appendingPathComponent("missing/current", isDirectory: true)
+        let source = directory.appendingPathComponent("legacy.txt")
+        try "legacy content".write(to: source, atomically: true, encoding: .utf8)
+        let migrationService = DocumentPersistenceService(
+            defaultDirectory: destination,
+            appLibraryDirectory: directory
+        )
+
+        #expect(migrationService.migrateLegacyAppDocumentsIfNeeded(into: destination) == nil)
+        #expect(try String(contentsOf: source, encoding: .utf8) == "legacy content")
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        #expect(migrationService.migrateLegacyAppDocumentsIfNeeded(into: destination) == 1)
+        #expect(try String(contentsOf: destination.appendingPathComponent("legacy.txt"), encoding: .utf8) == "legacy content")
+        #expect(migrationService.migrateLegacyAppDocumentsIfNeeded(into: destination) == 0)
+        #expect(try service.sidebarTextFiles().map(\.fileURL) == [source])
+    }
+
     @Test("sidebar visibility defaults to visible and survives encoding")
     func sidebarVisibilityPersists() throws {        #expect(WorkspacePreferences().isSidebarVisible)
 
