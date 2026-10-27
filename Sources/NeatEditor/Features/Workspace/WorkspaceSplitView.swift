@@ -46,6 +46,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     /// traffic lights. A bare titlebar is 32 pt and cannot be made taller.
     private let heightToolbar = NSToolbar(identifier: "WorkspaceCompactRow")
     private let sidebarAccessory = NSTitlebarAccessoryViewController()
+    private let tabAccessory = NSTitlebarAccessoryViewController()
     private let sidebarButton = WorkspaceSplitViewController.titlebarButton(symbol: "sidebar.left")
     private var pinButton: NSButton { detailController.pinButton }
     private weak var attachedWindow: NSWindow?
@@ -90,6 +91,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         sidebarButton.action = #selector(toggleSidebar(_:))
         sidebarAccessory.view = sidebarButton
         sidebarAccessory.layoutAttribute = .leading
+        tabAccessory.layoutAttribute = .trailing
         pinButton.target = self
         pinButton.action = #selector(togglePin(_:))
         heightToolbar.delegate = self
@@ -141,6 +143,14 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
 
     func detachFromWindow() {
         detailController.strip.finishRename(commit: true)
+        if let attachedWindow {
+            NotificationCenter.default.removeObserver(self, name: NSWindow.didEnterFullScreenNotification,
+                                                      object: attachedWindow)
+            NotificationCenter.default.removeObserver(self, name: NSWindow.didExitFullScreenNotification,
+                                                      object: attachedWindow)
+        }
+        detailController.moveTabBand(to: nil)
+        tabAccessory.removeFromParent()
         sidebarAccessory.removeFromParent()
         if attachedWindow?.toolbar === heightToolbar {
             attachedWindow?.toolbar = nil
@@ -152,7 +162,8 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         guard let window = view.window, attachedWindow !== window else { return }
         attachedWindow = window
         window.titleVisibility = .hidden
-        window.titlebarAppearsTransparent = true
+        // Native chrome must receive blank clicks, not the full-size content hosts.
+        window.titlebarAppearsTransparent = false
         window.backgroundColor = EditorChrome.tabBarBackgroundColor
         // The connected tab outline owns this boundary; a native full-width
         // separator would draw a second line through the selected tab's join.
@@ -164,7 +175,30 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         if !window.titlebarAccessoryViewControllers.contains(sidebarAccessory) {
             window.addTitlebarAccessoryViewController(sidebarAccessory)
         }
+        if !window.styleMask.contains(.fullScreen) {
+            detailController.moveTabBand(to: tabAccessory)
+            window.addTitlebarAccessoryViewController(tabAccessory)
+        }
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(didEnterFullScreen(_:)),
+            name: NSWindow.didEnterFullScreenNotification, object: window
+        )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(didExitFullScreen(_:)),
+            name: NSWindow.didExitFullScreenNotification, object: window
+        )
         detailController.view.needsLayout = true
+    }
+
+    @objc private func didEnterFullScreen(_ notification: Notification) {
+        detailController.moveTabBand(to: nil)
+        tabAccessory.removeFromParent()
+    }
+
+    @objc private func didExitFullScreen(_ notification: Notification) {
+        guard let window = attachedWindow else { return }
+        detailController.moveTabBand(to: tabAccessory)
+        window.addTitlebarAccessoryViewController(tabAccessory)
     }
 
     private func updatePinButton() {
@@ -211,14 +245,14 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     }
 }
 
-/// The tab band and top rule are native siblings above the hosting view, not
-/// subviews whose ordering or layout is owned by SwiftUI's hosting implementation.
+/// Native chrome owns the tab band; content owns the matching top rule.
+/// Full screen rehomes the same band above the host without SwiftUI-owned layout.
 private final class WorkspaceEditorViewController: NSViewController {
     private let host: NSHostingController<AnyView>
     let topRule = EditorTabTopRuleView()
-    let strip = EditorTabStripView()
-    /// Peer of the strip's New Document button: same size, colour and centre line.
-    let pinButton = WorkspaceSplitViewController.titlebarButton(symbol: "square.3.layers.3d.top.filled")
+    private let tabBand = WorkspaceTabBandView()
+    var strip: EditorTabStripView { tabBand.strip }
+    var pinButton: NSButton { tabBand.pinButton }
     /// Titlebar accessory views whose frames the tab band must not cover.
     var accessoryViews: [NSView] = [] {
         didSet {
@@ -254,8 +288,7 @@ private final class WorkspaceEditorViewController: NSViewController {
         topRule.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(host.view)
         view.addSubview(topRule, positioned: .above, relativeTo: host.view)
-        view.addSubview(strip, positioned: .above, relativeTo: topRule)
-        view.addSubview(pinButton, positioned: .above, relativeTo: strip)
+        view.addSubview(tabBand, positioned: .above, relativeTo: topRule)
         NSLayoutConstraint.activate([
             host.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             host.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -278,17 +311,32 @@ private final class WorkspaceEditorViewController: NSViewController {
             view.additionalSafeAreaInsets.top = reserved
         }
         let band = systemBand + reserved
-        strip.frame = CGRect(x: 0, y: view.bounds.height - band, width: view.bounds.width, height: band)
-        let slot = EditorTabLayout.newDocumentSlotWidth
-        let trailingSlot = slot + EditorTabLayout.trailingMargin
-        // All controls follow the native traffic-light axis, not the tab's join.
-        pinButton.frame = CGRect(x: view.bounds.width - trailingSlot,
-                                 y: strip.frame.maxY - EditorTabLayout.contentCenterY - EditorTabLayout.actionHeight / 2,
-                                 width: slot, height: EditorTabLayout.actionHeight)
-        var insets = accessoryInsets()
-        insets.right = max(insets.right, trailingSlot)
-        strip.contentInsets = insets
-        strip.layoutSubtreeIfNeeded()
+        let insets = accessoryInsets()
+        if tabBand.superview === view {
+            tabBand.frame = CGRect(x: 0, y: view.bounds.height - band, width: view.bounds.width, height: band)
+            tabBand.accessoryInsets = insets
+        } else {
+            // Do not overlap the leading native accessory when the sidebar is
+            // collapsed: its container would consume the sidebar button's hits.
+            let width = max(0, view.bounds.width - insets.left)
+            if tabBand.frame.width != width {
+                tabBand.setFrameSize(CGSize(width: width, height: tabBand.frame.height))
+            }
+            tabBand.accessoryInsets = NSEdgeInsets()
+        }
+        tabBand.needsLayout = true
+        tabBand.layoutSubtreeIfNeeded()
+    }
+
+    func moveTabBand(to accessory: NSTitlebarAccessoryViewController?) {
+        tabBand.removeFromSuperview()
+        if let accessory {
+            tabBand.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: EditorTabLayout.stripHeight)
+            accessory.view = tabBand
+        } else {
+            view.addSubview(tabBand, positioned: .above, relativeTo: topRule)
+        }
+        view.needsLayout = true
     }
 
     /// Accessory frames are read at layout time in window coordinates.
@@ -310,6 +358,41 @@ private final class WorkspaceEditorViewController: NSViewController {
 
     @objc private func accessoryFrameChanged(_ notification: Notification) {
         view.needsLayout = true
+    }
+}
+
+/// Product content inside native chrome. Blank hits stay in AppKit's titlebar.
+private final class WorkspaceTabBandView: NSView {
+    let strip = EditorTabStripView()
+    let pinButton = WorkspaceSplitViewController.titlebarButton(symbol: "square.3.layers.3d.top.filled")
+    var accessoryInsets = NSEdgeInsets()
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        addSubview(strip)
+        addSubview(pinButton)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func layout() {
+        super.layout()
+        strip.frame = bounds
+        let slot = EditorTabLayout.newDocumentSlotWidth
+        let trailingSlot = slot + EditorTabLayout.trailingMargin
+        pinButton.frame = CGRect(x: bounds.width - trailingSlot,
+                                 y: bounds.height - EditorTabLayout.contentCenterY - EditorTabLayout.actionHeight / 2,
+                                 width: slot, height: EditorTabLayout.actionHeight)
+        var insets = accessoryInsets
+        insets.right = max(insets.right, trailingSlot)
+        strip.contentInsets = insets
+        strip.layoutSubtreeIfNeeded()
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        let hit = super.hitTest(point)
+        return hit === self ? nil : hit
     }
 }
 

@@ -70,11 +70,12 @@ only; sidebar, split view, window controls and editor remain native.
   by the tab strip; when tabs overflow it stays at the strip's trailing edge.
 - No glass capsules: a 36 pt glass item cannot fit a 32 pt row, and the capsules
   were the main source of top-row weight. Buttons never draw focus rings.
-- The tab strip is a native sibling in the editor column's top band (titlebar
-  height, at least 40 pt), excluding the sidebar accessory and the pin slot. With the sidebar
-  collapsed it starts after the sidebar button; with it expanded it starts at
-  the editor column. Blank strip space still hit-tests through to native
-  titlebar drag/double-click.
+- The tab strip and pin live in a trailing native titlebar accessory aligned
+  with the editor column (40 pt row), not in the content hosts underneath it.
+  With the sidebar collapsed the accessory starts after the sidebar button;
+  with it expanded it starts at the editor column. Empty accessory regions stay
+  in native titlebar hit-testing. Full screen reuses the same controls in the
+  reserved content band; see the 2026-10-27 routing repair below.
 - Tabs: 30 pt tall, bottom-aligned with the editor, 13 pt regular titles,
   168 pt equal slots, 12 pt title padding, 7 pt corners; the stepped
   editor-joined shape and separator-colour outline are retained.
@@ -228,7 +229,7 @@ retain the stepped appearance, one toolbar row, native surrounding controls and
 all existing document actions. Editor buffers, save/restore and sidebar behavior
 are not redesigned.
 
-`EditorTabStripView` is a native toolbar `NSView`, owning one `NSScrollView`,
+`EditorTabStripView` is a native AppKit `NSView` in the titlebar accessory, owning one `NSScrollView`,
 stable-ID tab views and immediate selection reveal. Each `EditorTabItemView`
 keeps its native `NSTextField`, fill and open outline in the same local bounds.
 All tabs use one fixed slot width (184 pt; see Toolbar height below), independent of title or selection.
@@ -376,7 +377,7 @@ after lock are not transition evidence. No document text or window size changed.
   previous capsule as a leftover background; only the selected stepped tab owns
   a fill and raised outline. Switching, scrolling and resizing must leave no
   extra background behind an inactive filename.
-- Blank space within the custom toolbar item's bounds (above the tabs or after
+- Blank space within the tab accessory's bounds (above the tabs or after
   the last tab) must hit-test through to native window chrome. AppKit owns its
   double-click action and drag, including the user's Desktop & Dock preference.
   Do not manually invoke zoom/miniaturize or emulate the preference.
@@ -423,6 +424,48 @@ Official applicability and installed Xcode 27.2 SDK checked:
 - [Constraint-based toolbar sizing](https://developer.apple.com/documentation/macos-release-notes/appkit-release-notes-for-macos-10_14)
 - [NSSegmentedControl](https://developer.apple.com/documentation/appkit/nssegmentedcontrol)
 
+## Blank titlebar event routing (2026-10-27 repair)
+
+The owner reports that double-clicking the visible empty top row does not resize
+the window. Preserve the compact single row, tab rename, +, pin and sidebar
+controls. Every blank titlebar region (including the sidebar side, tab top gutter
+and trailing space) must reach AppKit's native titlebar interaction and honor
+Desktop & Dock settings. A strip-only `hitTest == nil` assertion is insufficient:
+content containers behind the strip can still claim that event. Verify routing
+through the complete window, then double-click to resize and restore, and drag.
+Do not emulate the system preference or invoke a second zoom action.
+
+Reference and API choice: reuse the existing sidebar's
+`NSTitlebarAccessoryViewController` mechanism for the tab band as a trailing
+accessory. AppKit owns the containing titlebar; the opaque native titlebar
+(`titlebarAppearsTransparent = false`) prevents blank clicks from falling through
+to the full-size content hosts. The accessory's product view only hit-tests tab
+controls, + and pin. Keep its width aligned with the editor column and retain
+the content-band fallback when full screen hides the titlebar. Official
+[NSTitlebarAccessoryViewController](https://developer.apple.com/documentation/appkit/nstitlebaraccessoryviewcontroller)
+and [titlebar transparency](https://developer.apple.com/documentation/appkit/nswindow/titlebarappearstransparent)
+were checked against the installed Xcode 27.2 SDK headers. No private titlebar
+subviews or preference emulation are used. Move the same controls to the content
+band only after full-screen entry succeeds, and restore the accessory after
+full-screen exit succeeds; failed transitions must not strand hidden controls.
+
+Verification: 114 tests in 17 suites pass on arm64, including complete-window
+hit-testing with and without a SwiftUI host/sidebar, button/tab targets,
+minimum widths and notification-driven full-screen reparenting. Debug static
+analysis and universal arm64/x86_64 Release build pass; full logs are in
+`build/titlebar-repair/*-delivery.log`. The only retained diagnostic is the
+[assessed AppIntents metadata notice](docs/code-review.md#verification).
+An initial Debug signing attempt failed because the timestamp service was
+unavailable; the test/analyze invocation alone used `--timestamp=none`. The
+local Release uses the existing Developer ID identity and a valid timestamp.
+
+Acceptance limit: the screen is locked. In-process native titlebar event replay
+did not resize even the native reference titlebar, so that method is not evidence
+of an actual double-click. Whole-window hit-routing tests establish the repaired
+ownership, not physical pointer zoom/restore, drag or full-screen animation.
+These interaction paths remain unaccepted; do not clear the owner's report on
+build or hit-testing results alone.
+
 ## Interaction contract
 
 - Single click selects immediately; no multi-click recognition delay.
@@ -439,7 +482,7 @@ Official applicability and installed Xcode 27.2 SDK checked:
 - Scroll-wheel/trackpad tab stepping keeps the existing sensitivity and ignores
   momentum. Selection is revealed when clipped, including after a resize.
 - Native AppKit owns all blank-titlebar double-click and dragging, including
-  blank space within the tab toolbar item. Never
+  blank space within the tab accessory. Never
   separately call zoom/miniaturize for the same event: that caused the earlier
   enlarge-then-immediately-restore regression.
 - Pin changes the native window level. Existing topmost hover-focus protection

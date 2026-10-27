@@ -10,11 +10,11 @@ import Testing
 struct WorkspaceTitlebarTests {
     private func makeWindow(sidebarVisible: Bool = true, pinned: Bool = false,
                             width: CGFloat = 900, settingsSelected: Bool = false,
-                            titles: [String] = ["One.md"],
+                            titles: [String] = ["One.md"], hosted: Bool = false,
                             styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable,
                                                              .resizable, .fullSizeContentView]) -> NSWindow {
         let tabs = titles.map { EditorTabDescriptor(id: UUID(), title: $0) }
-        let controller = WorkspaceSplitViewController(configuration: WorkspaceSplitView(
+        let configuration = WorkspaceSplitView(
             sidebar: AnyView(EmptyView()),
             detail: AnyView(EmptyView()),
             tabs: tabs,
@@ -25,12 +25,18 @@ struct WorkspaceTitlebarTests {
             isWindowPinned: pinned,
             onSidebarVisibilityChange: { _ in },
             onTogglePin: {}
-        ))
+        )
         let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: width, height: 500),
                               styleMask: styleMask,
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        window.contentViewController = controller
+        if hosted {
+            window.contentViewController = NSHostingController(rootView: configuration
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ignoresSafeArea(.container, edges: .top))
+        } else {
+            window.contentViewController = WorkspaceSplitViewController(configuration: configuration)
+        }
         window.setContentSize(CGSize(width: width, height: 500))
         window.layoutIfNeeded()
         return window
@@ -42,7 +48,7 @@ struct WorkspaceTitlebarTests {
     }
 
     private func pinButton(_ window: NSWindow) throws -> NSButton {
-        let strip = try #require(window.contentView.flatMap(findStrip))
+        let strip = try #require(findStrip(in: window))
         let siblings = strip.superview?.subviews.compactMap { $0 as? NSButton } ?? []
         return try #require(siblings.first { $0.accessibilityLabel() == String(localized: "Always on Top") })
     }
@@ -67,7 +73,7 @@ struct WorkspaceTitlebarTests {
     func titlebarControls() throws {
         let window = makeWindow()
         defer { window.close() }
-        #expect(window.titlebarAccessoryViewControllers.count == 1)
+        #expect(window.titlebarAccessoryViewControllers.count == 2)
         let sidebar = try sidebarButton(window)
         let pin = try pinButton(window)
         #expect(sidebar.action == #selector(NSSplitViewController.toggleSidebar(_:)))
@@ -75,7 +81,7 @@ struct WorkspaceTitlebarTests {
         #expect(!sidebar.isBordered && !pin.isBordered)
         #expect(pin.symbolConfiguration == NSImage.SymbolConfiguration(
             pointSize: EditorTabLayout.actionSymbolSize, weight: .regular))
-        let strip = try #require(window.contentView.flatMap(findStrip))
+        let strip = try #require(findStrip(in: window))
         let plus = try #require(strip.subviews.compactMap { $0 as? NSButton }.first)
         let plusFrame = plus.convert(plus.bounds, to: nil)
         let pinFrame = pin.convert(pin.bounds, to: nil)
@@ -108,7 +114,7 @@ struct WorkspaceTitlebarTests {
         let window = makeWindow(sidebarVisible: sidebarVisible)
         defer { window.close() }
         window.contentView?.layoutSubtreeIfNeeded()
-        let strip = try #require(window.contentView.flatMap(findStrip))
+        let strip = try #require(findStrip(in: window))
         let titlebarHeight = window.frame.height - window.contentLayoutRect.height
         #expect(strip.frame.height == titlebarHeight)
         let pin = try pinButton(window)
@@ -134,7 +140,7 @@ struct WorkspaceTitlebarTests {
             window.contentView?.layoutSubtreeIfNeeded()
             let content = try #require(window.contentView)
             let visible = content.convert(content.bounds, to: nil)
-            let strip = try #require(findStrip(in: content))
+            let strip = try #require(findStrip(in: window))
             let pin = try pinButton(window)
             let plus = try #require(strip.subviews.compactMap { $0 as? NSButton }.first)
             let column = try #require(strip.superview)
@@ -162,8 +168,8 @@ struct WorkspaceTitlebarTests {
         let window = makeWindow(sidebarVisible: sidebarVisible, width: width, settingsSelected: true)
         defer { window.close() }
         window.contentView?.layoutSubtreeIfNeeded()
-        let strip = try #require(window.contentView.flatMap(findStrip))
-        let column = try #require(strip.superview)
+        let strip = try #require(findStrip(in: window))
+        let column = try #require(strip.topRule?.superview)
         #expect(column.bounds.width >= WorkspaceSplitView.settingsMinimumWidth)
         let content = try #require(window.contentView)
         let pin = try pinButton(window)
@@ -175,13 +181,77 @@ struct WorkspaceTitlebarTests {
         let window = makeWindow(styleMask: [.borderless, .resizable])
         defer { window.close() }
         window.contentView?.layoutSubtreeIfNeeded()
-        let strip = try #require(window.contentView.flatMap(findStrip))
-        let column = try #require(strip.superview)
+        let strip = try #require(findStrip(in: window))
+        let column = try #require(strip.superview?.superview)
         #expect(strip.frame.height == EditorTabLayout.stripHeight)
-        #expect(strip.frame.maxY == column.bounds.maxY)
+        #expect(strip.convert(strip.bounds, to: column).maxY == column.bounds.maxY)
         #expect(column.safeAreaInsets.top == EditorTabLayout.stripHeight)
         let rule = try #require(strip.topRule)
-        #expect(abs(rule.frame.maxY - strip.frame.minY) < 0.5)
+        #expect(abs(rule.frame.maxY - strip.convert(strip.bounds, to: column).minY) < 0.5)
+    }
+
+    @Test("blank titlebar hits reach native chrome through the complete content host",
+          arguments: [true, false], [true, false])
+    func blankTitlebarRouting(sidebarVisible: Bool, hosted: Bool) throws {
+        let window = makeWindow(sidebarVisible: sidebarVisible, hosted: hosted)
+        defer { window.close() }
+        window.contentView?.layoutSubtreeIfNeeded()
+        let content = try #require(window.contentView)
+        let root = try #require(content.superview)
+        let strip = try #require(findStrip(in: window))
+        let plus = try #require(strip.subviews.compactMap { $0 as? NSButton }.first)
+        let stripFrame = strip.convert(strip.bounds, to: nil)
+        let plusFrame = plus.convert(plus.bounds, to: nil)
+        let pin = try pinButton(window)
+        let pinFrame = pin.convert(pin.bounds, to: nil)
+        let sidebar = try sidebarButton(window)
+        let sidebarFrame = sidebar.convert(sidebar.bounds, to: nil)
+        let points = [
+            NSPoint(x: stripFrame.midX, y: stripFrame.maxY - 2),
+            NSPoint(x: (plusFrame.maxX + pinFrame.minX) / 2, y: plusFrame.midY),
+            NSPoint(x: sidebarFrame.midX, y: stripFrame.maxY - 2)
+        ]
+        #expect(!window.titlebarAppearsTransparent)
+        for point in points {
+            let hit = try #require(root.hitTest(root.convert(point, from: nil)))
+            #expect(hit !== content && !hit.isDescendant(of: content))
+            #expect(hit !== strip.superview && !hit.isDescendant(of: strip))
+        }
+        for button in [plus, pin, sidebar] {
+            let point = button.convert(NSPoint(x: button.bounds.midX, y: button.bounds.midY), to: nil)
+            #expect(root.hitTest(root.convert(point, from: nil)) === button)
+        }
+        let tab = try #require(strip.tabViews.values.first)
+        let titlePoint = tab.convert(NSPoint(x: tab.tabBounds.midX, y: tab.tabBounds.midY), to: nil)
+        let titleHit = try #require(root.hitTest(root.convert(titlePoint, from: nil)))
+        #expect(titleHit === tab || titleHit.isDescendant(of: tab))
+    }
+
+    @Test("native full-screen notifications rehome the same tab controls without losing the join")
+    func fullScreenTabBandOwnership() throws {
+        let window = makeWindow()
+        defer { window.close() }
+        let strip = try #require(findStrip(in: window))
+        let topRule = try #require(strip.topRule)
+        NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
+        window.contentView?.layoutSubtreeIfNeeded()
+        #expect(window.titlebarAccessoryViewControllers.count == 1)
+        #expect(strip.isDescendant(of: try #require(window.contentView)))
+        #expect(strip.superview?.superview === topRule.superview)
+        NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
+        window.layoutIfNeeded()
+        window.contentView?.layoutSubtreeIfNeeded()
+        #expect(window.titlebarAccessoryViewControllers.count == 2)
+        #expect(findStrip(in: window) === strip)
+        #expect(!strip.isDescendant(of: try #require(window.contentView)))
+        #expect(abs(strip.convert(strip.bounds, to: nil).minY - window.contentLayoutRect.maxY) < 0.5)
+    }
+
+    private func findStrip(in window: NSWindow) -> EditorTabStripView? {
+        let accessories = window.styleMask.contains(.titled)
+            ? window.titlebarAccessoryViewControllers.map(\.view) : []
+        let views = accessories + [window.contentView].compactMap { $0 }
+        return views.lazy.compactMap { findStrip(in: $0) }.first
     }
 
     private func findStrip(in view: NSView) -> EditorTabStripView? {
