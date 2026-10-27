@@ -215,17 +215,25 @@ struct WorkspaceTitlebarTests {
             NSPoint(x: tabFrame.midX, y: stripFrame.maxY - 1)
         ]
         let sidebarPoint = NSPoint(x: sidebarFrame.midX, y: stripFrame.maxY - 2)
-        #expect(!window.titlebarAppearsTransparent)
+        // Transparent so the full-height sidebar shows behind the traffic lights;
+        // blank titlebar points must still reach native chrome, not content hosts.
+        #expect(window.titlebarAppearsTransparent)
+        let zoom = try #require(window.standardWindowButton(.zoomButton))
+        let zoomFrame = zoom.convert(zoom.bounds, to: nil)
+        // Expanded: sidebar column beside the button. Collapsed: editor column
+        // between the traffic lights and the button.
+        let leadingBlank = sidebarVisible
+            ? NSPoint(x: sidebarFrame.maxX + 10, y: sidebarFrame.midY)
+            : NSPoint(x: (zoomFrame.maxX + sidebarFrame.minX) / 2, y: sidebarFrame.midY)
         for point in bandPoints {
             // The accessory container would otherwise eat blank clicks; the
             // frame view owns native drag and the system double-click action.
             let hit = try #require(root.hitTest(root.convert(point, from: nil)))
             #expect(hit === root)
         }
-        for point in [sidebarPoint] {
+        for point in [sidebarPoint, leadingBlank] {
             let hit = try #require(root.hitTest(root.convert(point, from: nil)))
-            #expect(hit !== content && !hit.isDescendant(of: content))
-            #expect(hit !== strip.superview && !hit.isDescendant(of: strip))
+            #expect(hit === root, "\(point) hit \(type(of: hit))")
         }
         for button in [plus, pin, sidebar] {
             let point = button.convert(NSPoint(x: button.bounds.midX, y: button.bounds.midY), to: nil)

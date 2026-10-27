@@ -442,14 +442,19 @@ claims blank hits before the titlebar sees them, so blank `hitTest` results are
 handed to the window's frame view (`contentView.superview`). The frame view is
 the native owner of titlebar drag and the system double-click action, so no
 preference emulation or manual zoom call is needed. Only tab controls, + and pin
-consume events inside the band. The SwiftUI scene uses `.titleBar`, not
-`.hiddenTitleBar`: a real SwiftUI Scene probe showed the latter resetting
-`titlebarAppearsTransparent` to true after AppKit attachment. The normal scene
-style preserves native opaque chrome while `titleVisibility = .hidden` still
-hides the title. An `NSHostingController` fixture alone misses this Scene-level
-reset. With the old Scene style, the installed editor's full-size content also
-covered the accessory's selected-tab fill and trailing buttons; installed visual
-acceptance must retain those controls and the open join.
+consume events inside the band. Superseded 2026-10-27 (see "Full-height sidebar
+behind the traffic lights"): the scene is back on `.hiddenTitleBar` with a
+transparent titlebar, because the opaque `.titleBar` style capped the sidebar.
+`.titleBar` also resets `titlebarAppearsTransparent` to false after AppKit
+attachment, so setting it in `attachToWindow` alone has no effect in the real
+scene (measured in the live window; an `NSHostingController` fixture misses this
+Scene-level reset). Blank titlebar points that fall through to content are
+routed to the frame view by `TitlebarRoutingView` roots on the sidebar and
+editor columns. The earlier note that `.hiddenTitleBar` content covered the
+accessory's selected-tab fill and buttons was not reproduced: the live tree keeps
+the titlebar container above content, and a fresh capture shows the selected tab,
++ and pin. Installed visual acceptance must still retain those controls and the
+open join.
 
 Official
 [NSTitlebarAccessoryViewController](https://developer.apple.com/documentation/appkit/nstitlebaraccessoryviewcontroller)
@@ -489,6 +494,35 @@ in a real SwiftUI Window scene does resize the window from the blank band,
 establishing that the event now reaches the native frame view; it is not a
 substitute for physical pointer acceptance. Do not clear the owner's report on
 build or hit-testing results alone.
+
+## Full-height sidebar behind the traffic lights (owner report 2026-10-27)
+
+- Owner report on installed 1.0.20: in the active window the top-left area
+  behind the traffic lights is a white cap above the floating sidebar, instead
+  of the sidebar reaching the top as in 1.0.18. This violates the product
+  requirement above (the native sidebar occupies the leading area including
+  behind the traffic lights).
+- Cause (live view tree, 2026-10-27): the sidebar split item is already full
+  height (714 pt wrapper inside the native glass view) and the window has
+  full-size content. The opaque titlebar adopted by the routing repair makes
+  AppKit show one `NSTitlebarBackgroundView` per split section across the top
+  40 pt; the sidebar section's background is the white cap in the key window
+  (it resolves to the band color when inactive, which hid it in locked-session
+  captures). `titlebarAppearsTransparent = true` hides exactly those section
+  backgrounds. A sidebar tracking separator does not.
+- Routing constraint: with a transparent titlebar, live `hitTest` sends blank
+  titlebar points above the sidebar to the sidebar's SwiftUI host instead of
+  the toolbar view (measured; tab band and buttons are unchanged). Restore
+  transparency and route those points the same way the tab band already does:
+  content containers return the window frame view for points above
+  `NSWindow.contentLayoutRect` that no titlebar control claimed. This covers the
+  sidebar column and, with the sidebar collapsed, the editor column under the
+  traffic lights. Full screen has no titlebar region, so nothing is redirected.
+- Acceptance: the key window shows the sidebar material behind the traffic
+  lights with no cap; blank double-click and drag above the sidebar, above the
+  tabs and after the last tab still use the native titlebar actions; the sidebar
+  button, +, pin and tabs keep their hits; the tab accessory still draws above
+  content.
 
 ## First-tab join clearance (owner report 2026-10-27)
 
