@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.22 - 2026-10-27
+
+### Fixed
+
+- Continue the line under the tab bar across the whole window, including over the sidebar, so the selected tab rises from one unbroken line.
+- Fill the top row behind the window controls with the tab bar color when the sidebar is hidden, instead of the editor's background.
+
+### 简体中文
+
+- 标签栏下方的线条贯穿整个窗口，包括侧边栏上方，选中的标签从一条连续的线上凸起。
+- 隐藏侧边栏时，红绿灯按钮后面的顶部区域使用标签栏颜色，不再露出编辑区的白色底色。
+
 ## 1.0.21 - 2026-10-27
 
 ### Fixed
