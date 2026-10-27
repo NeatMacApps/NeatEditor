@@ -519,6 +519,29 @@ build or hit-testing results alone.
   inside the scroll viewport and that the selected gap leaves a nonzero leading
   rule run at rest.
 
+### First-tab join evidence (2026-10-27)
+
+- Fix commit `c08f65b`, shipped in the 1.0.19 release (`6b219ee`, tag `v1.0.19`,
+  [published release](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.19)).
+- Full arm64 suite: 115 tests in 17 suites, including
+  `ConnectedTabGeometryTests.firstTabJoinClearance`. Debug static analysis and
+  the universal arm64/x86_64 Release build passed; only the
+  [assessed AppIntents metadata notice](docs/code-review.md#verification)
+  remained.
+- The notarized 1.0.19 export was installed at `/Applications/NeatEditor.app`;
+  its executable SHA-256 `91ef4af48a665c35…` matches the export.
+- Inspected the installed window at 792 × 714 pt with five open tabs (overflow)
+  and the first tab selected: with the sidebar expanded and collapsed, the foot
+  stays wholly inside the editor column and a short run of the 1 pt rule joins
+  the sidebar edge into the arc, with no clipped curve. Captures:
+  `build/tab-join/evidence/release-expanded.png`,
+  `release-collapsed.png` and the join close-up `release-crop-big.png`
+  (local, untracked).
+- Limits: the session was locked, so first-tab selection and sidebar state were
+  driven through the saved workspace state and PID-posted menu key equivalents
+  rather than a physical pointer. Light appearance was inspected; the change is
+  geometry-only, and dark appearance was not recaptured.
+
 ## Interaction contract
 
 - Single click selects immediately; no multi-click recognition delay.
