@@ -469,19 +469,25 @@ hidden controls.
 
 Verification: 114 tests in 17 suites pass on arm64, including complete-window
 hit-testing with and without a SwiftUI host/sidebar, button/tab targets,
-minimum widths and notification-driven full-screen reparenting. Debug static
-analysis and universal arm64/x86_64 Release build pass; full logs are in
-`build/titlebar-repair/*-delivery.log`. The only retained diagnostic is the
+minimum widths, full-screen reparenting and the frame-view redirect for blank
+band hits. Debug static analysis and the universal arm64/x86_64 Release build
+pass; logs are in `build/titlebar-repair/test-final-routing.log`,
+`analyze-routing.log` and `release-routing.log`. A real SwiftUI `Window` scene
+probe with the production band and accessory reported the blank point between
+`+` and pin as the window frame view; a synthesized double-click there resized
+the window to the screen's visible frame instead of doing nothing. The installed
+Release window was captured after relaunch and retains the tabs, `+`, pin and
+open join. The only retained diagnostic is the
 [assessed AppIntents metadata notice](docs/code-review.md#verification).
-An initial Debug signing attempt failed because the timestamp service was
-unavailable; the test/analyze invocation alone used `--timestamp=none`. The
+An earlier Debug signing attempt failed because the timestamp service was
+unavailable; that test/analyze invocation alone used `--timestamp=none`. The
 local Release uses the existing Developer ID identity and a valid timestamp.
 
-Acceptance limit: the screen is locked. In-process native titlebar event replay
-did not resize even the native reference titlebar, so that method is not evidence
-of an actual double-click. Whole-window hit-routing tests establish the repaired
-ownership, not physical pointer zoom/restore, drag or full-screen animation.
-These interaction paths remain unaccepted; do not clear the owner's report on
+Acceptance limit: the screen is locked, so physical pointer double-click and
+restore, drag and full-screen animation remain unaccepted. In-process event replay
+in a real SwiftUI Window scene does resize the window from the blank band,
+establishing that the event now reaches the native frame view; it is not a
+substitute for physical pointer acceptance. Do not clear the owner's report on
 build or hit-testing results alone.
 
 ## Interaction contract
