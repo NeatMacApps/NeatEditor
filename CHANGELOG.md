@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.19 - 2026-10-27
+
+### Fixed
+
+- Double-clicking or dragging any empty part of the top row, including above the sidebar, above the tabs and after the last tab, now reaches the native window titlebar: it resizes the window according to your Desktop & Dock setting and moves the window.
+- Keep the selected first tab's outline continuous with the editor's top line. The tab's lower curve was clipped at the edge of the editor column, so the line appeared broken next to the sidebar or the sidebar button.
+
+### 简体中文
+
+- 双击或拖动顶部一行的任意空白处（包括侧边栏上方、标签上方和最后一个标签之后）现在都交给系统标题栏处理：按"桌面与程序坞"设置缩放窗口，并可拖动窗口。
+- 修复选中第一个标签时轮廓线与编辑区顶部线条断开的问题。此前标签底部的弧线在编辑区边缘被裁掉，侧边栏或侧边栏按钮旁会出现断线。
+
 ## 1.0.18 - 2026-10-27
 
 ### Changed
