@@ -430,6 +430,44 @@ the sidebar edge without a break; the pre-release local build was also captured
 with the sidebar collapsed. Pointer interaction and appearance variants were not
 reaccepted.
 
+## 1.0.20 and 1.0.21 corrections (2026-10-27)
+
+1.0.19 shipped two owner-visible regressions that inactive-window acceptance
+missed: the 8 pt first-tab clearance showed a stray band-colored column, and the
+opaque titlebar adopted for blank-titlebar routing clipped every selected tab's
+corner arcs and capped the sidebar with a white titlebar section background in
+the key window. Root causes and decisions are in
+[TabStripGestures.md](TabStripGestures.md).
+
+- [v1.0.20](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.20):
+  corner arcs rejoined and first-tab clearance reduced to the 3 pt foot. Source
+  `2190fdb`; appcast commit `41ed28c`; Apple submissions
+  `d78e0227-5408-4918-8b9c-f73f1b674786` (app) and
+  `919df3ce-0479-4b79-93f1-9f44913705d3` (DMG). The publisher's final feed check
+  timed out on raw-CDN lag (R6); a later anonymous read served build 20 and the
+  Release held exactly the three assets.
+- [v1.0.21](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.21):
+  transparent `.hiddenTitleBar` scene restored with blank-titlebar routing kept
+  native. Source `8cfa0e0`; appcast commit `29d6701`; Apple submissions
+  `e7890000-67fa-444b-a568-d5a6bc82d5bf` (app) and
+  `61b93e8c-73ea-4c17-8db8-d7b6d31d85c9` (DMG). Anonymous downloads matched
+  SHA256SUMS and local bytes; `releases/latest` and the raw appcast serve 1.0.21 /
+  build 21. DMG `a657038484e77ea326a9eb6eadc420ba1c8162fbdc8f7266e48ffffa30bab549`,
+  ZIP `9bb0983ce703203aa2538b036bf8f47363adb858ae206eb340cac3a2d832b988`.
+  Installed from the public DMG (same Developer ID; strict signature and staple
+  pass); executable SHA256 `a6ff08c7e625a0e46ffbc73e4df6e12a0a6f631f26de66097baf555222c307c4`.
+- Evidence: 116 tests in 17 suites; installed-window pixel reads of both
+  selected-tab corners and the first tab with the sidebar expanded and collapsed;
+  a debuggable ad-hoc copy of the same source (never installed) confirmed in the
+  real SwiftUI scene that the titlebar is transparent, both titlebar section
+  backgrounds are hidden, and blank points above the sidebar and tabs hit the
+  window frame view while buttons, tabs, list and editor keep their hits.
+- Limit and lesson: the session was locked, so every capture was of an inactive
+  window. The key-window cap was established structurally, not by an active
+  pixel capture. Titlebar, glass and material changes need key-window evidence
+  (owner capture or an unlocked session) before release; an inactive capture
+  alone is not acceptance for them.
+
 ## References
 
 - Apple: [Notarizing macOS software before distribution](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
