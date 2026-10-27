@@ -444,8 +444,8 @@ EOF
 fi
 ditto "${appcast_dir}/appcast.xml" "${APPCAST_PATH}"
 git add "${APPCAST_PATH}"
-if ! git diff --cached --quiet; then
-  git commit -m "chore: 发布 v${version} 更新清单" >/dev/null
+if ! git diff --cached --quiet -- "${APPCAST_PATH}"; then
+  git commit --only "${APPCAST_PATH}" -m "chore: 发布 v${version} 更新清单" >/dev/null
   git push origin "${DEFAULT_BRANCH}"
 fi
 asset_url="https://github.com/${REPOSITORY}/releases/download/v${version}/$(basename "${dmg_path}")"

@@ -77,7 +77,9 @@ appcast update commit (`chore: 发布 vX.Y.Z 更新清单`) lands on `main`
 *after* the tag + signed uploads succeed. If the anonymous re-check still
 sees the old `<sparkle:version>` at the raw CDN URL while the repo source
 already has the new one, that is CDN lag: wait and re-check only. Never
-roll back, re-sign, or re-notarize because of it.
+roll back, re-sign, or re-notarize because of it. The appcast stage, diff
+and commit must name only `appcast.xml`; unrelated staged files created during
+notarization/publication must remain staged and must never enter that commit.
 
 R7 — Build identity. The archive builds universal (`ARCHS="arm64 x86_64"`,
 `ONLY_ACTIVE_ARCH=NO`) and the script verifies the universal binary with
@@ -111,7 +113,8 @@ for other long local jobs.
 2. Require a clean committed tree, run `xcodegen generate`, reject generated
    drift, record `SOURCE_COMMIT`, and verify the version tag (an existing
    tag must equal `SOURCE_COMMIT`). `scripts/test-release-worktree.sh`
-   exercises clean, modified, staged, untracked and ignored-build fixtures.
+   exercises clean, modified, staged, untracked (including hidden-by-config)
+   and ignored-build fixtures, plus appcast-only commits with unrelated staged work.
 3. Universal Release archive + Developer ID export, retaining complete
    compiler and export diagnostics. Xcode signs the nested Sparkle
    components during export; do not manually re-sign the exported app.
@@ -339,6 +342,62 @@ restored the persisted selection (`软考笔记`) together with its content; an
 initial look at the cropped top row suggested the first tab was highlighted, but
 the bold title and lighter tab background show `软考笔记` selected, so no content
 crossed document identities.
+
+## 1.0.18 publication evidence (2026-10-27)
+
+Published [v1.0.18](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.18)
+from immutable source `5818fac7fec5101cfdfe8be915311596d46af12b`; the appcast
+commit is `a1c2aac`. This includes the persistence cleanup, floating character
+count and approved serif-N icon. The complete integrated gate passed 112 tests /
+142 executions with zero failures, skips or structured runtime warnings. Clean
+Debug/Release build and analysis plus the release archive compiled all 41 app
+Swift sources for arm64 and x86_64. Logs, input/environment fingerprints and
+structured results are in `build/refactor-1.0.18/`; the full publisher log is
+`build/release-logs/publish-20261027-102415.log`. Xcode 27.2 (27B5028f), macOS
+27.2 (26B118), Swift 6 mode, Sparkle 2.9.5 and deployment target 26.0 were used.
+The sole retained diagnostic is the AppIntents notice individually assessed in
+[code-review.md](docs/code-review.md#sidebar-review-2026-10-24).
+
+Apple accepted app submission `1e0daf4d-b909-416f-897a-7ead020dff48` and DMG
+submission `f11c9686-b275-484b-930d-fda72d57fab1`. Both tickets were stapled.
+Independent full anonymous downloads matched the local three-file asset set
+byte-for-byte, including SHA256SUMS. Published fingerprints:
+
+| Asset | SHA256 |
+|---|---|
+| `NeatEditor-1.0.18.dmg` | `e0a678036dd0e571629b24b8aa6430a85c22bfbe3535ef7a952422e2b7e7792f` |
+| `NeatEditor-1.0.18.zip` | `aa03fd782e729c7f8e0ecd7f0db1d5771838b080f86e34be5844a1beb5b13a90` |
+
+The live installed SUFeedURL serves build 18 with the expected URL, length and
+bilingual notes. Ed25519 verification accepted the downloaded update and rejected
+a one-byte-modified fixture. The latest-release route and release notes match.
+
+The app from the anonymously downloaded DMG was installed at
+`/Applications/NeatEditor.app` with the same Developer ID identity and launched
+as PID 22718. Strict nested signature and stapled-ticket validation passed.
+Its executable SHA256 is
+`5507941771a7409f8ae8584e478c19544f1f83dc1c7ad7c7c33e9a69bf057c08`;
+the executable, ICNS and Assets.car exactly match the exported release.
+The decoded installed icon was inspected against the approved artwork.
+Gatekeeper returned `source=Notarized Developer ID` with
+`override=security disabled`: this verifies signatures/tickets, not ordinary
+clean-machine enforcement. No security preference changed.
+
+Fresh inspected captures show restored documents and a newly opened mixed
+English/CJK/emoji fixture with aligned line numbers and the expected 54-character
+floating count. The native File > Close Tab accessibility action removed the
+fixture, and the original selected tab was restored. Evidence:
+`published-installed.png`, `published-fixture.png`, `published-restored.png`,
+installation receipts and public-verification JSON in the gate directory.
+The session was locked: pointer input, physical IME, Settings, appearance variants,
+motion, native Intel and minimum-macOS runtime execution were not reaccepted.
+The DMG was ejected; no virtual display was connected.
+
+Post-publication tooling follow-up changes only the appcast commit boundary:
+the script's diff and `git commit --only` explicitly name `appcast.xml`.
+Eight native Git fixtures, including a commit and a no-op with unrelated staged
+work, pass with that work preserved. This main-branch tooling fix is newer than
+the immutable release tag and does not change published application bytes.
 
 ## References
 

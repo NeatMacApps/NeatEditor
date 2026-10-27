@@ -52,3 +52,38 @@ if (cd "${fixture}/not-a-repository" && /bin/bash "${checker}" > "${fixture}/not
   exit 1
 fi
 printf 'PASS non-repository rejected\n'
+
+# Run the actual appcast commit block with push stubbed; no remote is contacted.
+appcast_block="${fixture}/appcast.sh"
+awk '/^git add /{active=1} active && /^asset_url=/{exit} active{print}' \
+  "${root}/scripts/publish-release.sh" > "${appcast_block}"
+(
+  mkdir "${fixture}/appcast"
+  cd "${fixture}/appcast"
+  git init -q
+  git config user.name 'Release Test'
+  git config user.email 'release-test@example.invalid'
+  printf 'old feed\n' > appcast.xml
+  printf 'original\n' > unrelated.txt
+  git add appcast.xml unrelated.txt
+  git commit -qm 'Initial appcast fixture'
+  printf 'new feed\n' > appcast.xml
+  printf 'unfinished work\n' > unrelated.txt
+  git add unrelated.txt
+  APPCAST_PATH="${PWD}/appcast.xml"
+  DEFAULT_BRANCH=main
+  version=test
+  git() {
+    if [[ "$1" == push ]]; then return 0; fi
+    command git "$@"
+  }
+  source "${appcast_block}"
+  [[ "$(git diff-tree --no-commit-id --name-only -r HEAD)" == appcast.xml ]]
+  [[ "$(git diff --cached --name-only)" == unrelated.txt ]]
+  [[ "$(git show :unrelated.txt)" == 'unfinished work' ]]
+  before_head="$(git rev-parse HEAD)"
+  source "${appcast_block}"
+  [[ "$(git rev-parse HEAD)" == "${before_head}" ]]
+  [[ "$(git diff --cached --name-only)" == unrelated.txt ]]
+  printf 'PASS appcast-only commit and no-op preserve unrelated staged work\n'
+)

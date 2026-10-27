@@ -33,7 +33,8 @@ Full clean Debug and Release build/analyze passed for arm64 and x86_64. The
 native arm64 suite passed **112 tests / 142 parameter-expanded executions**, with
 zero failures, skips or runtime warnings in the structured result. Complete logs,
 source-input SHA256, environment identity and XCTest results are retained under
-`build/refactor-1.0.17/`. Environment: Xcode 27.2 (27B5028f), macOS 27.2 (26B118),
+`build/refactor-1.0.17/`; the final integrated 1.0.18 gate repeats that full
+coverage with the approved icon under `build/refactor-1.0.18/`. Environment: Xcode 27.2 (27B5028f), macOS 27.2 (26B118),
 Swift 6 mode, pinned Sparkle 2.9.5 and deployment target 26.0. The sole retained
 diagnostic is the AppIntents metadata-step notice individually assessed under
 [Sidebar review](#sidebar-review-2026-10-24); no Swift compiler or analyzer warning
@@ -48,7 +49,11 @@ also protects the post-archive check. Seven native Git fixtures cover clean,
 modified, staged, untracked, configuration-hidden untracked, ignored build output
 and a non-repository, verifying that refusal changes neither history nor the
 working tree. The actual dirty-checkout dry run also refused publication before
-tagging or building. See [R1](../RELEASING.md#durable-release-requirements).
+tagging or building. A follow-up eighth fixture also exercises the actual
+appcast commit block and its no-op, proving that unrelated staged work stays
+staged and out of the commit. The script names only `appcast.xml` in its cached
+diff and `git commit --only`; Git's [path-limited commit contract](https://git-scm.com/docs/git-commit)
+provides that boundary. See [R1/R6](../RELEASING.md#durable-release-requirements).
 
 ## macOS 26 baseline (2026-10-25)
 
