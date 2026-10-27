@@ -3,6 +3,30 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.23</title>
+            <pubDate>Tue, 27 Oct 2026 17:55:30 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>23</sparkle:version>
+            <sparkle:shortVersionString>1.0.23</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.23
+
+
+### Fixed
+
+- Restore double-click to zoom and drag on the empty top row above the sidebar and beside the window controls, which stopped working in 1.0.21.
+- Keep the whole top row in the tab bar color without the white area that appeared above the sidebar in 1.0.19 and 1.0.20.
+- Use the light editor color for everything below the tab bar line, including the margins around the sidebar.
+
+### 简体中文
+
+- 恢复侧边栏上方以及红绿灯按钮旁边空白处的双击缩放和拖动，该功能在 1.0.21 中失效。
+- 顶部整行保持标签栏颜色，不再出现 1.0.19、1.0.20 中侧边栏上方的白色区域。
+- 标签栏线条以下统一使用编辑区的浅色，包括侧边栏周围的边距。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.23/NeatEditor-1.0.23.zip" length="3678150" type="application/octet-stream" sparkle:edSignature="esyOIOOFZ0YDai3xSl4bgUYjt8XiDuWsTtrqpaeGWDOCS5sWrrLKaJaXLCVTDPWbg/8cyRL94A55nVfU9UzPAQ=="/>
+        </item>
+        <item>
             <title>1.0.22</title>
             <pubDate>Tue, 27 Oct 2026 16:48:38 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
