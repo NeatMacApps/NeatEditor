@@ -14,6 +14,14 @@ The owner approved the serif-N revision for production: the foreground roller hi
 
 Approved master SHA256: `8ff7b4e7b2b7e062e6eb4280c2a2a1c178f47ef296ae8221d409d7b50fc62cce`. Preserve these approved pixels rather than re-typesetting the letter with a locally available font. Artwork adoption does not prove that the installed or published app has changed; those targets still require the separate installation checks below.
 
+### Adoption verification
+
+Verified source `1ee450a` from an unchanged `git archive` snapshot on Xcode 27.2 (27B5028f), macOS 27.2 (26B118). Clean Debug and Release build/analyze compiled all 41 app Swift sources for both arm64 and x86_64; the native arm64 suite passed 112 tests / 142 parameter-expanded executions with no failures, skips or runtime warnings. No Swift compiler or analyzer issue was reported. The only retained diagnostic is the metadata-step notice `Metadata extraction skipped, no AppIntents.framework dependency found`, with its individual origin, residual limit and follow-up assessed in [code-review.md](../code-review.md#sidebar-review-2026-10-24).
+
+All ten asset-catalog slots are opaque, correctly sized and derived from the approved master. Both compiled ICNS files decode to pixel-identical 32/128/256 px source derivatives; the compiled `Assets.car` contains all ten named renditions, including 1024 px. The legacy 16 px ICNS decoded by `iconutil` differs at its bottom-right pixel only: blue becomes 0 instead of 235, while red, green, alpha and the other 255 pixels match the approved PNG. This appears in both configurations; its compiler-versus-decoder origin is not isolated. The source PNG is unchanged. Residual risk is that single legacy corner pixel; reproduce with a stable toolchain and an independent decoder before attributing it to the artwork. Do not describe the 16 px ICNS as pixel-identical. The actual Release bundle's icon was inspected in Finder. The 48/24 px contrast gate passes (luminance spans 14.29:1 / 11.93:1; dominant-color contrast 5.54:1). Complete logs, structured results, source/environment fingerprints and the Finder capture remain under `build/icon-serif-n-20261027/committed-checks/`.
+
+These are build-artifact checks, not installed or public-release acceptance. Intel and minimum-macOS runtime execution remain unverified. Final coordinated release installation must still perform the checks below; the icon-only change does not alter application source or version settings.
+
 ## 排查顺序
 
 1. 确认图标母版和资源集中的各尺寸图片已经更新，且资源说明文件仍可解析。
