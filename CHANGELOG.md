@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.24 - 2026-10-27
+
+### Changed
+
+- Give the sidebar the same color as the tab bar, including the margins around it, so only the editor uses the light background.
+
+### 简体中文
+
+- 侧边栏（包括周围边距）改为与标签栏相同的颜色，只有编辑区使用浅色背景。
+
 ## 1.0.23 - 2026-10-27
 
 ### Fixed
