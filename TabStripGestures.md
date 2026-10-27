@@ -527,8 +527,11 @@ build or hit-testing results alone.
   lights when the sidebar is collapsed). `EditorTabTopRuleView` additionally
   strokes the selected tab's `ConnectedTabGeometry.outline`, converted from the
   live tab view and clipped to the visible viewport span, inside its own 1 pt row.
-  The strip and the rule therefore draw one path split exactly at the titlebar
-  edge. Do not move the band out of the accessory; that would regress blank
+  `EditorTabItemView` clips its own drawing to the band, because whether the
+  titlebar clips the 1 pt overhang varies with window state: installed inactive
+  pixels showed the overhang still drawn, so drawing it in both views darkened
+  each foot. The strip and the rule therefore draw one path split exactly at the
+  titlebar edge, each row painted once. Do not move the band out of the accessory; that would regress blank
   titlebar routing.
 - Acceptance: magnify both lower corners of a selected first, middle and overflow
   tab with the sidebar expanded and collapsed; the arc must continue into the rule

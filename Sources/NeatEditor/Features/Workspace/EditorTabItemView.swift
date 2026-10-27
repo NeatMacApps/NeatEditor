@@ -65,6 +65,9 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
 
     override func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext else { return }
+        // Whether the titlebar clips below the band varies with window state;
+        // the outline's lowest row always belongs to the editor's top rule.
+        context.clip(to: CGRect(x: 0, y: 0, width: bounds.width, height: EditorTabLayout.tabHeight))
         if isSelected {
             context.addPath(ConnectedTabGeometry.fill(in: tabBounds))
             context.setFillColor(EditorChrome.editorSurfaceColor.cgColor)

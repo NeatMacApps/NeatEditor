@@ -179,6 +179,16 @@ struct ConnectedTabGeometryTests {
         #expect(alpha(atX: frame.midX) == 0)
         // Outside the gap the full rule is unchanged.
         #expect(alpha(atX: frame.minX - footReach - 4) > 0)
+
+        // The tab itself never paints that row, so no part of the foot is drawn twice.
+        let itemBitmap = try #require(item.bitmapImageRepForCachingDisplay(in: item.bounds))
+        item.cacheDisplay(in: item.bounds, to: itemBitmap)
+        let itemScale = CGFloat(itemBitmap.pixelsHigh) / item.bounds.height
+        let lastRow = Int((EditorTabLayout.tabHeight * itemScale).rounded(.up))
+        let footX = Int(((item.tabBounds.minX - footReach + 1) * itemScale).rounded(.down))
+        #expect(lastRow < itemBitmap.pixelsHigh)
+        #expect((itemBitmap.colorAt(x: footX, y: lastRow)?.alphaComponent ?? 0) == 0)
+        #expect((itemBitmap.colorAt(x: Int(item.bounds.midX * itemScale), y: lastRow - 1)?.alphaComponent ?? 0) > 0)
     }
 
     @Test("inactive tabs never acquire a hover capsule or retain the selected fill")
