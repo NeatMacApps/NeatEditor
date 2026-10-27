@@ -40,6 +40,16 @@ diagnostic is the AppIntents metadata-step notice individually assessed under
 was found. Native Intel and minimum-macOS execution remain unverified. Release
 and installed-path evidence are maintained in [RELEASING.md](../RELEASING.md).
 
+The interrupted publisher also exposed automatic staging of unrelated work.
+The release script now refuses dirty source before generation and again before
+archive; it performs no automatic source commit. `--untracked-files=all` prevents
+user status-display preferences from hiding unfinished files. The same guard
+also protects the post-archive check. Seven native Git fixtures cover clean,
+modified, staged, untracked, configuration-hidden untracked, ignored build output
+and a non-repository, verifying that refusal changes neither history nor the
+working tree. The actual dirty-checkout dry run also refused publication before
+tagging or building. See [R1](../RELEASING.md#durable-release-requirements).
+
 ## macOS 26 baseline (2026-10-25)
 
 Owner requirement: minimum supported runtime is macOS 26.0. App/test deployment

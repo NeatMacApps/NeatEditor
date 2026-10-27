@@ -3,7 +3,7 @@
 #
 # 默认行为：经 Python start_new_session 可靠脱离当前会话后台执行完整发布，
 # 日志写入 build/release-logs/，PID 写入 publish-latest.pid。
-# 完整链路：提交快照 → 归档 → Developer ID 导出 → 签名校验 → 公证并装订 App
+# 完整链路：校验已提交快照 → 归档 → Developer ID 导出 → 签名校验 → 公证并装订 App
 # → 制作 dmg → 公证并装订 dmg → Gatekeeper 校验 → GitHub Release。
 #
 # 用法：
@@ -50,6 +50,13 @@ done
 
 log_step() { printf '\n\033[1;34m▶ %s\033[0m\n' "$*"; }
 die() { printf '\n\033[1;31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
+
+# The publisher never decides that another session's unfinished work is ready.
+assert_clean_worktree() {
+  local status
+  status="$(git status --porcelain --untracked-files=all)" || die "无法读取工作区状态"
+  [[ -z "${status}" ]] || die "工作区存在未提交改动；请先提交本次已验证的文件，发布器不会自动提交其他会话的改动"
+}
 
 # 公证可能需要数十分钟；默认先脱离当前会话再执行。子进程会完整串行后续步骤，
 # 不依赖 Agent 或终端保持在线。脱离经 scripts/run-detached.py 以 Python
@@ -219,6 +226,7 @@ readonly version build_number
 readonly dmg_path="${BUILD_DIR}/${APP_NAME}-${version}.dmg"
 readonly checksum_path="${BUILD_DIR}/SHA256SUMS.txt"
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "发布必须在 Git 仓库中运行"
+assert_clean_worktree
 if [[ -f .git/MERGE_HEAD || -d .git/rebase-merge || -d .git/rebase-apply ]]; then
   die "仓库正处于合并或变基中，先解决后再发布"
 fi
@@ -252,17 +260,13 @@ if ! mkdir "${lock_dir}" 2>/dev/null; then
 fi
 trap 'rm -rf "${lock_dir}"' EXIT
 
-log_step "生成工程并纳入发布快照"
+log_step "生成工程并校验已提交的发布快照"
+assert_clean_worktree
 xcodegen generate >/dev/null
-# 提交优先：归档、打标签、落盘全部来自这次提交。工作区改动（含他人未提交
-# 源码）一并纳入提交，绝不丢弃、贮藏（stash）、重置或隔离。
-git add -A
-if ! git diff --cached --quiet; then
-  git commit -m "chore: 发布 v${version} 快照（构建号 ${build_number}）" >/dev/null
-fi
+assert_clean_worktree
 SOURCE_COMMIT="$(git rev-parse HEAD)"
 readonly SOURCE_COMMIT
-[[ -z "$(git status --porcelain)" ]] || die "工作区仍有未纳入快照的改动"
+assert_clean_worktree
 printf '发布源提交：%s\n' "${SOURCE_COMMIT}"
 # 标签先行校验：已存在的标签必须指向本次源提交，否则在耗时的构建/公证之前停下。
 # 标签不可移动；同源重试会命中“已存在且一致”分支继续走。
@@ -298,7 +302,7 @@ xcodebuild -exportArchive -archivePath "${ARCHIVE_PATH}" -exportOptionsPlist "${
 [[ -d "${APP_PATH}" ]] || die "Developer ID 导出产物不存在"
 # 来源指纹守卫：构建不得漂移或污染工作区，否则产物与标签对不上源提交。
 [[ "$(git rev-parse HEAD)" == "${SOURCE_COMMIT}" ]] || die "构建期间 HEAD 已漂移，停止发布"
-[[ -z "$(git status --porcelain)" ]] || die "构建污染了工作区，先检查再发布"
+assert_clean_worktree
 # 构建身份守卫：产物内的展示版本/构建号必须与配置一致，且为 universal 二进制。
 # 公证之前校验，错配不进苹果队列。
 bundle_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${APP_PATH}/Contents/Info.plist" 2>/dev/null || true)"

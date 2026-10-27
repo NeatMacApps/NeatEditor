@@ -11,18 +11,17 @@ modifies a public GitHub Release.
 
 ## Durable release requirements
 
-R1 — Snapshot before build. The script runs `xcodegen generate`, then
-commits the generated project together with the whole workspace
-(`git add -A`, including other agents' unfinished source) *before*
-`xcodebuild` archives. Archive, tag, install image, and GitHub Release
-all derive from that commit. It records the built `SOURCE_COMMIT`
-fingerprint and aborts if `HEAD` moves or the tree goes dirty afterwards.
-It never uses destructive isolation (`git stash`, `git reset --hard`,
-`git clean` on tracked source, worktree moves of foreign changes).
-A dirty tree is committed, not discarded. The pre-existing tag for the
-version is verified **before** the costly build/notarization: an existing
-tag must point at the snapshot commit (tags are immutable); otherwise
-the script aborts instead of moving it.
+R1 — Committed clean source before build. The coordinator commits only its
+verified source, documentation and assets before invoking the publisher. The
+script rejects any tracked, staged or untracked working-tree change, runs
+`xcodegen generate`, then checks cleanliness again; it never auto-stages or
+commits another session's work. Generated project drift must be reviewed and
+committed by its owner before retrying. Archive, tag, install image and GitHub
+Release all derive from that clean commit. The script records `SOURCE_COMMIT`
+and aborts if HEAD moves or the tree goes dirty afterwards. It never uses
+`git stash`, `git reset --hard`, `git clean` on source, or moves foreign changes
+out of the checkout. An existing version tag is verified before the costly
+build/notarization and must already point at that commit; tags are immutable.
 
 R2 — Detached notarization wait. Notarization polls for tens of minutes.
 The script re-launches itself detached via Python
@@ -35,9 +34,9 @@ R3 — Local install needs no notarization. Launchability / local overwrite
 install (`ditto` a committed-tree build to `/Applications/NeatEditor.app`)
 works without waiting for notarization; the coordinator performs the
 actual install and launch acceptance. Notarization gates only the *public*
-artifacts below. `--local-only` still takes a local source snapshot commit
-(it must, per R1) but makes **no remote writes**: no push, no tag push, no
-GitHub Release changes.
+artifacts below. `--local-only` requires the same clean committed source
+(per R1) but makes **no remote writes**: no push, no tag push, no GitHub
+Release changes.
 
 R4 — Public asset set and draft discipline. A public Release `vX.Y.Z`
 must contain exactly the signed set, all from the tagged commit:
@@ -90,7 +89,7 @@ R7 — Build identity. The archive builds universal (`ARCHS="arm64 x86_64"`,
 
 ```bash
 scripts/publish-release.sh --dry-run      # preflight only, no writes
-scripts/publish-release.sh --local-only   # detached: local snapshot commit, signed+notarized DMG + ZIP, no remote writes
+scripts/publish-release.sh --local-only   # detached: clean committed source, signed+notarized DMG + ZIP, no remote writes
 scripts/publish-release.sh                # detached: full local build + draft Release + publish + appcast
 scripts/publish-release.sh --foreground --dry-run   # foreground preflight (debugging only)
 ```
@@ -109,9 +108,10 @@ for other long local jobs.
    the version, clean merge/rebase state, single-instance lock (same
    worktree never runs two publishes; the lock's parent dir is created
    only on a real run, never during `--dry-run`).
-2. `xcodegen generate`, then commit-first snapshot (`git add -A` +
-   commit when dirty), record `SOURCE_COMMIT`, verify the version tag
-   (existing tag must equal `SOURCE_COMMIT`).
+2. Require a clean committed tree, run `xcodegen generate`, reject generated
+   drift, record `SOURCE_COMMIT`, and verify the version tag (an existing
+   tag must equal `SOURCE_COMMIT`). `scripts/test-release-worktree.sh`
+   exercises clean, modified, staged, untracked and ignored-build fixtures.
 3. Universal Release archive + Developer ID export, retaining complete
    compiler and export diagnostics. Xcode signs the nested Sparkle
    components during export; do not manually re-sign the exported app.
@@ -192,6 +192,23 @@ with persistent source/asset fingerprints and generated appcast. Both recoveries
 mode should own draft state and appcast regeneration. The workaround above is
 evidence-backed recovery, not an instruction to silently rerun the whole
 archive/notarization pipeline after a transport failure.
+
+## Interrupted 1.0.17 preparation (2026-10-27)
+
+The persistence refactor and floating character count passed the complete local
+gate (112 tests / 142 executions; clean universal Debug/Release build/analyze).
+Source `68d5287` was installed and its fresh mixed CJK/emoji file-open path
+captured. Before publication, a concurrent owner-approved icon integration
+started. The old publisher automatically committed that session's requirement
+doc and taskboard as `c5d67b2` and created the local `v1.0.17` tag before archive.
+The coordinator stopped that publisher before export, notarization or remote
+publication. No public 1.0.17 was produced; do not move or publish that local tag.
+The next complete release uses 1.0.18 and the completed icon assets.
+
+This exposed an unsafe release-tooling assumption: a dirty checkout is not an
+approved release snapshot. R1 now rejects dirty source instead of sweeping other
+sessions' changes into a commit. Preserve the existing snapshot/history; do not
+amend, revert or discard another session's work to recover.
 
 ## 1.0.16 train gate (2026-10-26, owner-directed publication)
 
