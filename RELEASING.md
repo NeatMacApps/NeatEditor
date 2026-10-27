@@ -519,6 +519,23 @@ Lesson: in-process double-click replays never resized the window, even at the
 working tab band, so they prove nothing about titlebar double-click. Do not
 change the titlebar's hit owner without physical double-click acceptance.
 
+## 1.0.24 sidebar band color (2026-10-27)
+
+Owner choice after 1.0.23: the sidebar column uses the band color.
+[v1.0.24](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.24) paints
+the sidebar list and window background with `EditorChrome.tabBarBackgroundColor`.
+Source `43a0566`; appcast commit `c130446`; Apple submissions
+`4de77628-3094-45ad-aa2e-e08efd4c61f1` (app) and
+`c2bfe4d3-b9bf-4c62-8011-d25d3f6a1ccd` (DMG). Anonymous downloads matched
+SHA256SUMS and local bytes; DMG
+`56c23a8dcae88c27f9ad6cee71eff04518eb7a4af043a1b0699490bf18873e58`, ZIP
+`6f387f851396727ea56c8d9049334ef2a435d78eacaf2ceb601721818f778bc7`; repo and raw
+appcast serve build 24. Installed from the public DMG; executable SHA256
+`409ab9f214c37112f39c6775d326287d6b21d84b93c3123fd90c8bc426e7969d`. 117 tests.
+Inactive installed pixels: top row, sidebar and window edge share the band color
+in dark (53) and light (236, forced Aqua) appearances; the editor stays the
+light/dark surface. Key-window check remains with the owner.
+
 ## References
 
 - Apple: [Notarizing macOS software before distribution](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
