@@ -3,6 +3,28 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.20</title>
+            <pubDate>Tue, 27 Oct 2026 15:30:57 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>20</sparkle:version>
+            <sparkle:shortVersionString>1.0.20</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.20
+
+
+### Fixed
+
+- Rejoin the lower-left and lower-right curves of the selected tab with the line under the tab bar. In 1.0.19 the titlebar clipped the curves just above the line, so every selected tab's corners looked broken.
+- Remove the band-colored strip that 1.0.19 added before the first tab. The first tab's curve now ends exactly at the sidebar edge.
+
+### 简体中文
+
+- 修复选中标签左下角、右下角的弧线与标签栏下方线条断开的问题。1.0.19 中标题栏把弧线最底下一行截掉了，每个选中标签的两个下角看起来都是断的。
+- 去掉 1.0.19 在第一个标签前多出的一段色块，第一个标签的弧线现在正好收在侧边栏边缘。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.20/NeatEditor-1.0.20.zip" length="3675989" type="application/octet-stream" sparkle:edSignature="A49p+fmQe/oE8GwO6VuDsnHTo6jvZFjFMSH04ptI2au5UP2q93OBPx1qiHEnJ90QCA30f/UIBcAcTk2kjAflAA=="/>
+        </item>
+        <item>
             <title>1.0.19</title>
             <pubDate>Tue, 27 Oct 2026 14:59:23 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
