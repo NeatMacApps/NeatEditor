@@ -399,6 +399,37 @@ Eight native Git fixtures, including a commit and a no-op with unrelated staged
 work, pass with that work preserved. This main-branch tooling fix is newer than
 the immutable release tag and does not change published application bytes.
 
+## 1.0.19 publication evidence (2026-10-27)
+
+Published [v1.0.19](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.19)
+from immutable source `6b219ee894eebd183eed64dabbc322a8375af73b`; the appcast
+commit is `aa068cd`. Scope: blank titlebar routing to the native window frame
+and the first tab's continuous join beside the sidebar (`c08f65b`). Before the
+version bump, the complete Debug suite passed (115 tests in 17 suites); the only
+build/archive diagnostic was the AppIntents notice individually assessed in
+[code-review.md](docs/code-review.md#sidebar-review-2026-10-24). Publisher log:
+`build/release-logs/publish-20261027-145823.log`. Apple accepted app submission
+`65bb402e-99e5-4c23-a57e-19b4d9a097d0` and DMG submission
+`d4883431-92f6-4a34-863b-e1c6b93ebe5f`.
+
+Anonymous downloads of the three assets matched SHA256SUMS and the local bytes;
+the Release is published, `releases/latest` resolves to v1.0.19, and the raw
+appcast serves build 19 with the ZIP's exact length.
+
+| Asset | SHA256 |
+|---|---|
+| `NeatEditor-1.0.19.dmg` | `1f2d21fae36edec55e199c87b97104eca7eea3a10f556cb803266bd27cea6a42` |
+| `NeatEditor-1.0.19.zip` | `37fda2f1c9ba351eb41ec2343832c491f2d750d55fd294418651cd3f072bd39d` |
+
+The app from the downloaded DMG is installed at `/Applications/NeatEditor.app`
+with the same Developer ID identity; strict signature and stapled-ticket checks
+pass (`spctl`: `source=Notarized Developer ID`, `override=security disabled`).
+Executable SHA256 `91ef4af48a665c353956f6967206ab2aff34f061411ff7c4aa6eddc7536a1282`.
+A fresh window capture showed the first tab's foot and a short top-rule run meeting
+the sidebar edge without a break; the pre-release local build was also captured
+with the sidebar collapsed. Pointer interaction and appearance variants were not
+reaccepted.
+
 ## References
 
 - Apple: [Notarizing macOS software before distribution](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
