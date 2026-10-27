@@ -442,18 +442,13 @@ claims blank hits before the titlebar sees them, so blank `hitTest` results are
 handed to the window's frame view (`contentView.superview`). The frame view is
 the native owner of titlebar drag and the system double-click action, so no
 preference emulation or manual zoom call is needed. Only tab controls, + and pin
-consume events inside the band. Superseded 2026-10-27 (see "Full-height sidebar
-behind the traffic lights"): the scene is back on `.hiddenTitleBar` with a
-transparent titlebar, because the opaque `.titleBar` style capped the sidebar.
-`.titleBar` also resets `titlebarAppearsTransparent` to false after AppKit
-attachment, so setting it in `attachToWindow` alone has no effect in the real
-scene (measured in the live window; an `NSHostingController` fixture misses this
-Scene-level reset). Blank titlebar points that fall through to content are
-routed to the frame view by `TitlebarRoutingView` roots on the sidebar and
-editor columns. The earlier note that `.hiddenTitleBar` content covered the
-accessory's selected-tab fill and buttons was not reproduced: the live tree keeps
-the titlebar container above content, and a fresh capture shows the selected tab,
-+ and pin. Installed visual acceptance must still retain those controls and the
+consume events inside the band. The SwiftUI scene uses `.titleBar` with an
+opaque titlebar (a 2026-10-27 transparent detour is recorded in "Top band color,
+light surface and native titlebar gestures"). `.titleBar` resets
+`titlebarAppearsTransparent` to false after AppKit attachment, so a transparent
+setting in `attachToWindow` alone has no effect in the real scene (measured in
+the live window; an `NSHostingController` fixture misses this Scene-level
+reset). Installed visual acceptance must retain the tabs, + and pin and the
 open join.
 
 Official
@@ -515,34 +510,40 @@ build or hit-testing results alone.
   the tab to the trailing edge; key-window evidence is required for the sidebar
   glass portion.
 
-## Full-height sidebar behind the traffic lights (owner report 2026-10-27)
+## Top band color, light surface and native titlebar gestures (owner reports 2026-10-27, authoritative)
 
-- Owner report on installed 1.0.20: in the active window the top-left area
-  behind the traffic lights is a white cap above the floating sidebar, instead
-  of the sidebar reaching the top as in 1.0.18. This violates the product
-  requirement above (the native sidebar occupies the leading area including
-  behind the traffic lights).
-- Cause (live view tree, 2026-10-27): the sidebar split item is already full
-  height (714 pt wrapper inside the native glass view) and the window has
-  full-size content. The opaque titlebar adopted by the routing repair makes
-  AppKit show one `NSTitlebarBackgroundView` per split section across the top
-  40 pt; the sidebar section's background is the white cap in the key window
-  (it resolves to the band color when inactive, which hid it in locked-session
-  captures). `titlebarAppearsTransparent = true` hides exactly those section
-  backgrounds. A sidebar tracking separator does not.
-- Routing constraint: with a transparent titlebar, live `hitTest` sends blank
-  titlebar points above the sidebar to the sidebar's SwiftUI host instead of
-  the toolbar view (measured; tab band and buttons are unchanged). Restore
-  transparency and route those points the same way the tab band already does:
-  content containers return the window frame view for points above
-  `NSWindow.contentLayoutRect` that no titlebar control claimed. This covers the
-  sidebar column and, with the sidebar collapsed, the editor column under the
-  traffic lights. Full screen has no titlebar region, so nothing is redirected.
-- Acceptance: the key window shows the sidebar material behind the traffic
-  lights with no cap; blank double-click and drag above the sidebar, above the
-  tabs and after the last tab still use the native titlebar actions; the sidebar
-  button, +, pin and tabs keep their hits; the tab accessory still draws above
-  content.
+- Owner requirements: the whole top row (behind the traffic lights, above the
+  sidebar, behind the tabs) is the band color; everything below the full-width
+  line is the light surface, including the margins around the floating sidebar
+  panel; double-click and drag on every blank part of the top row keep the
+  native titlebar actions.
+- History: 1.0.20 showed a white cap above the sidebar in the key window. It is
+  AppKit's `NSTitlebarBackgroundView` per split section, inserted into the split
+  view under an opaque titlebar (live view tree). 1.0.21 removed it with a
+  transparent titlebar (`.hiddenTitleBar`) and routed blank titlebar hits to the
+  window frame view from content roots. The owner then found double-click no
+  longer zoomed above the sidebar / behind the traffic lights: a frame-view
+  redirect from content is not equivalent to the toolbar view the opaque titlebar
+  gives those points. That regression shipped in 1.0.21 and 1.0.22. In-process
+  replays of double-clicks did not resize the window even at the known-good tab
+  band, so they are not evidence for or against titlebar double-click.
+- Decision: keep the opaque `.titleBar` scene, where blank points above the
+  sidebar and behind the traffic lights hit the native `NSToolbarView` (the
+  1.0.20 behavior the owner used). The split view owns a full-width
+  `TabBandBackgroundView` (band color, z above AppKit's section backgrounds) and
+  the full-width rule; neither takes hits. The window background is
+  `EditorChrome.editorSurfaceColor`, so the light surface shows around the
+  floating sidebar. Do not reintroduce a transparent titlebar or content-side
+  titlebar hit routing for this.
+- Pending owner decision: the owner asked for a top margin between the line and
+  the floating sidebar panel equal to its bottom margin. The native sidebar
+  panel's placement has no public API (checked `NSSplitViewItem` /
+  `NSSplitViewController` in the Xcode 27.2 SDK); achieving it would mean
+  replacing the native sidebar glass with a custom panel, which the native-UI
+  standard prohibits without an explicit owner exception.
+- Acceptance: key-window owner check of the top-left area and of double-click
+  above the sidebar and behind the traffic lights; the locked session gives
+  only inactive pixels and hit-test routing.
 
 ## First-tab join clearance (owner report 2026-10-27)
 

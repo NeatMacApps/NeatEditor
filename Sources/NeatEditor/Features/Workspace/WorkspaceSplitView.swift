@@ -41,7 +41,6 @@ struct WorkspaceSplitView: NSViewControllerRepresentable {
 final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelegate {
     private var configuration: WorkspaceSplitView
     private let sidebarController: NSHostingController<AnyView>
-    private let sidebarContainer = TitlebarRoutingViewController()
     private let detailController: WorkspaceEditorViewController
     /// Empty `.unifiedCompact` toolbar: the native 40 pt row with centred
     /// traffic lights. A bare titlebar is 32 pt and cannot be made taller.
@@ -73,8 +72,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         splitView.isVertical = true
         splitView.dividerStyle = .thin
 
-        sidebarContainer.embed(sidebarController)
-        let sidebar = NSSplitViewItem(sidebarWithViewController: sidebarContainer)
+        let sidebar = NSSplitViewItem(sidebarWithViewController: sidebarController)
         sidebar.minimumThickness = WorkspaceSplitView.sidebarMinimumWidth
         sidebar.maximumThickness = 360
         sidebar.allowsFullHeightLayout = true
@@ -85,7 +83,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         detail.minimumThickness = configuration.isSettingsSelected
             ? WorkspaceSplitView.settingsMinimumWidth : WorkspaceSplitView.editorMinimumWidth
         addSplitViewItem(detail)
-        installTopRule()
+        installTopBand()
 
         let sidebarLabel = String(localized: "Toggle Sidebar")
         sidebarButton.toolTip = sidebarLabel
@@ -165,10 +163,12 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         guard let window = view.window, attachedWindow !== window else { return }
         attachedWindow = window
         window.titleVisibility = .hidden
-        // An opaque titlebar caps the full-height sidebar with its own section
-        // background. Content roots hand blank titlebar hits back to native chrome.
-        window.titlebarAppearsTransparent = true
-        window.backgroundColor = EditorChrome.tabBarBackgroundColor
+        // Native chrome must receive blank clicks: an opaque titlebar's toolbar view
+        // owns double-click and drag. A transparent one hands them to content.
+        window.titlebarAppearsTransparent = false
+        // Below the band everything is the light surface, including the margins
+        // around the floating sidebar; the band itself is painted by the split view.
+        window.backgroundColor = EditorChrome.editorSurfaceColor
         // The connected tab outline owns this boundary; a native full-width
         // separator would draw a second line through the selected tab's join.
         window.titlebarSeparatorStyle = .none
@@ -219,18 +219,28 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         pinButton.setAccessibilityValue(pinned ? 1 : 0)
     }
 
-    /// The tab rule spans the whole window, above both panes and the sidebar
-    /// glass, at the band's bottom edge, so the line continues to the left.
-    private func installTopRule() {
+    /// The band color and the tab rule span the whole window above both panes,
+    /// ending at the band's bottom edge. The background covers AppKit's titlebar
+    /// section backgrounds (white in the key window); the rule continues left
+    /// across the sidebar. Neither takes hits, so native titlebar gestures stay.
+    private func installTopBand() {
+        let background = TabBandBackgroundView()
         let rule = detailController.topRule
-        rule.translatesAutoresizingMaskIntoConstraints = false
-        rule.wantsLayer = true
-        rule.layer?.zPosition = 1
-        splitView.addSubview(rule)
+        let bandBottom = detailController.view.safeAreaLayoutGuide.topAnchor
+        for (view, zPosition) in [(background as NSView, 1.0), (rule, 2.0)] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            view.wantsLayer = true
+            view.layer?.zPosition = zPosition
+            splitView.addSubview(view)
+            NSLayoutConstraint.activate([
+                view.leadingAnchor.constraint(equalTo: splitView.leadingAnchor),
+                view.trailingAnchor.constraint(equalTo: splitView.trailingAnchor),
+            ])
+        }
         NSLayoutConstraint.activate([
-            rule.leadingAnchor.constraint(equalTo: splitView.leadingAnchor),
-            rule.trailingAnchor.constraint(equalTo: splitView.trailingAnchor),
-            rule.topAnchor.constraint(equalTo: detailController.view.safeAreaLayoutGuide.topAnchor),
+            background.topAnchor.constraint(equalTo: splitView.topAnchor),
+            background.bottomAnchor.constraint(equalTo: bandBottom),
+            rule.topAnchor.constraint(equalTo: bandBottom),
             rule.heightAnchor.constraint(equalToConstant: 1),
         ])
     }
@@ -271,9 +281,6 @@ private final class WorkspaceEditorViewController: NSViewController {
     private let host: NSHostingController<AnyView>
     let topRule = EditorTabTopRuleView()
     private let tabBand = WorkspaceTabBandView()
-    /// Band color behind the transparent titlebar where no tab band sits
-    /// (behind the traffic lights when the sidebar is collapsed).
-    private let bandBackground = TabBandBackgroundView()
     var strip: EditorTabStripView { tabBand.strip }
     var pinButton: NSButton { tabBand.pinButton }
     /// Titlebar accessory views whose frames the tab band must not cover.
@@ -305,22 +312,16 @@ private final class WorkspaceEditorViewController: NSViewController {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func loadView() {
-        view = TitlebarRoutingView()
+        view = NSView()
         addChild(host)
         host.view.translatesAutoresizingMaskIntoConstraints = false
-        bandBackground.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(host.view)
-        view.addSubview(bandBackground, positioned: .above, relativeTo: host.view)
-        view.addSubview(tabBand, positioned: .above, relativeTo: bandBackground)
+        view.addSubview(tabBand, positioned: .above, relativeTo: host.view)
         NSLayoutConstraint.activate([
             host.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             host.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             host.view.topAnchor.constraint(equalTo: view.topAnchor),
             host.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            bandBackground.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            bandBackground.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            bandBackground.topAnchor.constraint(equalTo: view.topAnchor),
-            bandBackground.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
         ])
     }
 
@@ -353,12 +354,11 @@ private final class WorkspaceEditorViewController: NSViewController {
 
     func moveTabBand(to accessory: NSTitlebarAccessoryViewController?) {
         tabBand.removeFromSuperview()
-        (view as? TitlebarRoutingView)?.routesTitlebarHits = accessory != nil
         if let accessory {
             tabBand.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: EditorTabLayout.stripHeight)
             accessory.view = tabBand
         } else {
-            view.addSubview(tabBand, positioned: .above, relativeTo: bandBackground)
+            view.addSubview(tabBand, positioned: .above, relativeTo: host.view)
         }
         view.needsLayout = true
     }
@@ -385,22 +385,6 @@ private final class WorkspaceEditorViewController: NSViewController {
     }
 }
 
-/// A transparent titlebar gives its blank points to the full-size content below.
-/// Hand them to the window frame view, the native owner of titlebar drag and the
-/// system double-click action. Titlebar controls are hit before content.
-private final class TitlebarRoutingView: NSView {
-    /// Off while full screen moves the tab band into content: no titlebar remains.
-    var routesTitlebarHits = true
-
-    override func hitTest(_ point: NSPoint) -> NSView? {
-        guard let hit = super.hitTest(point) else { return nil }
-        guard routesTitlebarHits, let window, let superview, !window.styleMask.contains(.fullScreen),
-              superview.convert(point, to: nil).y >= window.contentLayoutRect.maxY,
-              let frameView = window.contentView?.superview else { return hit }
-        return frameView
-    }
-}
-
 private final class TabBandBackgroundView: NSView {
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 
@@ -409,25 +393,6 @@ private final class TabBandBackgroundView: NSView {
         // rect can extend past this 40 pt band over the editor.
         EditorChrome.tabBarBackgroundColor.setFill()
         bounds.fill()
-    }
-}
-
-/// Hosts the sidebar under a titlebar-routing root.
-private final class TitlebarRoutingViewController: NSViewController {
-    override func loadView() {
-        view = TitlebarRoutingView()
-    }
-
-    func embed(_ child: NSViewController) {
-        addChild(child)
-        child.view.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(child.view)
-        NSLayoutConstraint.activate([
-            child.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            child.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            child.view.topAnchor.constraint(equalTo: view.topAnchor),
-            child.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ])
     }
 }
 

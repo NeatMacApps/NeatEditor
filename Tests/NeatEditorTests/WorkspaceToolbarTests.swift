@@ -237,9 +237,10 @@ struct WorkspaceTitlebarTests {
             NSPoint(x: tabFrame.midX, y: stripFrame.maxY - 1)
         ]
         let sidebarPoint = NSPoint(x: sidebarFrame.midX, y: stripFrame.maxY - 2)
-        // Transparent so the full-height sidebar shows behind the traffic lights;
-        // blank titlebar points must still reach native chrome, not content hosts.
-        #expect(window.titlebarAppearsTransparent)
+        // Opaque: the native toolbar view owns blank double-click and drag there.
+        #expect(!window.titlebarAppearsTransparent)
+        // Below the band the window base is the light editor surface.
+        #expect(window.backgroundColor == EditorChrome.editorSurfaceColor)
         let zoom = try #require(window.standardWindowButton(.zoomButton))
         let zoomFrame = zoom.convert(zoom.bounds, to: nil)
         // Expanded: sidebar column beside the button. Collapsed: editor column
@@ -254,8 +255,10 @@ struct WorkspaceTitlebarTests {
             #expect(hit === root)
         }
         for point in [sidebarPoint, leadingBlank] {
+            // Native titlebar chrome, never content, the band paint or the strip.
             let hit = try #require(root.hitTest(root.convert(point, from: nil)))
-            #expect(hit === root, "\(point) hit \(type(of: hit))")
+            #expect(hit !== content && !hit.isDescendant(of: content), "\(point) hit \(type(of: hit))")
+            #expect(hit !== strip.superview && !hit.isDescendant(of: strip))
         }
         for button in [plus, pin, sidebar] {
             let point = button.convert(NSPoint(x: button.bounds.midX, y: button.bounds.midY), to: nil)

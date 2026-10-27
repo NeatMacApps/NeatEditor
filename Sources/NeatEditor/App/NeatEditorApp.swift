@@ -41,9 +41,9 @@ struct NeatEditorApp: App {
                 .environment(workspaceStore)
         }
         .handlesExternalEvents(matching: [])
-        // Transparent titlebar keeps the full-height sidebar behind the traffic
-        // lights; WorkspaceSplitView routes blank titlebar hits to native chrome.
-        .windowStyle(.hiddenTitleBar)
+        // Opaque native titlebar: its toolbar view owns blank-titlebar double-click
+        // and drag. WorkspaceSplitView paints the band over its section backgrounds.
+        .windowStyle(.titleBar)
         .defaultSize(width: 800, height: 600)
         .commands {
             NeatEditorUpdateCommands()
