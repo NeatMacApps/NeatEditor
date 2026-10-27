@@ -85,6 +85,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         detail.minimumThickness = configuration.isSettingsSelected
             ? WorkspaceSplitView.settingsMinimumWidth : WorkspaceSplitView.editorMinimumWidth
         addSplitViewItem(detail)
+        installTopRule()
 
         let sidebarLabel = String(localized: "Toggle Sidebar")
         sidebarButton.toolTip = sidebarLabel
@@ -218,6 +219,22 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         pinButton.setAccessibilityValue(pinned ? 1 : 0)
     }
 
+    /// The tab rule spans the whole window, above both panes and the sidebar
+    /// glass, at the band's bottom edge, so the line continues to the left.
+    private func installTopRule() {
+        let rule = detailController.topRule
+        rule.translatesAutoresizingMaskIntoConstraints = false
+        rule.wantsLayer = true
+        rule.layer?.zPosition = 1
+        splitView.addSubview(rule)
+        NSLayoutConstraint.activate([
+            rule.leadingAnchor.constraint(equalTo: splitView.leadingAnchor),
+            rule.trailingAnchor.constraint(equalTo: splitView.trailingAnchor),
+            rule.topAnchor.constraint(equalTo: detailController.view.safeAreaLayoutGuide.topAnchor),
+            rule.heightAnchor.constraint(equalToConstant: 1),
+        ])
+    }
+
     @objc private func togglePin(_ sender: Any?) {
         configuration.onTogglePin()
     }
@@ -248,12 +265,15 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     }
 }
 
-/// Native chrome owns the tab band; content owns the matching top rule.
+/// Native chrome owns the tab band; the split view owns the full-width rule.
 /// Full screen rehomes the same band above the host without SwiftUI-owned layout.
 private final class WorkspaceEditorViewController: NSViewController {
     private let host: NSHostingController<AnyView>
     let topRule = EditorTabTopRuleView()
     private let tabBand = WorkspaceTabBandView()
+    /// Band color behind the transparent titlebar where no tab band sits
+    /// (behind the traffic lights when the sidebar is collapsed).
+    private let bandBackground = TabBandBackgroundView()
     var strip: EditorTabStripView { tabBand.strip }
     var pinButton: NSButton { tabBand.pinButton }
     /// Titlebar accessory views whose frames the tab band must not cover.
@@ -288,19 +308,19 @@ private final class WorkspaceEditorViewController: NSViewController {
         view = TitlebarRoutingView()
         addChild(host)
         host.view.translatesAutoresizingMaskIntoConstraints = false
-        topRule.translatesAutoresizingMaskIntoConstraints = false
+        bandBackground.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(host.view)
-        view.addSubview(topRule, positioned: .above, relativeTo: host.view)
-        view.addSubview(tabBand, positioned: .above, relativeTo: topRule)
+        view.addSubview(bandBackground, positioned: .above, relativeTo: host.view)
+        view.addSubview(tabBand, positioned: .above, relativeTo: bandBackground)
         NSLayoutConstraint.activate([
             host.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             host.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             host.view.topAnchor.constraint(equalTo: view.topAnchor),
             host.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            topRule.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            topRule.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            topRule.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            topRule.heightAnchor.constraint(equalToConstant: 1),
+            bandBackground.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bandBackground.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bandBackground.topAnchor.constraint(equalTo: view.topAnchor),
+            bandBackground.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
         ])
     }
 
@@ -338,7 +358,7 @@ private final class WorkspaceEditorViewController: NSViewController {
             tabBand.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: EditorTabLayout.stripHeight)
             accessory.view = tabBand
         } else {
-            view.addSubview(tabBand, positioned: .above, relativeTo: topRule)
+            view.addSubview(tabBand, positioned: .above, relativeTo: bandBackground)
         }
         view.needsLayout = true
     }
@@ -378,6 +398,17 @@ private final class TitlebarRoutingView: NSView {
               superview.convert(point, to: nil).y >= window.contentLayoutRect.maxY,
               let frameView = window.contentView?.superview else { return hit }
         return frameView
+    }
+}
+
+private final class TabBandBackgroundView: NSView {
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    override func draw(_ dirtyRect: NSRect) {
+        // Bounds, not dirtyRect: views no longer clip by default, and the dirty
+        // rect can extend past this 40 pt band over the editor.
+        EditorChrome.tabBarBackgroundColor.setFill()
+        bounds.fill()
     }
 }
 

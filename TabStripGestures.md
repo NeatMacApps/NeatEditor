@@ -495,6 +495,26 @@ establishing that the event now reaches the native frame view; it is not a
 substitute for physical pointer acceptance. Do not clear the owner's report on
 build or hit-testing results alone.
 
+## Full-width tab rule (owner clarification 2026-10-27, authoritative)
+
+- Owner clarification of the original "line breaks near the sidebar" report: the
+  tab bar's bottom line must continue naturally to the left, across the sidebar
+  column to the window's leading edge. The selected tab rises from one
+  continuous full-width line. Earlier fixes (first-tab clearance, corner-row
+  painting, titlebar transparency) addressed real defects but not this request.
+- Design: the rule is owned by the split view, not the editor column. One
+  `EditorTabTopRuleView` spans the whole split view width at the editor column's
+  safe-area top (the band's bottom edge in windowed and full-screen layouts),
+  above both split panes, including the floating sidebar glass. It keeps the
+  open gap and the selected tab's foot row exactly as before; the first tab's
+  foot now meets the rule's run over the sidebar.
+- Native alternative rejected: `NSSplitViewItem.titlebarSeparatorStyle` needs an
+  opaque titlebar section, which caps the sidebar (see below).
+- Acceptance: with the sidebar expanded and collapsed, the line runs unbroken
+  from the window's leading edge into the selected tab's foot and continues after
+  the tab to the trailing edge; key-window evidence is required for the sidebar
+  glass portion.
+
 ## Full-height sidebar behind the traffic lights (owner report 2026-10-27)
 
 - Owner report on installed 1.0.20: in the active window the top-left area

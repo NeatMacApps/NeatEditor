@@ -187,7 +187,29 @@ struct WorkspaceTitlebarTests {
         #expect(strip.convert(strip.bounds, to: column).maxY == column.bounds.maxY)
         #expect(column.safeAreaInsets.top == EditorTabLayout.stripHeight)
         let rule = try #require(strip.topRule)
-        #expect(abs(rule.frame.maxY - strip.convert(strip.bounds, to: column).minY) < 0.5)
+        #expect(abs(rule.convert(rule.bounds, to: nil).maxY - strip.convert(strip.bounds, to: nil).minY) < 0.5)
+    }
+
+    @Test("the tab rule spans the whole window, across the sidebar, at the band's bottom edge",
+          arguments: [true, false])
+    func fullWidthRule(sidebarVisible: Bool) throws {
+        let window = makeWindow(sidebarVisible: sidebarVisible)
+        defer { window.close() }
+        window.contentView?.layoutSubtreeIfNeeded()
+        let strip = try #require(findStrip(in: window))
+        let rule = try #require(strip.topRule)
+        let ruleFrame = rule.convert(rule.bounds, to: nil)
+        let content = try #require(window.contentView)
+        let contentFrame = content.convert(content.bounds, to: nil)
+        #expect(ruleFrame.minX == contentFrame.minX)
+        #expect(ruleFrame.maxX == contentFrame.maxX)
+        #expect(ruleFrame.height == 1)
+        #expect(abs(ruleFrame.maxY - strip.convert(strip.bounds, to: nil).minY) < 0.5)
+        // The open gap is only under the selected tab; the run over the sidebar stays drawn.
+        let gap = try #require(strip.selectedTabGap(in: rule))
+        #expect(gap.lowerBound > rule.bounds.minX)
+        // Drawn above both panes, including the sidebar glass.
+        #expect((rule.layer?.zPosition ?? 0) > 0)
     }
 
     @Test("blank titlebar hits reach native chrome through the complete content host",
@@ -254,7 +276,8 @@ struct WorkspaceTitlebarTests {
         window.contentView?.layoutSubtreeIfNeeded()
         #expect(window.titlebarAccessoryViewControllers.count == 1)
         #expect(strip.isDescendant(of: try #require(window.contentView)))
-        #expect(strip.superview?.superview === topRule.superview)
+        #expect(strip.isDescendant(of: try #require(topRule.superview)))
+        #expect(abs(topRule.convert(topRule.bounds, to: nil).maxY - strip.convert(strip.bounds, to: nil).minY) < 0.5)
         let content = try #require(window.contentView)
         let root = try #require(content.superview)
         let blankPoint = strip.convert(NSPoint(x: strip.bounds.width - 10, y: strip.bounds.midY), to: nil)
