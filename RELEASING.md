@@ -468,6 +468,33 @@ the key window. Root causes and decisions are in
   (owner capture or an unlocked session) before release; an inactive capture
   alone is not acceptance for them.
 
+## 1.0.22 full-width tab rule (2026-10-27)
+
+The owner clarified the original report: the tab bar's bottom line must continue
+left across the sidebar (see "Full-width tab rule" in
+[TabStripGestures.md](TabStripGestures.md)); 1.0.19-1.0.21 had fixed adjacent
+defects but not this. [v1.0.22](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.22)
+moves the rule to the split view (full width, above both panes) and paints the
+band color behind the transparent titlebar in the editor column. Source
+`ab2c237`; appcast commit `deaad15`; Apple submissions
+`13c6cfa0-1d6e-44f9-b729-80e3bcd63560` (app) and
+`29294660-be5f-4a0a-b251-48eb9d4dab07` (DMG). Anonymous downloads matched
+SHA256SUMS and local bytes; DMG `f40cf9a36288814a3f2f6189af0fe70d97dac7d071d8c180e79bd3684275e65c`,
+ZIP `3dfcd07bd93c079cb7986f0c92287fa00cdb970756101c9c971f7bee342aa3f1`. The raw
+feed lagged on build 21 for about a minute after the push (R6) and then served
+build 22. Installed from the public DMG; executable SHA256
+`3e92d1e629fd86c5b860669de3c1a34c729d27e2bdcdcfa54dd537cfc222fc48`.
+117 tests passed. Inactive installed pixels: the rule runs from the window's
+leading edge over the sidebar and the editor column; the editor surface is intact.
+
+A first build of this change filled `dirtyRect` in the new band background view
+and blanked the whole editor; the capture caught it before release. With
+`clipsToBounds` off by default, fill `bounds`, never `dirtyRect`.
+
+Remaining limit: still no key-window capture. Inactive pixels show the run over
+the sidebar slightly darker (the system's own sidebar edge line overlaps it
+only when inactive).
+
 ## References
 
 - Apple: [Notarizing macOS software before distribution](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
