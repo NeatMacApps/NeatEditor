@@ -6,7 +6,11 @@
 
 构建成功并不代表正式安装版已携带新图标；必须同时确认构建产物与 `/Applications/NeatEditor.app` 内的图标一致，再清理旧注册记录并刷新系统图标服务。
 
-**当前生效图标是蓝底、白纸卷在滚轴上的那张，母版在 `design/app-icon/AppIcon-1024.png`。** 工程图标资源必须跟母版走。白底手写 A 是 2026-03 占位图，不是现行图标；不得再留在资源集、本地构建产物或已登记的应用包里。从仍含占位图的旧提交拉仓或还原时，装包前先按母版换图标，禁止把占位图装回本机。
+**当前生效图标是蓝底、白纸卷在滚轴上，纸面印有深蓝色衬线 N 的那张，母版在 `design/app-icon/AppIcon-1024.png`。** 工程图标资源必须跟母版走。白底手写 A 是 2026-03 占位图，不是现行图标；不得再留在资源集、本地构建产物或已登记的应用包里。从仍含占位图的旧提交拉仓或还原时，装包前先按母版换图标，禁止把占位图装回本机。
+
+## Approved artwork (2026-10-27)
+
+The owner approved the serif-N revision for production: the foreground roller hides the lower **one third of the complete letter height**, leaving the upper two thirds visible. This is intentional occlusion, not a nearly complete N merely touching the roller. Preserve the existing blue background, white sheet and folded corner, navy roller and cyan ends; do not recenter or resize the approved composition. The 1024 × 1024 master is opaque. Generate all ten existing macOS app-icon slots from that master and keep `docs/images/app-icon.png` synchronized for every localized README. Earlier blank-paper and nearly unoccluded-N candidates are not the current artwork.
 
 ## 排查顺序
 
