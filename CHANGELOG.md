@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.21 - 2026-10-27
+
+### Fixed
+
+- Let the sidebar reach the top of the window again behind the window controls. Since 1.0.19 the active window showed a white bar above the sidebar.
+- Keep double-click and drag on empty parts of the top row working with the restored sidebar, including above the sidebar and beside the window controls when the sidebar is hidden.
+
+### 简体中文
+
+- 侧边栏重新铺到窗口顶部，红绿灯按钮后面也是侧边栏。自 1.0.19 起，激活状态的窗口在侧边栏上方会出现一块白色区域。
+- 侧边栏恢复后，双击或拖动顶部一行的空白处仍然有效，包括侧边栏上方，以及隐藏侧边栏时红绿灯按钮旁边的空白处。
+
 ## 1.0.20 - 2026-10-27
 
 ### Fixed
