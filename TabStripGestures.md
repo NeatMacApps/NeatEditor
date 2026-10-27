@@ -472,7 +472,7 @@ hit-testing with and without a SwiftUI host/sidebar, button/tab targets,
 minimum widths, full-screen reparenting and the frame-view redirect for blank
 band hits. Debug static analysis and the universal arm64/x86_64 Release build
 pass; logs are in `build/titlebar-repair/test-final-routing.log`,
-`analyze-routing.log` and `release-routing.log`. A real SwiftUI `Window` scene
+`analyze-routing.log` and `release-final.log`. A real SwiftUI `Window` scene
 probe with the production band and accessory reported the blank point between
 `+` and pin as the window frame view; a synthesized double-click there resized
 the window to the screen's visible frame instead of doing nothing. The installed
