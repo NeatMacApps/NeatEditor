@@ -445,7 +445,16 @@ the content-band fallback when full screen hides the titlebar. Official
 [NSTitlebarAccessoryViewController](https://developer.apple.com/documentation/appkit/nstitlebaraccessoryviewcontroller)
 and [titlebar transparency](https://developer.apple.com/documentation/appkit/nswindow/titlebarappearstransparent)
 were checked against the installed Xcode 27.2 SDK headers. No private titlebar
-subviews or preference emulation are used. Move the same controls to the content
+subviews or preference emulation are used. The SwiftUI scene uses `.titleBar`,
+not `.hiddenTitleBar`: a real SwiftUI Scene probe showed the latter resetting
+`titlebarAppearsTransparent` to true after AppKit attachment. The normal scene
+style preserves native opaque chrome while `titleVisibility = .hidden` still
+hides the title. An `NSHostingController` fixture alone misses this Scene-level
+reset. With the old Scene style, the installed editor's full-size content also
+covered the accessory's selected-tab fill and trailing buttons; installed visual
+acceptance must retain those controls and the open join.
+
+Move the same controls to the content
 band only after full-screen entry succeeds, and restore the accessory after
 full-screen exit succeeds; failed transitions must not strand hidden controls.
 

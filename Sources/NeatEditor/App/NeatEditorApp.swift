@@ -41,7 +41,8 @@ struct NeatEditorApp: App {
                 .environment(workspaceStore)
         }
         .handlesExternalEvents(matching: [])
-        .windowStyle(.hiddenTitleBar)
+        // AppKit hides the title; keep native chrome opaque for blank-titlebar gestures.
+        .windowStyle(.titleBar)
         .defaultSize(width: 800, height: 600)
         .commands {
             NeatEditorUpdateCommands()

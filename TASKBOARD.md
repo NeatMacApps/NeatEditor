@@ -4,5 +4,5 @@
 
 | 任务 | 状态 | 影响范围 | 开始 | 最近更新 | 备注 |
 |---|---|---|---|---|---|
-| Blank titlebar double-click repair (Pi) | 验证中 | WorkspaceSplitView, tab hit-testing, titlebar tests, TabStripGestures.md; Xcode + AppKit | 10:38 | 2026-10-27 10:55 | Whole-window routing, controls and full-screen ownership pass; 114 tests. Universal Release + analyze next; physical pointer input blocked by screen lock. |
+| Blank titlebar double-click repair (Pi) | 验证中 | NeatEditorApp scene, WorkspaceSplitView, titlebar tests, TabStripGestures.md; Xcode + AppKit | 10:38 | 2026-10-27 11:11 | Scene-level hiddenTitleBar reset reproduced; align normal native style before reinstall. 114 tests; pointer acceptance blocked by lock. |
 | Editor rendering repair (Pi) | 完成（待重启验收） | Editor/AppKitBridge container, gutter, ZoomableTextView; rendering tests; editing contract + parent KB | 15:02 | 2026-10-25 17:20 | TextKit 2 migration complete; no legacy layoutManager reads. Production-view fixture passed sequential insert/delete, 200-line bottom viewport, final-line and search-highlight captures; integrated initial surface checked. 91 tests + analyze + universal Release build pass. Pushed 94423bc/36ca51c; Release installed to /Applications, running 1.0.15 process intentionally not restarted for the tab owner's acceptance. |
