@@ -3,6 +3,35 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.25</title>
+            <pubDate>Thu, 29 Oct 2026 13:42:01 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>25</sparkle:version>
+            <sparkle:shortVersionString>1.0.25</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.25
+
+## 1.0.25 - 2026-10-29
+
+### Changed
+
+- Faster typing in large documents: line numbers now update incrementally instead of rescanning the whole file on every keystroke.
+- Faster folder listing: sorting no longer re-reads file names on every comparison.
+- Faster, lighter saving: blank checks no longer copy the document, first-save naming reuses its formatter, and automatic saving writes in the background while manual saves keep their immediate behavior.
+- Large files (over 2 MB) load through memory mapping; smaller files keep the faster direct read.
+- Update checks now start after the first window appears instead of during launch.
+
+### 简体中文
+
+- 大文档输入更快：行号改为增量更新，不再每次击键都全量扫描。
+- 文件夹列表更快：排序不再每次比较都重复读取文件名。
+- 保存更快更轻：空白检查不再复制全文，首次命名复用日期格式器，自动保存改为后台写入，手动保存仍保持即时行为。
+- 大文件（超过 2 MB）走内存映射加载，小文件保持更快的直接读取。
+- 更新检查改为首个窗口出现后启动，不再占用启动路径。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.25/NeatEditor-1.0.25.zip" length="3716900" type="application/octet-stream" sparkle:edSignature="jXNu8pAuZivpI37xSupZmOMnmZgUfLK9/JDriM0Csyzkk9N0JVPooclq+BGa8ubpOHiNN4EHAnQOL4ygTuJaCw=="/>
+        </item>
+        <item>
             <title>1.0.24</title>
             <pubDate>Tue, 27 Oct 2026 18:28:08 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
