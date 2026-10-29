@@ -536,6 +536,35 @@ Inactive installed pixels: top row, sidebar and window edge share the band color
 in dark (53) and light (236, forced Aqua) appearances; the editor stays the
 light/dark surface. Key-window check remains with the owner.
 
+## 1.0.25 performance pass (2026-10-29)
+
+Scope: microsecond-level hot paths (blank-check without allocation,
+cached `DateFormatter`, sidebar sort key pre-extraction, incremental gutter
+index, 2 MB read branch, background autosave entry) plus Sparkle deferral to
+post-first-frame and a permanent 6-checkpoint launch profiler. No UI changes.
+
+Published [v1.0.25](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.25)
+from immutable source `a036aae`; appcast commit `8442024`. Apple accepted app
+submission `0e5df963-9f0a-4f1b-bad0-dd814000d548` and DMG submission
+`fb37733a-6c38-47f7-bf9b-3dc1ebc29cf4`. Anonymous downloads matched SHA256SUMS
+and local bytes; DMG
+`2a636a0f7a518039fc71e0c92b48b7eeb4ab9e63e3d6f40b8ed2385504bcc247`,
+ZIP
+`5ad0e2efce20f4a124b87e447bbe458f4db5ea1a6ee52e08a65257a29f7f4bc9`;
+repo and raw appcast serve build 25. Installed from the public DMG (same
+Developer ID; strict signature and staple pass; `spctl`:
+`source=Notarized Developer ID`, `override=security disabled`); executable
+SHA256 `c8c2816ebb07f3241cd621e7c8901eaf12a3c6699abfd95d82c291bbe7c49795`.
+117 tests. Key-window capture remains with the owner.
+
+Transport note: the publisher died at tag push with `Connection closed by
+198.18.0.5 port 22` (SSH). Following the 1.0.14 precedent, only publication
+was resumed over HTTPS (`git -c credential.helper= -c
+'credential.helper=!gh auth git-credential'` + `gh`): branch/tag push, draft
+reuse, one-by-one uploads with read-back, exact three-file set, download
+byte-compare + SHA256, publish, appcast regeneration from the unchanged signed
+ZIP. No rebuild, re-sign or re-notarization.
+
 ## References
 
 - Apple: [Notarizing macOS software before distribution](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
