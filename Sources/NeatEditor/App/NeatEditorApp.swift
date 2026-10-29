@@ -31,7 +31,8 @@ struct NeatEditorApp: App {
     }
 
     var body: some Scene {
-        Window("NeatEditor", id: "main") {
+        LaunchProfiler.recordBodyEvaluated()
+        return Window("NeatEditor", id: "main") {
             WorkspaceView()
                 .frame(
                     minWidth: WorkspaceSplitView.minimumWindowWidth(

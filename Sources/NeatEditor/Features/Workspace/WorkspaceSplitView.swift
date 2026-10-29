@@ -26,7 +26,8 @@ struct WorkspaceSplitView: NSViewControllerRepresentable {
     }
 
     func makeNSViewController(context: Context) -> WorkspaceSplitViewController {
-        WorkspaceSplitViewController(configuration: self)
+        LaunchProfiler.recordMakeStart()
+        return WorkspaceSplitViewController(configuration: self)
     }
 
     func updateNSViewController(_ controller: WorkspaceSplitViewController, context: Context) {
@@ -57,6 +58,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         sidebarController = NSHostingController(rootView: configuration.sidebar)
         detailController = WorkspaceEditorViewController(rootView: configuration.detail)
         super.init(nibName: nil, bundle: nil)
+        LaunchProfiler.recordBridgeReady()
         detailController.strip.update(tabs: configuration.tabs, selectedTabID: configuration.selectedTabID,
                                       actions: configuration.tabActions)
         detailController.accessoryViews = [sidebarButton]

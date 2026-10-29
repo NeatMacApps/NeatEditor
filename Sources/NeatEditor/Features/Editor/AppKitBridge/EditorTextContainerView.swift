@@ -90,6 +90,7 @@ final class EditorTextContainerView: NSView {
         self.textView.onIncreaseFontSize = onIncreaseFontSize
         self.textView.onDecreaseFontSize = onDecreaseFontSize
         refreshLineNumbers()
+        LaunchProfiler.recordEditorReady()
     }
 
     @available(*, unavailable)
