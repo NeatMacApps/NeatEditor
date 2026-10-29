@@ -105,6 +105,8 @@ view frame and passed geometry tests, but the installed TextKit 2 surface still
 stopped drawing text above the inset while gutter labels continued to the bottom.
 A full-height frame alone is insufficient evidence; check the rendered bottom
 rows outside the count and the actual text viewport, not only Auto Layout.
+The reusable inset/viewport lesson is maintained in the shared
+[AppKit guide](~/Codes/_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md#floating-content-and-bottom-text-padding-2026-10-29).
 
 The count is computed away from the main actor and coalesced. It uses the
 committed buffer, never marked IME text; superseded work must not publish after
@@ -115,7 +117,35 @@ Acceptance: type, switch tabs, compose with IME, search and resize wide/narrow;
 inspect light/dark and English/Chinese. Verify the count updates live, remains
 readable over the editor, leaves the final line fully visible at maximum scroll,
 and disappears for Settings. Keep diagnostics and actual-path evidence under
-`build/character-count/`; a hosted view test does not substitute for the installed UI.
+`build/floating-count/` for the current correction (`build/character-count/` for
+historical evidence); a hosted view test does not substitute for the installed UI.
+
+Correction acceptance (2026-10-29, source `c24774e`): the complete arm64 suite
+passes 119 tests in 17 suites with zero failures/skips. Debug and Release app
+build/analyze pass for arm64 and x86_64; complete initial and final diagnostics
+are in `build/floating-count/logs/`. The unused DEBUG profiler return-value
+warning was fixed; only the individually assessed AppIntents metadata notice
+remains. Frame tests cover 360/900 pt editors, full-height gutters and unchanged
+8 pt top origin. Native TextKit 2 tests scroll a long wrapped CJK/emoji document's
+final caret fully above the count at both 13 and 36 pt.
+
+The same Developer ID-signed universal Release was installed at
+`/Applications/NeatEditor.app` (version/build remain 1.0.25/25; no public release
+requested). Inspected fresh installed captures show bottom-row text continuing
+outside the local count capsule, including dense wrapped text. Verified English
+at 1335 × 740 pt and Chinese at 600 × 520 pt; actual system dark-mode switching
+produced the inspected dark capture, whereas the launch-only dark argument did
+not. Settings has no count; the native Find command leaves the count above its
+search bar. Evidence, executable hashes and restoration receipts are under
+`build/floating-count/`. The original four tabs, selected file, window frame,
+normal launch arguments and light appearance were restored; no document content
+was edited. No virtual display was connected.
+
+Limits: the execution host is macOS 27.2 / Xcode 27.2, not macOS 26. The locked
+session permits fresh rendering and menu commands but not reliable body input;
+installed pointer scrolling, typing/IME and final-line-at-maximum-scroll are not
+claimed. The final-line result above is native production-view test evidence,
+not installed interaction evidence. Native Intel execution is also unverified.
 
 Historical acceptance of the superseded shortened viewport (2026-10-27):
 107 tests in 16 suites, analyze and the universal
