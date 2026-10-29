@@ -16,6 +16,14 @@ final class ZoomableTextView: NSTextView {
     var onCompositionEnd: () -> Void = {}
     var onOpenFiles: ([URL]) -> Void = { _ in }
     var tabBehavior: TabBehavior = .spaces2
+    var bottomScrollPadding: CGFloat = 0
+
+    override var textContainerOrigin: NSPoint {
+        let origin = super.textContainerOrigin
+        // The native symmetric inset supplies extra document height; move its
+        // top half back up so all additional space remains below the text.
+        return NSPoint(x: origin.x, y: origin.y - bottomScrollPadding / 2)
+    }
 
     override var readablePasteboardTypes: [NSPasteboard.PasteboardType] {
         prioritizedPasteboardTypes(from: super.readablePasteboardTypes)

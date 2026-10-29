@@ -92,8 +92,9 @@ struct EditorCharacterCountIntegrationTests {
 
         #expect(scrollView.frame.maxY == container.bounds.maxY)
         #expect(scrollView.contentView.frame.height == container.bounds.height)
-        #expect(scrollView.contentInsets.bottom == EditorCharacterCountLayout.scrollableBottomInset)
-        #expect(scrollView.automaticallyAdjustsContentInsets == false)
+        #expect(scrollView.contentInsets.bottom == 0)
+        #expect(container.textView.textContainerOrigin.y == 8)
+        #expect(container.textView.bottomScrollPadding == EditorCharacterCountLayout.scrollableBottomInset)
         let gutter = try #require(container.subviews.compactMap { $0 as? LineNumberGutterView }.first)
         #expect(gutter.frame.height == container.bounds.height)
         #expect(container.textView.textLayoutManager != nil)
@@ -116,6 +117,7 @@ struct EditorCharacterCountIntegrationTests {
         let caretOnScreen = editor.firstRect(forCharacterRange: end, actualRange: nil)
         let caret = editor.convert(window.convertFromScreen(caretOnScreen), from: nil)
         let viewport = scrollView.contentView.bounds
+        #expect(editor.visibleRect.maxY == viewport.maxY)
         #expect(viewport.minY > 0)
         #expect(caret.height > 0)
         #expect(caret.maxY <= viewport.maxY - EditorCharacterCountLayout.scrollableBottomInset + 1)

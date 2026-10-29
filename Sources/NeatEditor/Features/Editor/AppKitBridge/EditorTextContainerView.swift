@@ -319,7 +319,10 @@ final class EditorTextContainerView: NSView {
         textView.isAutomaticDataDetectionEnabled = false
         textView.font = editorMonospacedFont()
         textView.drawsBackground = true
-        textView.textContainerInset = NSSize(width: 8, height: 8)
+        textView.bottomScrollPadding = EditorCharacterCountLayout.scrollableBottomInset
+        textView.textContainerInset = NSSize(
+            width: 8, height: 8 + textView.bottomScrollPadding / 2
+        )
         textView.isHorizontallyResizable = false
         textView.isVerticallyResizable = true
         textView.maxSize = NSSize(
@@ -426,13 +429,6 @@ final class EditorTextContainerView: NSView {
         // Keep the thin, auto-hiding knob even if the system prefers legacy
         // scrollers; the editor must not reserve a permanent scrollbar column.
         scrollView.scrollerStyle = .overlay
-        // Let the final line scroll clear of the local count without clipping
-        // every other line across the bottom of the viewport.
-        scrollView.automaticallyAdjustsContentInsets = false
-        scrollView.contentInsets = NSEdgeInsets(
-            top: 0, left: 0,
-            bottom: EditorCharacterCountLayout.scrollableBottomInset, right: 0
-        )
         scrollView.contentView.postsBoundsChangedNotifications = true
         scrollView.focusRingType = .none
     }

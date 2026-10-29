@@ -78,9 +78,9 @@ workspace shows no count.
 
 Retain 11 pt secondary text with monospaced digits, 16 pt trailing and 6 pt
 bottom outer inset; local padding belongs inside the capsule. The count stays
-non-interactive and passes clicks through. Use native scrollable bottom content
-insets, not a shorter scroll-view frame, so the final text line and caret can
-scroll fully above the count. Other text at the bottom edge remains visible
+non-interactive and passes clicks through. Add scrollable space to the native
+text document, not a shorter scroll-view frame or scroll-view content inset,
+so the final text line and caret can scroll fully above the count. Other text at the bottom edge remains visible
 outside the count's local bounds; a background alone is not proof that the final
 line is accessible. Counts are extended grapheme clusters, including spaces and
 line breaks, with locale grouping separators.
@@ -89,12 +89,22 @@ Reference inspected: the existing `EditorCharacterCountView`, its workspace
 bottom-trailing overlay and `EditorTextContainerView`'s scroll-view constraints.
 Reuse that count/overlay and `EditorChrome.editorSurface` rather than introducing
 a status bar or glass control over a flat editor. Public APIs: SwiftUI
-`background(_:in:)` with `Capsule`, and AppKit
-[`NSScrollView.contentInsets`](https://developer.apple.com/documentation/appkit/nsscrollview/contentinsets)
-with `automaticallyAdjustsContentInsets = false`. Apple's documented nonzero-inset
-tiling keeps the content view full-sized; verify frame, scrolling and final-line
-geometry separately on the installed SDK/runtime. No text-layout, input-method
-or count-computation change is intended.
+`background(_:in:)` with `Capsule`, AppKit
+[`NSTextView.textContainerInset`](https://developer.apple.com/documentation/appkit/nstextview/textcontainerinset)
+and its overridable `textContainerOrigin`. Inspect and adapt only the bottom
+padding/origin calculation in Christian Tietze's
+[one-sided overscrolling reference](https://christiantietze.de/posts/2017/07/typewriter-mode-overscrolling/):
+half the extra padding is added to the symmetric vertical inset, then subtracted
+from the text origin to preserve the existing 8 pt top margin. No typewriter
+mode, scroll locking or resize observer is adopted. Verify this older reference
+against the current TextKit 2 engine, gutter coordinates and final-line geometry.
+No input-method or count-computation change is intended.
+
+Rejected implementation: `NSScrollView.contentInsets` retained a full-sized clip
+view frame and passed geometry tests, but the installed TextKit 2 surface still
+stopped drawing text above the inset while gutter labels continued to the bottom.
+A full-height frame alone is insufficient evidence; check the rendered bottom
+rows outside the count and the actual text viewport, not only Auto Layout.
 
 The count is computed away from the main actor and coalesced. It uses the
 committed buffer, never marked IME text; superseded work must not publish after
