@@ -3,6 +3,7 @@ import SwiftUI
 @main
 enum NeatEditorEntry {
     static func main() {
+        LaunchProfiler.recordEntry()
         MacScrollerPreference.install()
         NeatEditorApp.main()
     }
@@ -16,6 +17,7 @@ struct NeatEditorApp: App {
     init() {
         let workspaceStore = WorkspaceStore()
         self.workspaceStore = workspaceStore
+        LaunchProfiler.recordStoreReady()
 
         updater.onWillInstallUpdate = { [weak workspaceStore] in
             workspaceStore?.saveAllDocuments()
@@ -39,6 +41,10 @@ struct NeatEditorApp: App {
                     minHeight: settingsSelected ? max(440, EditorTabStripView.minimumWindowEdge) : EditorTabStripView.minimumWindowEdge
                 )
                 .environment(workspaceStore)
+                .task {
+                    LaunchProfiler.recordFirstFrame()
+                    AppUpdater.shared.warmUp()
+                }
         }
         .handlesExternalEvents(matching: [])
         // Opaque native titlebar: its toolbar view owns blank-titlebar double-click

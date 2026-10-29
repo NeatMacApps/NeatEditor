@@ -30,8 +30,24 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate, @preconcurrency SPUStandar
     @ObservationIgnored
     private var observations: [NSKeyValueObservation] = []
 
+    /// Heavy lifting deferred off the launch path. `init` stays a plain
+    /// `NSObject` init; the Sparkle controller (XPC, bundle checks, KVO)
+    /// starts on the first `warmUp`/use, i.e. post-first-frame.
+    private var isStarted = false
+
     private override init() {
         super.init()
+    }
+
+    /// Post-first-frame entry point (called from the main window `.task`).
+    /// Idempotent; also invoked lazily from every public use.
+    func warmUp() {
+        ensureStarted()
+    }
+
+    private func ensureStarted() {
+        guard !isStarted else { return }
+        isStarted = true
         _ = controller
         for keyPath in [
             \SPUUpdater.canCheckForUpdates,
@@ -47,25 +63,30 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate, @preconcurrency SPUStandar
     }
 
     var sessionInProgress: Bool {
-        controller.updater.sessionInProgress
+        ensureStarted()
+        return controller.updater.sessionInProgress
     }
 
     func checkForUpdates() {
+        ensureStarted()
         guard canCheckForUpdates else { return }
         controller.checkForUpdates(nil)
     }
 
     func setAutomaticChecks(_ enabled: Bool) {
+        ensureStarted()
         controller.updater.automaticallyChecksForUpdates = enabled
         refresh()
     }
 
     func setAutomaticDownloads(_ enabled: Bool) {
+        ensureStarted()
         controller.updater.automaticallyDownloadsUpdates = enabled
         refresh()
     }
 
     private func refresh() {
+        ensureStarted()
         let updater = controller.updater
         canCheckForUpdates = updater.canCheckForUpdates
         automaticallyChecksForUpdates = updater.automaticallyChecksForUpdates
