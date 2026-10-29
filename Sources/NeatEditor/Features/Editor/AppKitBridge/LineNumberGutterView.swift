@@ -1,5 +1,39 @@
 import AppKit
 
+/// Forwards `NSTextStorage` character edits to the gutter's incremental line
+/// index. `NSView` subclasses are `@MainActor`-isolated in this SDK, but the
+/// `NSTextStorageDelegate` witness must be nonisolated, so the conformance
+/// lives on this plain `NSObject` instead of on `LineNumberGutterView`
+/// (same split as `Coordinator` and its text view). Main-thread-only by
+/// construction: AppKit invokes storage delegates on the editing thread
+/// (guarded below), and the gutter link is set from the view's own
+/// main-thread setup path, so the unchecked conformance is sound.
+private final class GutterStorageDelegate: NSObject, NSTextStorageDelegate, @unchecked Sendable {
+    weak var gutter: LineNumberGutterView?
+
+    func textStorage(
+        _ textStorage: NSTextStorage,
+        didProcessEditing editedMask: NSTextStorageEditActions,
+        range editedRange: NSRange,
+        changeInLength delta: Int
+    ) {
+        // AppKit drives storage delegates on the main thread. If that ever
+        // changes, skip the incremental path: the next `ensure` on the main
+        // thread sees the length mismatch and falls back to a full rebuild.
+        guard Thread.isMainThread else {
+            return
+        }
+        let isCharacterEdit = editedMask.contains(.editedCharacters)
+        MainActor.assumeIsolated {
+            gutter?.handleStorageEdit(
+                range: editedRange,
+                changeInLength: delta,
+                isCharacterEdit: isCharacterEdit
+            )
+        }
+    }
+}
+
 final class LineNumberGutterView: NSView {
     enum Metrics {
         static let minimumDigits = 3
@@ -13,6 +47,14 @@ final class LineNumberGutterView: NSView {
     private weak var textView: NSTextView?
     private var lineStartIndices = [0]
     private var cachedLineCount = 1
+    // Incremental line-index bookkeeping. The gutter observes character edits
+    // through the storage delegate and only rescans from the edited line,
+    // resynchronizing onto the shifted suffix instead of walking the whole
+    // document on every keystroke. `indexedLength` is the UTF-16 length the
+    // index was built for; `observedStorage` detects a replaced storage so a
+    // missed edit can never leave a stale index behind.
+    private weak var observedStorage: NSTextStorage?
+    private var indexedLength = 0
 
     override var isFlipped: Bool {
         true
@@ -164,7 +206,7 @@ final class LineNumberGutterView: NSView {
 
     @objc
     private func handleTextDidChange() {
-        rebuildLineMetrics()
+        ensureLineMetricsCurrent()
         needsDisplay = true
         superview.flatMap { $0 as? EditorTextContainerView }?.refreshLineNumbers()
     }
@@ -182,7 +224,7 @@ final class LineNumberGutterView: NSView {
     }
 
     func synchronizeLineMetrics() {
-        rebuildLineMetrics()
+        ensureLineMetricsCurrent()
         needsDisplay = true
     }
 
@@ -204,12 +246,182 @@ final class LineNumberGutterView: NSView {
             name: NSView.boundsDidChangeNotification,
             object: scrollView.contentView
         )
+        attachStorageDelegate()
+    }
+
+    // MARK: - Incremental line index
+
+    private let storageDelegate = GutterStorageDelegate()
+
+    /// Character edits arrive here synchronously, before
+    /// `NSText.didChangeNotification`. Attribute-only edits (search
+    /// highlights) carry no character change and leave line structure
+    /// untouched, so they are ignored.
+    func handleStorageEdit(
+        range editedRange: NSRange,
+        changeInLength delta: Int,
+        isCharacterEdit: Bool
+    ) {
+        guard isCharacterEdit else {
+            return
+        }
+        if let storage = textView?.textStorage {
+            observedStorage = storage
+        }
+        if !applyIncrementalLineEdit(editedRange: editedRange, changeInLength: delta) {
+            rebuildLineMetrics()
+        }
+    }
+
+    /// Fast path shared by the keystroke notification and the push/rebind
+    /// entry point. The delegate already keeps the index current, so both
+    /// only fall back to a full scan when the storage was replaced or an
+    /// edit was missed (length mismatch).
+    private func ensureLineMetricsCurrent() {
+        attachStorageDelegate()
+        guard let textView else {
+            lineStartIndices = [0]
+            cachedLineCount = 1
+            indexedLength = 0
+            return
+        }
+        guard let storage = textView.textStorage,
+              observedStorage === storage,
+              (storage.delegate as? GutterStorageDelegate) === storageDelegate else {
+            rebuildLineMetrics()
+            return
+        }
+        if storage.length != indexedLength {
+            rebuildLineMetrics()
+        }
+    }
+
+    private func attachStorageDelegate() {
+        storageDelegate.gutter = self
+        guard let storage = textView?.textStorage else {
+            return
+        }
+        if observedStorage !== storage || (storage.delegate as? GutterStorageDelegate) !== storageDelegate {
+            storage.delegate = storageDelegate
+            observedStorage = storage
+        }
+    }
+
+    /// Rebuild only the index entries at and after the edited line. Entries
+    /// before the edit are byte-identical, so they are kept; the rescan stops
+    /// as soon as a regenerated line start realigns with a shifted old
+    /// entry, and the remaining suffix is carried over with the length delta
+    /// instead of being rescanned. Returns false when the old index cannot
+    /// be trusted, letting the caller fall back to a full rebuild.
+    private func applyIncrementalLineEdit(editedRange: NSRange, changeInLength delta: Int) -> Bool {
+        guard let storage = textView?.textStorage else {
+            return false
+        }
+        let string = storage.string as NSString
+        let newLength = string.length
+        guard newLength > 0 else {
+            lineStartIndices = [0]
+            cachedLineCount = 1
+            indexedLength = 0
+            return true
+        }
+        let editLocation = editedRange.location
+        let editLength = editedRange.length
+        guard editLocation >= 0,
+              editLength >= 0,
+              editLocation + editLength <= newLength else {
+            return false
+        }
+        let oldEditEnd = editLocation + editLength - delta
+        guard oldEditEnd >= 0, oldEditEnd <= indexedLength else {
+            return false
+        }
+        guard lineStartIndices.first == 0 else {
+            return false
+        }
+
+        var low = 0
+        var high = lineStartIndices.count
+        while low < high {
+            let mid = (low + high) / 2
+            if lineStartIndices[mid] <= editLocation {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        let prefixCount = low
+        guard prefixCount > 0 else {
+            return false
+        }
+
+        var suffixLow = 0
+        var suffixHigh = lineStartIndices.count
+        while suffixLow < suffixHigh {
+            let mid = (suffixLow + suffixHigh) / 2
+            if lineStartIndices[mid] <= oldEditEnd {
+                suffixLow = mid + 1
+            } else {
+                suffixHigh = mid
+            }
+        }
+        let suffixStart = suffixLow
+
+        var updatedLineStartIndices = Array(lineStartIndices.prefix(prefixCount))
+        var lineStart = lineStartIndices[prefixCount - 1]
+        let editEnd = editLocation + editLength
+        while lineStart < newLength {
+            var lineEnd = lineStart
+            var contentsEnd = lineStart
+            string.getLineStart(
+                nil,
+                end: &lineEnd,
+                contentsEnd: &contentsEnd,
+                for: NSRange(location: lineStart, length: 0)
+            )
+            guard lineEnd > contentsEnd else { break }
+            updatedLineStartIndices.append(lineEnd)
+            lineStart = lineEnd
+            if lineStart > editEnd, suffixStart < lineStartIndices.count {
+                if let match = shiftedSuffixIndex(for: lineStart - delta, from: suffixStart) {
+                    for oldIndex in (match + 1)..<lineStartIndices.count {
+                        updatedLineStartIndices.append(lineStartIndices[oldIndex] + delta)
+                    }
+                    break
+                }
+            }
+        }
+
+        lineStartIndices = updatedLineStartIndices
+        cachedLineCount = max(1, updatedLineStartIndices.count)
+        indexedLength = newLength
+        return true
+    }
+
+    /// Binary search for an old line start at or after `start`, returning its
+    /// position only on an exact match.
+    private func shiftedSuffixIndex(for target: Int, from start: Int) -> Int? {
+        var low = start
+        var high = lineStartIndices.count
+        while low < high {
+            let mid = (low + high) / 2
+            if lineStartIndices[mid] < target {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        guard low < lineStartIndices.count, lineStartIndices[low] == target else {
+            return nil
+        }
+        return low
     }
 
     private func rebuildLineMetrics() {
         guard let textView else {
             lineStartIndices = [0]
             cachedLineCount = 1
+            indexedLength = 0
             return
         }
 
@@ -217,6 +429,7 @@ final class LineNumberGutterView: NSView {
         guard string.length > 0 else {
             lineStartIndices = [0]
             cachedLineCount = 1
+            indexedLength = 0
             return
         }
 
@@ -238,6 +451,7 @@ final class LineNumberGutterView: NSView {
 
         lineStartIndices = updatedLineStartIndices
         cachedLineCount = max(1, updatedLineStartIndices.count)
+        indexedLength = string.length
     }
 
     private var textAttributes: [NSAttributedString.Key: Any] {

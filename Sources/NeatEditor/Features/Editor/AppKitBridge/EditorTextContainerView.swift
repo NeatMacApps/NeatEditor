@@ -44,6 +44,10 @@ final class EditorTextContainerView: NSView {
     private var appliedTextColor: NSColor?
     private var appliedBackgroundColor: NSColor?
     private var appliedInsertionPointColor: NSColor?
+    // Last-applied gutter width. The gutter posts `refreshLineNumbers` on
+    // every keystroke (and the coordinator posts it again for the same edit);
+    // rewriting an unchanged width constraint would dirty layout each time.
+    private var appliedGutterWidth: CGFloat?
 
     override var isFlipped: Bool {
         true
@@ -95,7 +99,10 @@ final class EditorTextContainerView: NSView {
 
     func refreshLineNumbers() {
         let gutterWidth = lineNumberView.requiredWidth
-        gutterWidthConstraint?.constant = gutterWidth
+        if appliedGutterWidth != gutterWidth {
+            gutterWidthConstraint?.constant = gutterWidth
+            appliedGutterWidth = gutterWidth
+        }
         lineNumberView.needsDisplay = true
     }
 
@@ -436,6 +443,7 @@ final class EditorTextContainerView: NSView {
             equalToConstant: lineNumberView.requiredWidth
         )
         self.gutterWidthConstraint = gutterWidthConstraint
+        self.appliedGutterWidth = lineNumberView.requiredWidth
 
         NSLayoutConstraint.activate([
             lineNumberView.leadingAnchor.constraint(equalTo: leadingAnchor),

@@ -1,8 +1,26 @@
 import AppKit
 import Foundation
+import ObjectiveC
+
+nonisolated(unsafe) private var sidebarIndexAssociationKey: UInt8 = 0
 
 extension WorkspaceStore {
     // MARK: - Sidebar
+
+    /// O(1) index of `sidebarFiles` by file URL. All mutations of
+    /// `sidebarFiles` go through this file, so the cache is rebuilt at
+    /// every write site; lookups verify the entry before writing and fall
+    /// back to a linear scan on any drift, preserving exact semantics.
+    private var cachedSidebarIndex: [URL: Int]? {
+        get { objc_getAssociatedObject(self, &sidebarIndexAssociationKey) as? [URL: Int] }
+        set { objc_setAssociatedObject(self, &sidebarIndexAssociationKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
+    }
+
+    private func rebuildSidebarIndex() {
+        cachedSidebarIndex = Dictionary(
+            uniqueKeysWithValues: sidebarFiles.enumerated().map { ($1.fileURL, $0) }
+        )
+    }
 
     var selectedSidebarFileURL: URL? {
         guard let selectedTabID,
@@ -64,6 +82,7 @@ extension WorkspaceStore {
         documentsFolder = normalizedURL
         sidebarDiskFiles = []
         sidebarFiles = []
+        cachedSidebarIndex = [:]
         sidebarFailureMessage = nil
         saveState()
         refreshSidebarFiles()
@@ -123,6 +142,7 @@ extension WorkspaceStore {
 
                 sidebarDiskFiles = diskItems
                 sidebarFiles = diskItems
+                rebuildSidebarIndex()
                 for tab in tabs where tab.isContentLoaded {
                     if let fileURL = tab.fileURL {
                         updateSidebarPreview(for: fileURL, content: tab.content)
@@ -163,9 +183,18 @@ extension WorkspaceStore {
 
     func updateSidebarPreview(for fileURL: URL, content: String) {
         let normalizedURL = persistenceService.normalizedFileURL(for: fileURL)
+        if let cache = cachedSidebarIndex,
+           cache.count == sidebarFiles.count,
+           let index = cache[normalizedURL],
+           sidebarFiles.indices.contains(index),
+           sidebarFiles[index].fileURL == normalizedURL {
+            sidebarFiles[index].preview = DocumentPersistenceService.sidebarPreviewExcerpt(from: content)
+            return
+        }
         guard let index = sidebarFiles.firstIndex(where: { $0.fileURL == normalizedURL }) else {
             return
         }
+        rebuildSidebarIndex()
         sidebarFiles[index].preview = DocumentPersistenceService.sidebarPreviewExcerpt(from: content)
     }
 

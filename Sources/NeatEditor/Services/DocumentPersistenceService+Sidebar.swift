@@ -73,15 +73,18 @@ extension DocumentPersistenceService {
                 fileSize: values.fileSize ?? 0
             ))
         }
-        return infos.sorted { lhs, rhs in
-            let comparison = lhs.fileURL.lastPathComponent.localizedStandardCompare(
-                rhs.fileURL.lastPathComponent
-            )
+        // Pre-extract the display name once per file: the old comparator
+        // recomputed `lastPathComponent` on every comparison (O(N log N)
+        // extractions). Sorting on precomputed keys keeps the exact same
+        // order (natural descending, path fallback).
+        let keyed = infos.map { ($0.fileURL.lastPathComponent, $0) }
+        return keyed.sorted { lhs, rhs in
+            let comparison = lhs.0.localizedStandardCompare(rhs.0)
             if comparison != .orderedSame {
                 return comparison == .orderedDescending
             }
-            return lhs.fileURL.path > rhs.fileURL.path
-        }
+            return lhs.1.fileURL.path > rhs.1.fileURL.path
+        }.map(\.1)
     }
 
     /// Copies documents left in the pre-folder app library into `directory`.
