@@ -86,7 +86,7 @@ enum LaunchProfiler {
             let url = URL(fileURLWithPath: "/tmp/neat-launch-times.log")
             if FileManager.default.fileExists(atPath: url.path),
                let handle = try? FileHandle(forWritingTo: url) {
-                try? handle.seekToEnd()
+                _ = try? handle.seekToEnd()
                 try? handle.write(contentsOf: data)
                 try? handle.close()
             } else {

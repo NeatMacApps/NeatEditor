@@ -65,22 +65,36 @@ Historical acceptance for 1.0.8 (8), before the owner removed Text Softness: Eng
 Historical 1.0.8 diagnostics: 51 tests in six suites passed; the scheduler suite passed again after its weak-reference warning was repaired. Release build and analyze passed. The ineffective Sparkle delegate `@preconcurrency` annotation was removed. The remaining Xcode App Intents metadata-extraction warning comes from the build tool finding no AppIntents dependency in this target: this settings change adds no intents, metadata is not required for these controls, and existing editor behavior is unaffected. Reassess the warning when an App Intents capability is introduced; no diagnostic was suppressed. The Developer ID-signed, stapled universal 1.0.8 app was installed and its Settings tab inspected again. The public [1.0.8 release](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.8) contains the notarized DMG, signed ZIP and SHA256SUMS; all three downloaded bytes matched, and its release-time Sparkle feed served build 8. A transient SSH transport failure was recovered from the existing verified artifacts without rebuilding or resubmitting notarization. Distribution requirements remain in `RELEASING.md`.
 - Zoom commands belong to the existing native View menu, using `CommandGroup`; the app must not create a second View menu. Existing zoom shortcuts remain available.
 
-## Floating character count (2026-10-26, owner simplification)
+## Floating character count
 
-Owner direction supersedes the earlier full-width footer: show only a character
-count, floating at the document editor's bottom-right. There is no status row,
-divider, panel, background, capsule, icon, hover target or statistics popover.
-The count never reserves or covers the left line-number gutter, which keeps its
-full height. Font commands stay in the native View menu and Command +/-, and
-Settings or an empty workspace shows no count.
+Owner correction (2026-10-29, reported on macOS 26) supersedes the former
+background-free count and 24 pt shortened viewport: the count floats only in
+its own bottom-right region, not in a full-width footer or clipped bottom band.
+Give the count a small, opaque, editor-colored capsule so document glyphs do
+not mix with the statistics. Do not add a divider, icon, hover target or popover.
+The text viewport and line-number gutter both retain their full height. Font
+commands stay in the native View menu and Command +/-, and Settings or an empty
+workspace shows no count.
 
-The overlay uses 11 pt secondary text with monospaced digits, 16 pt trailing and
-6 pt bottom inset from the editor edge. It is non-interactive and passes clicks
-through to the text. The editor's scroll viewport ends 24 pt above its bottom,
-leaving a clear bottom band for the count; the line-number gutter still spans the
-full height, and no text line can render behind the count at any scroll position.
-Counts are extended grapheme clusters, including spaces and line breaks, with
-locale grouping separators.
+Retain 11 pt secondary text with monospaced digits, 16 pt trailing and 6 pt
+bottom outer inset; local padding belongs inside the capsule. The count stays
+non-interactive and passes clicks through. Use native scrollable bottom content
+insets, not a shorter scroll-view frame, so the final text line and caret can
+scroll fully above the count. Other text at the bottom edge remains visible
+outside the count's local bounds; a background alone is not proof that the final
+line is accessible. Counts are extended grapheme clusters, including spaces and
+line breaks, with locale grouping separators.
+
+Reference inspected: the existing `EditorCharacterCountView`, its workspace
+bottom-trailing overlay and `EditorTextContainerView`'s scroll-view constraints.
+Reuse that count/overlay and `EditorChrome.editorSurface` rather than introducing
+a status bar or glass control over a flat editor. Public APIs: SwiftUI
+`background(_:in:)` with `Capsule`, and AppKit
+[`NSScrollView.contentInsets`](https://developer.apple.com/documentation/appkit/nsscrollview/contentinsets)
+with `automaticallyAdjustsContentInsets = false`. Apple's documented nonzero-inset
+tiling keeps the content view full-sized; verify frame, scrolling and final-line
+geometry separately on the installed SDK/runtime. No text-layout, input-method
+or count-computation change is intended.
 
 The count is computed away from the main actor and coalesced. It uses the
 committed buffer, never marked IME text; superseded work must not publish after
@@ -93,7 +107,8 @@ readable over the editor, leaves the final line fully visible at maximum scroll,
 and disappears for Settings. Keep diagnostics and actual-path evidence under
 `build/character-count/`; a hosted view test does not substitute for the installed UI.
 
-Acceptance (2026-10-27): 107 tests in 16 suites, analyze and the universal
+Historical acceptance of the superseded shortened viewport (2026-10-27):
+107 tests in 16 suites, analyze and the universal
 Release build passed; the only diagnostics were the existing AppIntents metadata
 warnings. The Developer ID Release from `139bdce` was installed at
 `/Applications`. In the installed app the count updated across tab switches,

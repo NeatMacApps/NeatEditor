@@ -5,6 +5,16 @@ AppKit text synchronization, preferences, accessibility, and local/public
 release tooling. Behavior requirements are recorded before implementation in
 [editing-text-sync-test-cases.md](editing-text-sync-test-cases.md).
 
+## Floating count verification (2026-10-29)
+
+A fresh full Debug test build exposed `LaunchProfiler.swift`'s unused optional
+`FileHandle.seekToEnd()` result. Explicitly discard that returned file offset;
+retain the existing DEBUG-only append behavior. This is a diagnostic cleanup,
+not a change to launch measurements or logging policy. The AppIntents metadata
+notice retains its individual assessment under [Sidebar review](#sidebar-review-2026-10-24).
+Floating-count layout and installed acceptance belong to the
+[editing contract](editing-text-sync-test-cases.md#floating-character-count).
+
 ## Persistence cleanup (2026-10-27)
 
 Preserve the existing service facade and all editor/UI contracts. Core save,

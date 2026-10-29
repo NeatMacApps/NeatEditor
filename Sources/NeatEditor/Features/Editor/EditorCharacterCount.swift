@@ -2,8 +2,10 @@ import Foundation
 import Observation
 
 enum EditorCharacterCountLayout {
-    /// Keeps the final line above the floating count at maximum scroll.
-    static let reservedBottomInset: CGFloat = 24
+    /// Scrollable space, not a full-width reduction of the text viewport.
+    static let scrollableBottomInset: CGFloat = 32
+    static let horizontalPadding: CGFloat = 8
+    static let verticalPadding: CGFloat = 4
     static let trailingInset: CGFloat = 16
     static let bottomInset: CGFloat = 6
 }

@@ -85,6 +85,57 @@ struct EditorCharacterCountIntegrationTests {
         #expect(editor.textLayoutManager != nil)
     }
 
+    @Test("Floating count does not shorten the native text viewport", arguments: [360.0, 900.0])
+    func fullHeightViewport(width: CGFloat) throws {
+        let (window, container, scrollView) = try makeEditor(width: width)
+        defer { window.close() }
+
+        #expect(scrollView.frame.maxY == container.bounds.maxY)
+        #expect(scrollView.contentView.frame.height == container.bounds.height)
+        #expect(scrollView.contentInsets.bottom == EditorCharacterCountLayout.scrollableBottomInset)
+        #expect(scrollView.automaticallyAdjustsContentInsets == false)
+        let gutter = try #require(container.subviews.compactMap { $0 as? LineNumberGutterView }.first)
+        #expect(gutter.frame.height == container.bounds.height)
+        #expect(container.textView.textLayoutManager != nil)
+    }
+
+    @Test("Last wrapped line and caret scroll above the floating count", arguments: [13.0, 36.0])
+    func finalLineClearsCount(fontSize: CGFloat) throws {
+        let (window, container, scrollView) = try makeEditor(width: 360)
+        defer { window.close() }
+        let editor = container.textView
+        container.applyFontSize(fontSize)
+        editor.string = String(repeating: "中文 wrapped text 🙂 abcdefghijklmnop\n", count: 80)
+            + "FINAL " + String(repeating: "wrapped 中文🙂 ", count: 12)
+        container.applyEditorTextAttributes()
+        let end = NSRange(location: editor.string.utf16.count, length: 0)
+        editor.setSelectedRange(end)
+        editor.scrollRangeToVisible(end)
+        scrollView.layoutSubtreeIfNeeded()
+
+        let caretOnScreen = editor.firstRect(forCharacterRange: end, actualRange: nil)
+        let caret = editor.convert(window.convertFromScreen(caretOnScreen), from: nil)
+        let viewport = scrollView.contentView.bounds
+        #expect(viewport.minY > 0)
+        #expect(caret.height > 0)
+        #expect(caret.maxY <= viewport.maxY - EditorCharacterCountLayout.scrollableBottomInset + 1)
+        #expect(editor.textLayoutManager != nil)
+    }
+
+    private func makeEditor(width: CGFloat) throws -> (NSWindow, EditorTextContainerView, NSScrollView) {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: width, height: 400),
+            styleMask: [.titled], backing: .buffered, defer: false
+        )
+        window.isReleasedWhenClosed = false
+        let container = EditorTextContainerView()
+        window.contentView = container
+        container.frame = NSRect(x: 0, y: 0, width: width, height: 400)
+        container.layoutSubtreeIfNeeded()
+        let scrollView = try #require(container.subviews.compactMap { $0 as? NSScrollView }.first)
+        return (window, container, scrollView)
+    }
+
     private func wait(for model: EditorCharacterCountModel, toReach expected: Int) async -> Bool {
         for _ in 0..<200 {
             if model.characters == expected {

@@ -426,6 +426,13 @@ final class EditorTextContainerView: NSView {
         // Keep the thin, auto-hiding knob even if the system prefers legacy
         // scrollers; the editor must not reserve a permanent scrollbar column.
         scrollView.scrollerStyle = .overlay
+        // Let the final line scroll clear of the local count without clipping
+        // every other line across the bottom of the viewport.
+        scrollView.automaticallyAdjustsContentInsets = false
+        scrollView.contentInsets = NSEdgeInsets(
+            top: 0, left: 0,
+            bottom: EditorCharacterCountLayout.scrollableBottomInset, right: 0
+        )
         scrollView.contentView.postsBoundsChangedNotifications = true
         scrollView.focusRingType = .none
     }
@@ -460,12 +467,7 @@ final class EditorTextContainerView: NSView {
             scrollView.leadingAnchor.constraint(equalTo: separatorView.trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: topAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            // Keep the document viewport above the floating character count
-            // so no line can ever render behind it.
-            scrollView.bottomAnchor.constraint(
-                equalTo: bottomAnchor,
-                constant: -EditorCharacterCountLayout.reservedBottomInset
-            )
+            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
 
