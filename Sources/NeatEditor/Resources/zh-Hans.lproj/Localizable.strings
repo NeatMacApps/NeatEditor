@@ -59,6 +59,11 @@
 "2 Spaces" = "2 个空格";
 "4 Spaces" = "4 个空格";
 "Save Failed" = "保存失败";
+"Both Versions Kept" = "已保留双方版本";
+"The file changed elsewhere. Your text and the other versions were saved as separate files." = "文件已被其他程序修改。你的内容和其他版本已分别保存。";
+"Open Other Version" = "打开另一版本";
+"Save Copy…" = "另存副本…";
+"External Changes" = "外部修改";
 "Open Failed" = "打开失败";
 "Move to Trash Failed" = "移至废纸篓失败";
 "Duplicate Failed" = "创建副本失败";

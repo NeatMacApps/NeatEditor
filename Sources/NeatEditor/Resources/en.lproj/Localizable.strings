@@ -59,6 +59,11 @@
 "2 Spaces" = "2 Spaces";
 "4 Spaces" = "4 Spaces";
 "Save Failed" = "Save Failed";
+"Both Versions Kept" = "Both Versions Kept";
+"The file changed elsewhere. Your text and the other versions were saved as separate files." = "The file changed elsewhere. Your text and the other versions were saved as separate files.";
+"Open Other Version" = "Open Other Version";
+"Save Copy…" = "Save Copy…";
+"External Changes" = "External Changes";
 "Open Failed" = "Open Failed";
 "Move to Trash Failed" = "Move to Trash Failed";
 "Duplicate Failed" = "Duplicate Failed";

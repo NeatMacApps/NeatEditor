@@ -7,12 +7,13 @@ release tooling. Behavior requirements are recorded before implementation in
 
 ## External-writer safety research (2026-10-30)
 
-Status: research requested, implementation not authorized by this research task.
-Evidence is official documentation and inspected source, not installed-app or
-multi-device acceptance. Shared platform mechanisms and their limits live in the
+Historical research scope: documentation/source inspection only. The owner
+subsequently authorized implementation and comprehensive scenario testing; its
+current behavior and execution evidence follow below. The research itself is not
+installed-app or multi-device acceptance. Shared platform mechanisms and their limits live in the
 [Apple shared-file recipe](~/Codes/_standards/workspace-docs/swift-docs/offline-first-sync.md#shared-file-editing-researched-mechanisms-and-limits-2026-10-30).
 
-### Current gap
+### Pre-fix gap
 
 `DocumentPersistenceService.save(tab:in:)` atomically replaces an existing file
 without comparing its disk revision/content with the last read. `EditorTab` has
@@ -43,7 +44,7 @@ No implementation code, UI or dependency was copied. Zed search results mostly
 concerned Git conflicts; those were not treated as evidence of external-file
 conflict handling. Reference inspection is not a benchmark or a runtime test.
 
-### Proposal for product/technical review, not an adopted contract
+### Researched proposal (subsequently adopted in the editing contract)
 
 Preserve the current workspace and 2-second autosave behavior. Give each opened
 file an accepted disk baseline, a live content revision and an ordered save
@@ -78,6 +79,53 @@ by a newer manual/close save, and editing during save completion. Verify actual
 bytes and preserved local text, plus IME/undo/selection on the installed app.
 An iCloud offline two-device test must establish conflict-version retention and
 resolution separately. None of those execution claims is made by this research.
+
+## External-writer implementation and validation (2026-10-30)
+
+Adopted behavior: [editing contract](editing-text-sync-test-cases.md#external-writer-safety-owner-approved-2026-10-30).
+The value persistence facade shares a FIFO lane; a transferred `FileManager` is
+mutex-protected rather than declared unchecked Sendable. Coordinated content
+checks, conservative three-way line merge, Keep Both publication and durable
+recovery preserve the blank/no-clobber/2-second contracts. Native presenter/vnode
+observation handles cooperating/direct writers and replacement; main-actor
+external revisions protect the editor from stale echoes. Source deletion refuses
+old-path recreation and offers an explicit native Save Copy escape path.
+
+Clean universal Debug and Release build/analyze passed, arm64 and x86_64, on
+Xcode 27.2 (27B5028f) / macOS 27.2 (26B118). Each configuration's native arm64
+suite passed **148 tests / 202 parameter-expanded executions**, zero failures,
+skips or structured runtime warnings. Complete logs, result bundles and input
+SHA256s are under `build/external-writer/`; the input manifest matches all checks.
+Release tests use a separate derived-data directory with `ENABLE_TESTABILITY=YES`
+for existing `@testable` imports; optimization remains Release. The first plain
+Release test build correctly refused the non-testable app module and executed no
+tests; it is not counted as passing. Shipping Release settings are unchanged.
+
+The sole application build diagnostic is the existing AppIntents metadata-step
+notice individually assessed under [Sidebar review](#sidebar-review-2026-10-24).
+The Release test-only Intel link warning matches the previously assessed Xcode
+Testing framework missing x86_64 slice; arm64 executes, application universal
+builds do not depend on that framework. No diagnostic was suppressed. Native
+Intel execution and macOS 26 minimum-runtime execution remain unverified.
+
+Regressions include independent cooperating writers, same-size/backdated changes,
+continuous direct/atomic replacement, disjoint/overlapping edits, all six native
+line terminators, old queued saves versus newer close/manual saves, editing
+during a save, symlink aliases, external rename/delete, recovery failure and
+restart, conflict-name collisions, blank content, marked-text deferral, native
+undo and presenter cleanup. Early tests exposed and repaired use of a different
+coordinator for move notification. The native-window fixture was also corrected
+to disable release-on-close as Apple's [ARC window guidance](https://developer.apple.com/documentation/appkit/nswindow/isreleasedwhenclosed)
+requires; path assertions compare file identity rather than `/var` alias spelling.
+Programmatic editor updates follow Apple's [text-storage guidance](https://developer.apple.com/documentation/appkit/nstextinputclient/inserttext(_:replacementrange:)),
+not simulated user input. Actual installed-surface acceptance is recorded after
+execution; a green native fixture is not a substitute for that evidence.
+
+Limit: native file coordination cannot enforce exclusion on a nonparticipating
+writer between content check and replacement. iCloud conflict-version retention
+is implemented, but physical offline two-device synchronization/resolution has
+not been executed on this host. No zero-loss guarantee against arbitrary raw
+writers or real iCloud convergence is claimed.
 
 ## Floating count verification (2026-10-29)
 
@@ -406,10 +454,11 @@ submissions and stapled tickets independently establish notarization.
 - Closed-tab snapshots retain document strings without a bound. A retention
   limit would change how far Reopen Closed Tab can go; no arbitrary limit was
   introduced without that decision.
-- Manual/lifecycle saves are synchronous on the main actor; debounced autosave
-  now dispatches detached writes. Their shared ordering and close/quit completion
-  semantics remain unresolved; see [external-writer research](#external-writer-safety-research-2026-10-30).
-  Dispatching I/O off-thread does not establish that a newer save wins.
+- Synchronous manual/lifecycle flush now shares the ordered file lane with
+  asynchronous debounced saves; ordering is covered by the external-writer
+  regressions above. Synchronous cloud-provider/file-coordination latency can
+  still delay these boundaries. A fully asynchronous close/quit lifecycle is a
+  separate architectural change, not required to establish save ordering.
 
 ## Distribution status
 

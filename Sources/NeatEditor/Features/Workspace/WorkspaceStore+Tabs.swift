@@ -82,6 +82,7 @@ extension WorkspaceStore {
         guard saveDocument(id: id) else { return }
         autoSaveScheduler.cancel(for: id)
 
+        stopObservingDocument(id: id)
         let closedTab = tabs[index]
         if !closedTab.isSettings {
             closedTabs.append(ClosedTabSnapshot(tab: closedTab, index: index))
@@ -110,6 +111,7 @@ extension WorkspaceStore {
         for closeID in idsToClose {
             guard let index = tabs.firstIndex(where: { $0.id == closeID }) else { continue }
             autoSaveScheduler.cancel(for: closeID)
+            stopObservingDocument(id: closeID)
             let closedTab = tabs[index]
             if !closedTab.isSettings {
                 closedTabs.append(ClosedTabSnapshot(tab: closedTab, index: index))
@@ -138,6 +140,8 @@ extension WorkspaceStore {
             tabs.insert(closedTabSnapshot.tab, at: restoredIndex)
             selectedTabID = closedTabSnapshot.tab.id
             loadTabContentIfNeeded(id: closedTabSnapshot.tab.id)
+            observeDocument(id: closedTabSnapshot.tab.id)
+            reconcileDocument(id: closedTabSnapshot.tab.id)
             applyEditorFontPreferenceForSelectedTab()
             saveState()
             return

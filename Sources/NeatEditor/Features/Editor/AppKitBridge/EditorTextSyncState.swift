@@ -26,6 +26,7 @@ struct EditorTextSyncState {
     private(set) var lastKnownText: String?
 
     private var hasTextViewEdits = false
+    private var externalRevision: UInt64 = 0
 
     enum Update {
         /// Assign this string to the text view (tab switch or external change).
@@ -44,9 +45,10 @@ struct EditorTextSyncState {
 
     /// Record a string that was just pushed programmatically
     /// (`makeNSView` initial fill / `updateNSView` external push).
-    mutating func notePushedText(_ text: String, for tabID: UUID) {
+    mutating func notePushedText(_ text: String, for tabID: UUID, externalRevision: UInt64 = 0) {
         boundTabID = tabID
         lastKnownText = text
+        self.externalRevision = externalRevision
         hasTextViewEdits = false
     }
 
@@ -55,16 +57,21 @@ struct EditorTextSyncState {
     /// - Note: on a tab switch the caller must discard in-flight IME
     ///   composition *before* calling this. Uncommitted marked text belongs
     ///   to neither tab, so it must not be reported to the old binding.
-    mutating func update(for tabID: UUID, text: String, hasMarkedText: Bool) -> Update {
+    mutating func update(for tabID: UUID, text: String, hasMarkedText: Bool, externalRevision: UInt64 = 0) -> Update {
         guard boundTabID == tabID else {
             boundTabID = tabID
             lastKnownText = text
             hasTextViewEdits = false
+            self.externalRevision = externalRevision
             return .pushToTextView(text)
         }
 
-        guard !hasMarkedText else {
+        guard !hasMarkedText, externalRevision >= self.externalRevision else {
             return .keepTextView
+        }
+        if externalRevision > self.externalRevision {
+            notePushedText(text, for: tabID, externalRevision: externalRevision)
+            return .pushToTextView(text)
         }
 
         // `text == lastKnownText` means this update is just the echo of our

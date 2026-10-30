@@ -35,11 +35,9 @@ extension DocumentPersistenceService {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .contentModificationDateKey, .fileSizeKey]
         let urls: [URL]
         do {
-            urls = try fileManager.contentsOfDirectory(
-                at: directory,
-                includingPropertiesForKeys: Array(keys),
-                options: [.skipsHiddenFiles]
-            )
+            urls = try withFileManager {
+                try $0.contentsOfDirectory(at: directory, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles])
+            }
         } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
             return []
         }
@@ -64,7 +62,7 @@ extension DocumentPersistenceService {
                 continue
             }
             if !hasSupportedExtension,
-               !Self.isLikelyTextFile(at: fileURL, fileManager: fileManager) {
+               !Self.isLikelyTextFile(at: fileURL) {
                 continue
             }
             infos.append(SidebarFileInfo(
@@ -113,11 +111,11 @@ extension DocumentPersistenceService {
             let destinationURL = destination.appendingPathComponent(
                 info.fileURL.lastPathComponent
             )
-            guard !fileManager.fileExists(atPath: destinationURL.path) else {
+            guard !withFileManager({ $0.fileExists(atPath: destinationURL.path) }) else {
                 continue
             }
             do {
-                try fileManager.copyItem(at: info.fileURL, to: destinationURL)
+                try withFileManager { try $0.copyItem(at: info.fileURL, to: destinationURL) }
                 copiedCount += 1
             } catch where isFileExistsError(error) {
                 // Another writer claimed this name; its content stays intact.
@@ -257,7 +255,7 @@ extension DocumentPersistenceService {
             named: copyName,
             in: sourceURL.deletingLastPathComponent()
         ) { destination in
-            try fileManager.copyItem(at: sourceURL, to: destination)
+            try withFileManager { try $0.copyItem(at: sourceURL, to: destination) }
         }
     }
 }

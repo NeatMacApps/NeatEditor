@@ -21,6 +21,8 @@ final class WorkspaceStore {
         let id = UUID()
         let title: String
         let message: String
+        var otherVersionURL: URL? = nil
+        var recoveryTabID: UUID? = nil
     }
 
     static let logger = Logger(
@@ -55,6 +57,24 @@ final class WorkspaceStore {
 
     @ObservationIgnored
     var commitEditorChanges: (@MainActor (UUID) -> Void)?
+
+    @ObservationIgnored
+    var editorHasMarkedText: (@MainActor (UUID) -> Bool)?
+
+    @ObservationIgnored
+    var applyExternalEditorChanges: (@MainActor (UUID, String, UInt64) -> Void)?
+
+    @ObservationIgnored
+    var saveGenerations: [UUID: UInt64] = [:]
+
+    @ObservationIgnored
+    var fileObservers: [UUID: DocumentFileObserver] = [:]
+
+    @ObservationIgnored
+    var reconcilingTabIDs: Set<UUID> = []
+
+    @ObservationIgnored
+    var pendingExternalChecks: Set<UUID> = []
 
     // saveState() is invoked from many small mutating paths and previously did
     // a synchronous JSONEncoder + UserDefaults write per call. Coalesce
@@ -95,6 +115,10 @@ final class WorkspaceStore {
     /// `scrollTo` aligns the target at the top even when it is already visible.
     @ObservationIgnored
     var sidebarOriginatedSelectionURL: URL?
+
+    deinit {
+        for observer in fileObservers.values { observer.stop() }
+    }
 
     init(
         persistenceService: DocumentPersistenceService = DocumentPersistenceService(),

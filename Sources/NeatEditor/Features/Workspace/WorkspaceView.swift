@@ -48,7 +48,19 @@ struct WorkspaceView: View {
             workspaceStore.documentFailureAlert?.title ?? String(localized: "Save Failed"),
             isPresented: documentFailureAlertIsPresented,
             presenting: workspaceStore.documentFailureAlert
-        ) { _ in
+        ) { alert in
+            if let id = alert.recoveryTabID {
+                Button("Save Copy…") {
+                    workspaceStore.dismissDocumentFailureAlert()
+                    workspaceStore.saveDocumentCopy(id: id)
+                }
+            }
+            if let url = alert.otherVersionURL {
+                Button("Open Other Version") {
+                    workspaceStore.dismissDocumentFailureAlert()
+                    workspaceStore.openFiles(at: [url])
+                }
+            }
             Button("OK", role: .cancel) {
                 workspaceStore.dismissDocumentFailureAlert()
             }
@@ -57,6 +69,7 @@ struct WorkspaceView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
+                workspaceStore.reconcileOpenDocuments()
                 workspaceStore.refreshSidebarFiles()
             }
             if newPhase == .inactive || newPhase == .background {
@@ -146,10 +159,13 @@ struct WorkspaceView: View {
                         onRegisterCommitHandler: { handler in
                             workspaceStore.commitEditorChanges = handler
                         },
+                        externalRevision: tab.externalRevision,
                         onCharacterCountChange: { tabID, text in
                             guard workspaceStore.selectedTabID == tabID else { return }
                             editorCharacterCount.update(tabID: tabID, text: text)
-                        }
+                        },
+                        onRegisterCompositionCheck: { workspaceStore.editorHasMarkedText = $0 },
+                        onRegisterExternalChangeHandler: { workspaceStore.applyExternalEditorChanges = $0 }
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 

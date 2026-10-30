@@ -24,7 +24,7 @@ private final class CachedDocumentNameFormatter: @unchecked Sendable {
     }
 }
 
-struct DocumentPersistenceService {
+struct DocumentPersistenceService: Sendable {
     enum PersistenceError: LocalizedError {
         case destinationAlreadyExists(URL)
 
@@ -41,39 +41,34 @@ struct DocumentPersistenceService {
     /// Pre-folder location used by older builds, retained only as the source
     /// for non-destructive legacy migration.
     let appLibraryDirectory: URL
-    let fileManager: FileManager
+    func withFileManager<T: Sendable>(_ operation: @Sendable (FileManager) throws -> T) rethrows -> T {
+        try fileAccess.withFileManager(operation)
+    }
+    let fileAccess: DocumentFileAccess
+    let recoveryDirectory: URL
 
     init(
-        fileManager: FileManager = .default,
+        fileManager: sending FileManager = FileManager(),
         defaultDirectory: URL? = nil,
         appLibraryDirectory: URL? = nil,
+        recoveryDirectory: URL? = nil,
         environment: [String: String]? = nil
     ) {
-        self.fileManager = fileManager
         let environment = environment ?? ProcessInfo.processInfo.environment
         self.defaultDirectory = defaultDirectory
             ?? Self.resolveDefaultDirectory(using: fileManager)
         self.appLibraryDirectory = appLibraryDirectory
             ?? Self.resolveAppLibraryDirectory(using: fileManager, environment: environment)
+        self.recoveryDirectory = recoveryDirectory ?? self.appLibraryDirectory
+            .deletingLastPathComponent().appendingPathComponent("recovery", isDirectory: true)
+        self.fileAccess = DocumentFileAccess(manager: fileManager)
     }
 
-    func save(tab: EditorTab, in directory: URL? = nil) throws -> EditorTab {
-        guard !isBlankContent(tab.content) else {
-            return tab
-        }
+    func save(tab: EditorTab, in directory: URL? = nil, allowsReconciliation: Bool = true) throws -> EditorTab {
+        try fileAccess.sync { try saveInOrder(tab: tab, in: directory, allowsReconciliation: allowsReconciliation) }
+    }
 
-        // Re-saving an already-placed document overwrites its own file, which
-        // is the normal save path. Only the first save (no fileURL yet) needs
-        // no-clobber creation.
-        if let fileURL = tab.fileURL {
-            var savedTab = tab
-            let normalizedURL = normalizedFileURL(for: fileURL)
-            try savedTab.content.write(to: normalizedURL, atomically: true, encoding: .utf8)
-            savedTab.fileURL = normalizedURL
-            savedTab.title = normalizedURL.lastPathComponent
-            return savedTab
-        }
-
+    func publishNewDocument(tab: EditorTab, in directory: URL? = nil) throws -> EditorTab {
         var savedTab = tab
         let validatedTitle = try validatedSingleFileName(from: savedTab.title)
         let fileName = (validatedTitle as NSString).pathExtension.isEmpty
@@ -96,6 +91,12 @@ struct DocumentPersistenceService {
     }
 
     func rename(tab: EditorTab, to newTitle: String) throws -> EditorTab {
+        try fileAccess.sync {
+            try renameInOrder(tab: tab, to: newTitle)
+        }
+    }
+
+    func moveDocumentFile(tab: EditorTab, to newTitle: String, beforeMove: (URL, URL) -> Void = { _, _ in }) throws -> EditorTab {
         let validatedTitle = try validatedSingleFileName(from: newTitle)
         var renamedTab = tab
         renamedTab.title = validatedTitle
@@ -113,11 +114,11 @@ struct DocumentPersistenceService {
             return renamedTab
         }
 
-        guard !fileManager.fileExists(atPath: destinationURL.path) else {
+        guard !withFileManager({ $0.fileExists(atPath: destinationURL.path) }) else {
             throw PersistenceError.destinationAlreadyExists(destinationURL)
         }
 
-        guard fileManager.fileExists(atPath: normalizedFileURL.path) else {
+        guard withFileManager({ $0.fileExists(atPath: normalizedFileURL.path) }) else {
             // The persisted file is gone; refuse to repoint the tab at a
             // destination that may later belong to an unrelated file.
             throw CocoaError(
@@ -130,7 +131,8 @@ struct DocumentPersistenceService {
         // a file created at the destination between the check above and
         // now still cannot be clobbered; map that race to the same error.
         do {
-            try fileManager.moveItem(at: normalizedFileURL, to: destinationURL)
+            beforeMove(normalizedFileURL, destinationURL)
+            try withFileManager { try $0.moveItem(at: normalizedFileURL, to: destinationURL) }
         } catch where isFileExistsError(error) {
             throw PersistenceError.destinationAlreadyExists(destinationURL)
         }
@@ -141,13 +143,17 @@ struct DocumentPersistenceService {
     }
 
     func openDocument(at fileURL: URL) throws -> EditorTab {
+        try loadDocument(tab: openDocumentLazily(at: fileURL))
+    }
+
+    func readDocumentFile(at fileURL: URL) throws -> EditorTab {
         let normalizedFileURL = normalizedFileURL(for: fileURL)
         // Small files decode faster via String(contentsOf:); large files
         // win with mmap. Threshold measured at ~2MB (1MB: direct wins,
         // 10MB: mapped wins 46%).
         let mappedThreshold = 2 * 1024 * 1024
-        let fileSize = (try? fileManager.attributesOfItem(atPath: normalizedFileURL.path)[.size]
-            as? NSNumber)?.intValue
+        let fileSize = (try? withFileManager { try $0.attributesOfItem(atPath: normalizedFileURL.path)[.size]
+            as? NSNumber })?.intValue
         let content: String
         if let fileSize, fileSize >= mappedThreshold {
             let data = try Data(contentsOf: normalizedFileURL, options: .mappedIfSafe)
@@ -246,7 +252,7 @@ struct DocumentPersistenceService {
     /// true only when every unicode scalar is in `.whitespacesAndNewlines`
     /// (empty string counts as blank). Early-exits on the first non-blank
     /// scalar so non-blank saves never copy the whole content.
-    private func isBlankContent(_ content: String) -> Bool {
+    func isBlankContent(_ content: String) -> Bool {
         for scalar in content.unicodeScalars {
             if !CharacterSet.whitespacesAndNewlines.contains(scalar) {
                 return false
@@ -281,27 +287,23 @@ struct DocumentPersistenceService {
     /// both contents intact. Pre-existing files are never modified.
     func exclusivePublish(data: Data, named fileName: String, in directory: URL? = nil) throws -> URL {
         let directory = directory ?? defaultDirectory
-        try fileManager.createDirectory(
-            at: directory,
-            withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o700]
-        )
+        try withFileManager {
+            try $0.createDirectory(at: directory, withIntermediateDirectories: true,
+                                   attributes: [.posixPermissions: 0o700])
+        }
 
         // .withoutOverwriting guards the staging name itself; it is never
         // combined with .atomic — NSData.h forbids that pair.
         let stagingURL = directory.appendingPathComponent(
             ".neateditor-staging-\(UUID().uuidString)"
         )
-        defer { try? fileManager.removeItem(at: stagingURL) }
+        defer { try? withFileManager { try $0.removeItem(at: stagingURL) } }
         try data.write(to: stagingURL, options: .withoutOverwriting)
-        try fileManager.setAttributes(
-            [.posixPermissions: 0o600],
-            ofItemAtPath: stagingURL.path
-        )
+        try withFileManager { try $0.setAttributes([.posixPermissions: 0o600], ofItemAtPath: stagingURL.path) }
 
         return try publishFile(named: fileName, in: directory) { destination in
             // Every candidate reuses the complete staged inode and its 600 mode.
-            try fileManager.linkItem(at: stagingURL, to: destination)
+            try withFileManager { try $0.linkItem(at: stagingURL, to: destination) }
         }
     }
 

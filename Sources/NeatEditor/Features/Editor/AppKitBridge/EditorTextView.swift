@@ -17,7 +17,10 @@ struct EditorTextView: NSViewRepresentable {
     let onDecreaseFontSize: () -> Void
     let onOpenFiles: ([URL]) -> Void
     let onRegisterCommitHandler: (@escaping @MainActor (UUID) -> Void) -> Void
+    var externalRevision: UInt64 = 0
     var onCharacterCountChange: (UUID, String) -> Void = { _, _ in }
+    var onRegisterCompositionCheck: (@escaping @MainActor (UUID) -> Bool) -> Void = { _ in }
+    var onRegisterExternalChangeHandler: (@escaping @MainActor (UUID, String, UInt64) -> Void) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -33,7 +36,7 @@ struct EditorTextView: NSViewRepresentable {
         textView.delegate = context.coordinator
         textView.string = text
         textView.isEditable = isEditable
-        context.coordinator.sync.notePushedText(text, for: tabID)
+        context.coordinator.sync.notePushedText(text, for: tabID, externalRevision: externalRevision)
         containerView.synchronizeLineNumbersToCurrentText()
         textView.onOpenFiles = onOpenFiles
         textView.tabBehavior = tabBehavior
@@ -84,7 +87,8 @@ struct EditorTextView: NSViewRepresentable {
         switch coordinator.sync.update(
             for: tabID,
             text: text,
-            hasMarkedText: textView.hasMarkedText()
+            hasMarkedText: textView.hasMarkedText(),
+            externalRevision: externalRevision
         ) {
         case .keepTextView:
             break
@@ -157,6 +161,14 @@ struct EditorTextView: NSViewRepresentable {
         }
 
         func registerCommitHandler(for textView: ZoomableTextView) {
+            parent.onRegisterCompositionCheck { [weak self, weak textView] id in
+                self?.sync.boundTabID == id && (textView?.hasMarkedText() ?? false)
+            }
+            parent.onRegisterExternalChangeHandler { [weak self, weak textView] id, text, revision in
+                guard let self, let textView, self.sync.boundTabID == id,
+                      !textView.hasMarkedText() else { return }
+                self.applyExternalText(text, revision: revision, to: textView)
+            }
             parent.onRegisterCommitHandler { [weak self, weak textView] id in
                 // While composing, the binding already holds the committed
                 // text; forcing a commit here would save raw pinyin and leave
@@ -167,6 +179,48 @@ struct EditorTextView: NSViewRepresentable {
                     reportAppKitText(textView.string)
                 }
             }
+        }
+
+        /// Apply external content immediately on the same actor as edits, not
+        /// through a delayed binding snapshot. AppKit's editing notifications
+        /// and text storage retain native undo instead of simulating user input.
+        func applyExternalText(_ text: String, revision: UInt64, to textView: NSTextView) {
+            guard let container = textView.enclosingScrollView?.superview as? EditorTextContainerView,
+                  !textView.hasMarkedText(), textView.string != text else { return }
+            let old = Array(textView.string.utf16)
+            let new = Array(text.utf16)
+            let prefix = zip(old, new).prefix(while: { $0 == $1 }).count
+            let suffix = zip(old.dropFirst(prefix).reversed(), new.dropFirst(prefix).reversed())
+                .prefix(while: { $0 == $1 }).count
+            func map(_ offset: Int) -> Int {
+                if offset <= prefix { return offset }
+                if offset >= old.count - suffix { return max(0, offset + new.count - old.count) }
+                return min(offset, new.count - suffix)
+            }
+            let selections = textView.selectedRanges.map { value in
+                let range = value.rangeValue
+                let start = map(range.location)
+                return NSValue(range: NSRange(location: start, length: max(0, map(NSMaxRange(range)) - start)))
+            }
+            let origin = textView.enclosingScrollView?.contentView.bounds.origin
+            textView.breakUndoCoalescing()
+            isSyncingFromSwiftUI = true
+            let replacementRange = NSRange(location: 0, length: old.count)
+            if textView.shouldChangeText(in: replacementRange, replacementString: text) {
+                textView.textStorage?.replaceCharacters(in: replacementRange, with: text)
+                textView.didChangeText()
+            }
+            isSyncingFromSwiftUI = false
+            textView.breakUndoCoalescing()
+            textView.undoManager?.setActionName(String(localized: "External Changes"))
+            textView.selectedRanges = selections
+            if let origin { textView.enclosingScrollView?.contentView.scroll(to: origin) }
+            sync.notePushedText(text, for: sync.boundTabID ?? parent.tabID, externalRevision: revision)
+            container.synchronizeLineNumbersToCurrentText()
+            container.applyEditorTextAttributes()
+            container.reapplySearchHighlightsIfNeeded(query: lastAppliedSearchQuery,
+                usesRegularExpression: lastAppliedIsRegex, isPresented: lastSearchWasPresented)
+            scheduleCharacterCountReport(for: textView)
         }
 
         /// Ends an in-flight composition without committing it anywhere:
