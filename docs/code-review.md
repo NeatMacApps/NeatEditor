@@ -5,6 +5,80 @@ AppKit text synchronization, preferences, accessibility, and local/public
 release tooling. Behavior requirements are recorded before implementation in
 [editing-text-sync-test-cases.md](editing-text-sync-test-cases.md).
 
+## External-writer safety research (2026-10-30)
+
+Status: research requested, implementation not authorized by this research task.
+Evidence is official documentation and inspected source, not installed-app or
+multi-device acceptance. Shared platform mechanisms and their limits live in the
+[Apple shared-file recipe](~/Codes/_standards/workspace-docs/swift-docs/offline-first-sync.md#shared-file-editing-researched-mechanisms-and-limits-2026-10-30).
+
+### Current gap
+
+`DocumentPersistenceService.save(tab:in:)` atomically replaces an existing file
+without comparing its disk revision/content with the last read. `EditorTab` has
+no accepted-content baseline or dirty revision. `loadTabContentIfNeeded` skips
+already-loaded buffers; active-scene refresh updates only the sidebar.
+`saveAllDocuments` calls save for every loaded non-settings tab, so nonblank,
+locally unchanged text can overwrite an external update at a later save boundary.
+First-save no-clobber publication protects a different problem: name collisions.
+
+Debounced autosave now starts a detached write in
+`WorkspaceStore.saveDocumentInBackground`; manual and lifecycle saves remain
+synchronous. No shared per-file in-flight queue joins these paths. The comment
+claiming a racing synchronous save always wins is not established by the code:
+checking identity when publishing the outcome occurs after disk I/O and cannot
+undo a stale write. This is a static race finding, not a runtime reproduction.
+
+### Inspected industry references
+
+| Reference | Observed mechanism | Reuse boundary |
+|---|---|---|
+| [VS Code model](https://github.com/microsoft/vscode/blob/cd2259bdf72ec7421e70ae80999ceb46f8bd86fe/src/vs/workbench/services/textfile/common/textFileEditorModel.ts#L859-L1098) | Skip unchanged saves; one active save per model; queue the next; clear dirty only if the saved version is still current. Its [model manager](https://github.com/microsoft/vscode/blob/cd2259bdf72ec7421e70ae80999ceb46f8bd86fe/src/vs/workbench/services/textfile/common/textFileEditorModelManager.ts#L134-L147) reloads only clean buffers after file events. | Reuse state transitions/order, not its cross-platform service graph. |
+| [VS Code file service](https://github.com/microsoft/vscode/blob/cd2259bdf72ec7421e70ae80999ceb46f8bd86fe/src/vs/platform/files/common/fileService.ts#L457-L540) and [official save-conflict behavior](https://code.visualstudio.com/docs/editing/getting-started/tips-and-tricks#_preventing-dirty-writes) | Saving can reject `FILE_MODIFIED_SINCE`; conflict keeps the model dirty and offers comparison/explicit resolution. The local service deliberately uses mtime/size heuristics and documents equal-length false negatives. | Reuse save-time conflict refusal, not a claim that its etag is a content checksum or atomic compare-and-swap. |
+| [CotEditor TextDocument](https://github.com/coteditor/CotEditor/blob/1bf62cfd6415023f28280f03f7e28349d2328de2/CotEditor/Sources/Document/TextDocument.swift#L863-L908) and [content check](https://github.com/coteditor/CotEditor/blob/1bf62cfd6415023f28280f03f7e28349d2328de2/CotEditor/Sources/Document/TextDocument.swift#L1383-L1436) | Native `NSDocument` subclass; coordinated comparison with accepted/pending file data; compensates for cloud timestamps moving backward. Overrides the default change callback to control automatic reversion. | Inspect native lifecycle/content checks; do not copy configurable ignore/revert policy or assume equal timestamps prove identical bytes. |
+| [JetBrains conflict handling](https://www.jetbrains.com/help/webstorm/file-cache-conflict.html) and [safe write](https://www.jetbrains.com/help/rider/System_Settings.html) | Separates disk/memory conflict resolution from backup-before-save and external-change synchronization. | Safe write is failure recovery, not stale-write protection. Product interaction remains undecided. |
+
+The two source snapshots were shallow-cloned and read outside this workspace.
+No implementation code, UI or dependency was copied. Zed search results mostly
+concerned Git conflicts; those were not treated as evidence of external-file
+conflict handling. Reference inspection is not a benchmark or a runtime test.
+
+### Proposal for product/technical review, not an adopted contract
+
+Preserve the current workspace and 2-second autosave behavior. Give each opened
+file an accepted disk baseline, a live content revision and an ordered save
+lifecycle shared by all save entry points. Recheck disk content under coordinated
+access before replacement; do not rely only on sidebar timestamps. Distinguish:
+
+| Local versus baseline | Disk versus baseline | Candidate behavior |
+|---|---|---|
+| Unchanged | Changed | Update the clean buffer without writing the old text back. |
+| Changed | Unchanged | Save the current snapshot; only that revision becomes saved. |
+| Changed | Changed, but equal to local | Adopt the common content/baseline without a false conflict. |
+| Changed | Differently changed | Preserve both; three-way reconciliation may merge independent edits, but overlapping/ambiguous edits need a retained conflict and explicit resolution. |
+
+Three-way comparison needs the prior shared content, not merely a diff between
+two current strings. [Git's merge-file documentation](https://git-scm.com/docs/git-merge-file)
+is an algorithm reference, not a proposed Git runtime dependency. A textual
+non-conflict does not prove semantic correctness; retain recovery points.
+
+Evaluate `NSDocument` as the native lifecycle option against a custom
+`NSFilePresenter`/`NSFileCoordinator` session before selecting a route. A framework
+migration must reconcile lazy loading, existing undo/IME ownership, first-save
+naming and the blank-content exception; it is not justified solely to add a lock.
+For custom sessions, native coordination plus independent filesystem observation
+covers cooperating apps and direct-writing tools more broadly, but cannot promise
+OS-enforced exclusion against arbitrary writers. Conflict recovery must survive
+restart; no blank-document policy reversal or new recovery window is adopted.
+
+Acceptance should include clean external edits, dirty disjoint/overlapping edits,
+equal-size changes, backward/preserved timestamps, atomic file replacement,
+rename/delete, a missed notification followed by save, a slow old autosave followed
+by a newer manual/close save, and editing during save completion. Verify actual
+bytes and preserved local text, plus IME/undo/selection on the installed app.
+An iCloud offline two-device test must establish conflict-version retention and
+resolution separately. None of those execution claims is made by this research.
+
 ## Floating count verification (2026-10-29)
 
 A fresh full Debug test build exposed `LaunchProfiler.swift`'s unused optional
@@ -332,9 +406,10 @@ submissions and stapled tickets independently establish notarization.
 - Closed-tab snapshots retain document strings without a bound. A retention
   limit would change how far Reopen Closed Tab can go; no arbitrary limit was
   introduced without that decision.
-- Large-file saves are synchronous on the main actor. Moving them off-thread
-  requires ordered saves plus close/quit completion semantics; no unverified
-  asynchronous rewrite was added.
+- Manual/lifecycle saves are synchronous on the main actor; debounced autosave
+  now dispatches detached writes. Their shared ordering and close/quit completion
+  semantics remain unresolved; see [external-writer research](#external-writer-safety-research-2026-10-30).
+  Dispatching I/O off-thread does not establish that a newer save wins.
 
 ## Distribution status
 
