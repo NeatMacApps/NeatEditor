@@ -252,6 +252,7 @@ extension WorkspaceStore {
                     self.tabs[index].fileURL = destination
                     self.tabs[index].title = destination.lastPathComponent
                     self.saveState()
+                    self.refreshSidebarFiles()
                 }
                 self.reconcileDocument(id: id)
             }

@@ -95,7 +95,8 @@ Clean universal Debug and Release build/analyze passed, arm64 and x86_64, on
 Xcode 27.2 (27B5028f) / macOS 27.2 (26B118). Each configuration's native arm64
 suite passed **148 tests / 202 parameter-expanded executions**, zero failures,
 skips or structured runtime warnings. Complete logs, result bundles and input
-SHA256s are under `build/external-writer/`; the input manifest matches all checks.
+SHA256s are under `build/external-writer/`; `final-r2-inputs.json` matches the
+final r2 checks in both configurations.
 Release tests use a separate derived-data directory with `ENABLE_TESTABILITY=YES`
 for existing `@testable` imports; optimization remains Release. The first plain
 Release test build correctly refused the non-testable app module and executed no
@@ -120,6 +121,13 @@ requires; path assertions compare file identity rather than `/var` alias spellin
 Programmatic editor updates follow Apple's [text-storage guidance](https://developer.apple.com/documentation/appkit/nstextinputclient/inserttext(_:replacementrange:)),
 not simulated user input. Actual installed-surface acceptance is recorded after
 execution; a green native fixture is not a substitute for that evidence.
+
+The first installed rename capture revealed a stale sidebar name despite the
+correct tab/file identity. The move callback now refreshes the sidebar, and the
+rename regression requires both the new row and removal of the old row without
+an explicit refresh. This correction reopened acceptance; final r2 clean checks
+repeat both configurations and the full suites. Initial installed captures cannot
+establish acceptance of the corrected artifact.
 
 Limit: native file coordination cannot enforce exclusion on a nonparticipating
 writer between content check and replacement. iCloud conflict-version retention

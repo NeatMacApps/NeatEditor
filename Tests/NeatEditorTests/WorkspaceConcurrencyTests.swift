@@ -98,6 +98,10 @@ struct WorkspaceConcurrencyTests {
         let actualID = try FileManager.default.attributesOfItem(atPath: followed.path)[.systemFileNumber] as? NSNumber
         let expectedID = try FileManager.default.attributesOfItem(atPath: destination.path)[.systemFileNumber] as? NSNumber
         #expect(actualID == expectedID)
+        try await wait {
+            store.sidebarFiles.contains(where: { $0.fileURL.lastPathComponent == "moved.txt" })
+                && !store.sidebarFiles.contains(where: { $0.fileURL.lastPathComponent == "shared.txt" })
+        }
         store.updateDocumentContent("edited after move", for: id)
         #expect(store.saveDocument(id: id))
         #expect(try String(contentsOf: destination, encoding: .utf8) == "edited after move")
