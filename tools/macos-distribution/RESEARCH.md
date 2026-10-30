@@ -17,13 +17,12 @@ reference; they do not establish NeatEditor's readiness for the Mac App Store.
 
 ## Verified template pitfalls
 
-Native fixture builds established two XcodeGen details that source inspection
-alone missed: a configuration-level compilation-condition value replaced the
-same target's base value, and an omitted generated Info.plist version defaulted
-to `1.0` instead of following `MARKETING_VERSION`. The templates now define each
-channel condition in both configurations and explicitly bind both version keys
-to build settings. Keep native two-channel/two-configuration coverage when
-changing these templates.
+The first native fixture failed its Debug channel compile guard; a separate
+artifact readback found version `1.0` instead of the intended `1.0.0`. After
+correcting the template's per-configuration channel conditions and generated
+version bindings, both channels reported `1.0.0` / build `1`. The exact toolchain,
+build matrix, artifact readbacks and remaining limits are retained in
+[the verification record](VERIFICATION.md#native-compilation-and-returned-values).
 
 The signed archive also exposed a missing-category warning. Applications must
 supply their own category via `app_category`; the developer fixture uses

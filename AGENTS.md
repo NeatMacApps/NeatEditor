@@ -84,7 +84,7 @@ macOS 纯文本编辑器（SwiftUI + AppKit）。
 xcodegen generate
 ```
 - 在修改 `project.yml`、新增/删除源文件、调整 target/scheme 后必须运行。
-- 当前环境已验证 `xcodegen` 可用，版本为 `2.44.1`。
+- 当前环境已验证 `xcodegen` 可用，版本为 `2.46.0`（2026-10-30 双渠道工具验收）。
 
 ### 构建
 ```bash
@@ -241,6 +241,7 @@ xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration D
 
 ## 文档导航
 
+- [Distribution toolkit](tools/macos-distribution/README.md): Reusable direct-download/Mac App Store target templates, local archive/export and artifact audits; research, native verification and store-adoption limits.
 - [TabStripGestures.md](TabStripGestures.md): Full-height sidebar, compact 40 pt top row (empty compact toolbar, sidebar accessory, + and pin in the tab band), owner-retained stepped tabs, continuous joins, click/rename/drag and acceptance.
 - [docs/editing-text-sync-test-cases.md](docs/editing-text-sync-test-cases.md): Editing and persistence contracts, failure recovery, input-method ownership, and manual acceptance scenarios.
 - [docs/code-review.md](docs/code-review.md): Code review findings, macOS 26 API/runtime baseline, implemented fixes, verification evidence, and remaining architecture decisions.
