@@ -1,0 +1,66 @@
+# Reusable XcodeGen include. App-specific capabilities and UI stay in the app.
+targetTemplates:
+  DistributionBase:
+    type: application
+    platform: macOS
+    sources:
+      - path: ${app_sources}
+        excludes:
+          - "**/Info.plist"
+          - "**/*.entitlements"
+    info:
+      path: Configuration/${target_name}-Info.plist
+      properties:
+        CFBundleDisplayName: ${app_name}
+        LSApplicationCategoryType: ${app_category}
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+    settings:
+      base:
+        PRODUCT_NAME: ${app_name}
+        PRODUCT_BUNDLE_IDENTIFIER: ${bundle_id}
+        SWIFT_VERSION: "6.0"
+        CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+        GENERATE_INFOPLIST_FILE: NO
+      configs:
+        Release:
+          ENABLE_HARDENED_RUNTIME: YES
+
+  DistributionDirect:
+    templates: [DistributionBase]
+    dependencies:
+      - package: Sparkle
+        product: Sparkle
+    info:
+      properties:
+        DistributionChannel: direct
+        SUFeedURL: ${sparkle_feed_url}
+        SUPublicEDKey: ${sparkle_public_key}
+    settings:
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEBUG DIRECT_DISTRIBUTION"
+        Release:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DIRECT_DISTRIBUTION"
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: Developer ID Application
+          OTHER_CODE_SIGN_FLAGS: "--timestamp"
+
+  DistributionAppStore:
+    templates: [DistributionBase]
+    info:
+      properties:
+        DistributionChannel: app-store
+    entitlements:
+      path: Configuration/${target_name}.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+    settings:
+      base:
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: Apple Development
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEBUG APP_STORE"
+        Release:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) APP_STORE"

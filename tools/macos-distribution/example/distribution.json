@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "project": "DistributionExample.xcodeproj",
+  "app_name": "DistributionExample",
+  "bundle_id": "com.example.DistributionExample",
+  "channels": {
+    "direct": {
+      "scheme": "DistributionExample",
+      "export_options": "Configuration/Export-Direct.plist"
+    },
+    "app-store": {
+      "scheme": "DistributionExample-AppStore",
+      "export_options": "Configuration/Export-AppStore.plist"
+    }
+  }
+}

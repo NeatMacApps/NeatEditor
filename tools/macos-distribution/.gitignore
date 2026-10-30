@@ -1,0 +1,6 @@
+__pycache__/
+.ruff_cache/
+example/*.xcodeproj/
+example/Configuration/*-Info.plist
+example/Configuration/*.entitlements
+example/build/

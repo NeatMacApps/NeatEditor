@@ -87,6 +87,28 @@ R7 — Build identity. The archive builds universal (`ARCHS="arm64 x86_64"`,
 `CFBundleShortVersionString` / `CFBundleVersion` equal the configured
 `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION`.
 
+## Reusable dual-channel tooling
+
+The owner requested reusable direct-download and Mac App Store distribution
+components, not two product codebases. The reference toolkit lives in
+[`tools/macos-distribution/README.md`](tools/macos-distribution/README.md), with
+[research and adoption boundaries](tools/macos-distribution/RESEARCH.md) and
+[native verification and limits](tools/macos-distribution/VERIFICATION.md).
+
+Its boundary is shared XcodeGen target templates, local archive/export planning
+and execution, and built-artifact channel audits. Separate lightweight app
+targets share sources/configuration; only the direct target depends on Sparkle.
+The store target must not link/embed Sparkle or carry its updater settings.
+Local export never uploads, publishes, notarizes, installs, or migrates data;
+product publishers retain those responsibilities. A development artifact is not
+an accepted or distributable store release.
+
+NeatEditor itself remains on its existing Developer ID release route. Store
+adoption additionally requires verified persistent file authorization, autosave,
+restore, storage isolation/migration decisions, store signing/profile readiness
+and App Store acceptance. This tooling task does not authorize automatic user
+data migration or claim that those requirements have passed.
+
 ## Routes
 
 ```bash

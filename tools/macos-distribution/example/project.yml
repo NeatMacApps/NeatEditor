@@ -1,0 +1,49 @@
+name: DistributionExample
+include:
+  - path: ../dual-channel.yml
+    relativePaths: false
+options:
+  deploymentTarget:
+    macOS: "13.0"
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: "2.9.5"
+targets:
+  DistributionExample:
+    templates: [DistributionDirect]
+    templateAttributes:
+      app_name: DistributionExample
+      bundle_id: com.example.DistributionExample
+      app_sources: Sources
+      app_category: public.app-category.developer-tools
+      sparkle_feed_url: https://example.com/appcast.xml
+      sparkle_public_key: REPLACE_WITH_YOUR_SPARKLE_PUBLIC_KEY
+  DistributionExample-AppStore:
+    templates: [DistributionAppStore]
+    templateAttributes:
+      app_name: DistributionExample
+      bundle_id: com.example.DistributionExample
+      app_sources: Sources
+      app_category: public.app-category.developer-tools
+schemes:
+  DistributionExample:
+    build:
+      targets:
+        DistributionExample: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+  DistributionExample-AppStore:
+    build:
+      targets:
+        DistributionExample-AppStore: all
+    run:
+      config: Debug
+    archive:
+      config: Release
