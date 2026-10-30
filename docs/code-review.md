@@ -93,10 +93,13 @@ old-path recreation and offers an explicit native Save Copy escape path.
 
 Clean universal Debug and Release build/analyze passed, arm64 and x86_64, on
 Xcode 27.2 (27B5028f) / macOS 27.2 (26B118). Each configuration's native arm64
-suite passed **148 tests / 202 parameter-expanded executions**, zero failures,
+suite passed **148 tests / 203 parameter-expanded executions**, zero failures,
 skips or structured runtime warnings. Complete logs, result bundles and input
-SHA256s are under `build/external-writer/`; `final-r2-inputs.json` matches the
-final r2 checks in both configurations.
+SHA256s are under `build/external-writer/`; `final-r4-inputs.json` matches the
+final clean universal build/analyze and full native suites in both configurations.
+The r3 suites added compound replace-and-move coverage. The final r4 regression
+also reproduced and repaired replay of an old conflict notification after a blank
+save; preserved-file notification metadata is consumed, not stored on the live tab.
 Release tests use a separate derived-data directory with `ENABLE_TESTABILITY=YES`
 for existing `@testable` imports; optimization remains Release. The first plain
 Release test build correctly refused the non-testable app module and executed no
@@ -128,6 +131,52 @@ rename regression requires both the new row and removal of the old row without
 an explicit refresh. This correction reopened acceptance; final r2 clean checks
 repeat both configurations and the full suites. Initial installed captures cannot
 establish acceptance of the corrected artifact.
+
+### Installed-path evidence and remaining coverage
+
+Final installed source `363be9d` at `/Applications/NeatEditor.app`, universal
+Release, Developer ID-signed with the same team/identity as the previous
+installation. Installed and clean r4 build executables match SHA256
+`4484520adc6e33f3177c124a1b3962c2b0cc1c2929062b751e7c0d12372d0495`.
+The original workspace was restored and this final build relaunched.
+
+Using an isolated disposable workspace, inspected fresh installed captures for:
+initial file load; atomic external replacement; direct/backdated changes; and
+stable-identity external rename. The corrected rename capture shows both the tab
+and sidebar at `stable-renamed.txt` with the new content and no stale old row.
+Earlier correction captures: `build/external-writer/installed-r2-fresh-{initial,external}.png`
+and `installed-r2-stable-renamed.png`. On final source `363be9d`, repeated the fresh
+initial/update/rename path and inspected `installed-r4-{initial,updated,renamed}.png`:
+the final tab and sidebar both show `verified-renamed.txt`, and the editor shows
+`External update verified`. Matching real disk bytes were checked, and
+the old path remains absent. Inspected the native Save Failed/Save Copy alert in
+English/light on the initial snapshot (identical alert implementation) and
+Chinese/dark on the sidebar-corrected artifact (`28bc01f`), including a missing-source
+case. The final r4 change does not alter the alert's layout or localized strings.
+System appearance was temporarily changed for the dark capture and restored afterward.
+
+An atomic replacement immediately followed by an uncoordinated move before
+observation can lose the old inode/path association. It is intentionally treated
+as a missing source: retain local text/recovery, leave the externally moved file
+untouched, offer Save Copy and never guess an unrelated file by content. The r3
+regression covers this conservative result. This is not an automatic-rename pass.
+
+The session is locked (`CGSSessionScreenIsLocked = 1`): fresh window pixels and
+file-driven updates work under bounded wake, but external Accessibility cannot
+operate the application's actual windows. Installed Cmd+Z/Cmd+W attempts did not
+change the captured surface and are **not accepted** as keyboard/close evidence.
+Conflict resolution, Save Copy data publication, close/quit veto, IME deferral
+and undo passed production-class/native-editor integration tests; installed
+conflict-button/panel, real typing/IME and keyboard-undo interactions remain
+unverified. The native Save Copy alert's appearance is verified, not its physical
+button activation. No permission, signing or security setting was weakened to
+circumvent the lock. No virtual display was connected; bounded wake ended.
+
+The original workspace preference bytes and system appearance were restored;
+only task-fixture recovery records and temporary documents were removed. The
+current installed build was relaunched on the original workspace, and active
+preferences contain no fixture path. Test driver failures under lock were fixture
+AX-targeting failures, not application crashes.
 
 Limit: native file coordination cannot enforce exclusion on a nonparticipating
 writer between content check and replacement. iCloud conflict-version retention

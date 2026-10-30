@@ -39,6 +39,7 @@ NeatEditor is built around a simple goal: reduce interface noise and keep your a
 - Pin-to-top window support and native title bar double-click zoom behavior.
 - Disk-backed rename behavior that preserves editable file extensions.
 - Blank content never overwrites existing files by design.
+- External file changes reload clean buffers; independent edits merge conservatively, while conflicting edits keep both versions. Ordered saves prevent an older autosave from overwriting a newer save. See [safety and verification limits](docs/code-review.md#external-writer-implementation-and-validation-2026-10-30).
 - App-created documents live in your `~/Documents` folder by default; switch folders in Settings → Editor → Documents Folder. New documents save to the current folder, and documents left in the older app library are copied over on first launch.
 
 ## Main Shortcuts
