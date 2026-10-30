@@ -164,6 +164,9 @@ extension WorkspaceStore {
     private func publishSavedDocument(_ saved: EditorTab) {
         guard let index = tabs.firstIndex(where: { $0.id == saved.id }) else { return }
         var published = saved
+        // A result carries new notifications, not persistent tab state. Blank
+        // saves return the tab unchanged and must not replay an old conflict.
+        published.preservedFileURLs = []
         if saved.content != tabs[index].content {
             published.externalRevision = tabs[index].externalRevision + 1
             applyExternalEditorChanges?(saved.id, saved.content, published.externalRevision)

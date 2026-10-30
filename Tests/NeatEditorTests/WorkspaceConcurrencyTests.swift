@@ -108,18 +108,28 @@ struct WorkspaceConcurrencyTests {
         #expect(!FileManager.default.fileExists(atPath: old.path))
     }
 
-    @Test("external deletion keeps the buffer and prevents destructive close")
-    func externalDeletion() async throws {
+    @Test("missing or coalesced replaced-and-moved sources retain the buffer", arguments: [false, true])
+    func externalDeletion(replaceAndMove: Bool) async throws {
         let (store, root, suite) = try fixture()
         defer { cleanup(store, root: root, suite: suite) }
         let id = try await open(store, root: root, text: "base")
         let url = try #require(store.tabs.first(where: { $0.id == id })?.fileURL)
         store.updateDocumentContent("retained draft", for: id)
-        try FileManager.default.removeItem(at: url)
+        store.stopObservingDocument(id: id)
+        let moved = root.appendingPathComponent("external-final.txt")
+        if replaceAndMove {
+            try "external replacement".write(to: url, atomically: true, encoding: .utf8)
+            try FileManager.default.moveItem(at: url, to: moved)
+        } else {
+            try FileManager.default.removeItem(at: url)
+        }
         store.closeDocument(id: id)
         #expect(store.tabs.contains(where: { $0.id == id && $0.content == "retained draft" }))
         #expect(!FileManager.default.fileExists(atPath: url.path))
-        #expect(store.documentFailureAlert != nil)
+        #expect(store.documentFailureAlert?.recoveryTabID == id)
+        if replaceAndMove {
+            #expect(try String(contentsOf: moved, encoding: .utf8) == "external replacement")
+        }
     }
 
     @Test("old first-save completion cannot override manual/close save")
@@ -173,6 +183,11 @@ struct WorkspaceConcurrencyTests {
         let localURL = try #require(store.tabs.first(where: { $0.id == id })?.fileURL)
         #expect(localURL != original)
         #expect(store.documentFailureAlert?.otherVersionURL == original)
+        store.dismissDocumentFailureAlert()
+        store.updateDocumentContent(" \n", for: id)
+        #expect(store.saveAllDocuments())
+        #expect(store.documentFailureAlert == nil, "blank saves must not replay an old conflict notification")
+        #expect(try String(contentsOf: localURL, encoding: .utf8) == "local")
         let restarted = WorkspaceStore(persistenceService: DocumentPersistenceService(defaultDirectory: root,
             recoveryDirectory: root.appendingPathComponent("recovery")), userDefaults: store.userDefaults)
         defer {

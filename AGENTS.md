@@ -16,9 +16,9 @@ macOS 纯文本编辑器（SwiftUI + AppKit）。
 
 - [docs/WORKSPACE_TABS_KNOWLEDGE_BASE.md](~/Codes/NeatEditor/docs/WORKSPACE_TABS_KNOWLEDGE_BASE.md): 工作区与多标签管理：标签新建/切换/关闭/重开/废纸篓、存旧前置、状态快照、标题栏手势.
 
-- [docs/EDITOR_SYNC_KNOWLEDGE_BASE.md](~/Codes/NeatEditor/docs/EDITOR_SYNC_KNOWLEDGE_BASE.md): 编辑器文本同步与 AppKit 桥接：同步裁决、换绑六步、IME 组字、撤销隔离、搜索高亮、缩放与行号，以及显示残影的 TextKit 2 修复与验收.
+- [docs/EDITOR_SYNC_KNOWLEDGE_BASE.md](~/Codes/NeatEditor/docs/EDITOR_SYNC_KNOWLEDGE_BASE.md): 编辑器文本同步与 AppKit 桥接：同步裁决、换绑、IME 组字、撤销与外部内容版本、搜索高亮、缩放与行号，以及 TextKit 2 显示修复与验收.
 
-- [docs/PERSISTENCE_AUTOSAVE_KNOWLEDGE_BASE.md](~/Codes/NeatEditor/docs/PERSISTENCE_AUTOSAVE_KNOWLEDGE_BASE.md): 文档持久化与自动保存：空白策略、独占首存、重命名搬文件、2 秒调度 token、懒打开、失败呈现.
+- [docs/PERSISTENCE_AUTOSAVE_KNOWLEDGE_BASE.md](~/Codes/NeatEditor/docs/PERSISTENCE_AUTOSAVE_KNOWLEDGE_BASE.md): 文档持久化与自动保存：空白与首存策略、串行保存、外部变更协调、三方合并、冲突副本与恢复、2 秒调度、懒打开和失败呈现.
 
 - [app-macos/RELEASING.md](~/Codes/NeatEditor/app-macos/RELEASING.md): 发布与更新分发：发布快照、通用 Release 构建、Developer ID 签名与公证、DMG 与 Sparkle 更新包、appcast 纪律、发布中断后的续跑和验收.
 
@@ -244,7 +244,7 @@ xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration D
 - [Distribution toolkit](tools/macos-distribution/README.md): Reusable direct-download/Mac App Store target templates, local archive/export and artifact audits; research, native verification and store-adoption limits.
 - [TabStripGestures.md](TabStripGestures.md): Full-height sidebar, compact 40 pt top row (empty compact toolbar, sidebar accessory, + and pin in the tab band), owner-retained stepped tabs, continuous joins, click/rename/drag and acceptance.
 - [docs/editing-text-sync-test-cases.md](docs/editing-text-sync-test-cases.md): Editing and persistence contracts, failure recovery, input-method ownership, and manual acceptance scenarios.
-- [docs/code-review.md](docs/code-review.md): Code review findings, macOS 26 API/runtime baseline, implemented fixes, verification evidence, and remaining architecture decisions.
+- [docs/code-review.md](docs/code-review.md): Review findings, external-writer safety research/implementation, native concurrency and installed acceptance, macOS 26 baseline, retained diagnostics and architecture limits.
 - [Notarization agreement rejection](docs/troubleshooting/2026-10-01-notary-agreement.md): Account agreement preflight failure and release recovery.
 - `docs/troubleshooting/2026-08-09-app-icon-stale-install.md`：改、替换、还原代码或排查「图标变成白底手写 A / 被还原到几个月前」前**必读**。不读会把公开仓里的占位图装回本机，盖掉现行蓝底卷纸图标。
 - 现行图标母版：`design/app-icon/AppIcon-1024.png`。工程内 `AppIcon.appiconset` 必须跟这张走，不要跟 git 历史上的占位图走。
