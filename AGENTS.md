@@ -4,6 +4,8 @@
 
 macOS 纯文本编辑器（SwiftUI + AppKit）。
 
+产品方向（2026-11-03 确认）：要做 iOS 版本，macOS 为当前主体，iOS 规划中，范围与时间待定。
+
 通用工程规范：[Swift 规范](~/Codes/_standards/swift.md)
 
 ## 文档导航
@@ -242,7 +244,7 @@ xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration D
 ## 文档导航
 
 - [Distribution toolkit](tools/macos-distribution/README.md): Reusable direct-download/Mac App Store target templates, local archive/export and artifact audits; research, native verification and store-adoption limits.
-- [TabStripGestures.md](TabStripGestures.md): Full-height sidebar, compact 40 pt top row (empty compact toolbar, sidebar accessory, + and pin in the tab band), owner-retained stepped tabs, continuous joins, click/rename/drag and acceptance.
+- [TabStripGestures.md](docs/TabStripGestures.md): Full-height sidebar, compact 40 pt top row (empty compact toolbar, sidebar accessory, + and pin in the tab band), owner-retained stepped tabs, continuous joins, click/rename/drag and acceptance.
 - [docs/editing-text-sync-test-cases.md](docs/editing-text-sync-test-cases.md): Editing and persistence contracts, failure recovery, input-method ownership, and manual acceptance scenarios.
 - [docs/code-review.md](docs/code-review.md): Review findings, external-writer safety research/implementation, native concurrency and installed acceptance, macOS 26 baseline, retained diagnostics and architecture limits.
 - [Notarization agreement rejection](docs/troubleshooting/2026-10-01-notary-agreement.md): Account agreement preflight failure and release recovery.

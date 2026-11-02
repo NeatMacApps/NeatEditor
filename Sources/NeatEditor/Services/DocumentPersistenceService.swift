@@ -197,7 +197,7 @@ struct DocumentPersistenceService: Sendable {
         // New notes are user content, so the default destination is the
         // user's Documents folder. The sidebar can switch to another folder;
         // the old app library remains only as a migration source.
-        fileManager.homeDirectoryForCurrentUser.appendingPathComponent(
+        userHomeDirectory(using: fileManager).appendingPathComponent(
             "Documents",
             isDirectory: true
         )
@@ -223,7 +223,7 @@ struct DocumentPersistenceService: Sendable {
             }
         }
 
-        return fileManager.homeDirectoryForCurrentUser.appendingPathComponent(
+        return userHomeDirectory(using: fileManager).appendingPathComponent(
             ".config/neateditor/documents",
             isDirectory: true
         )
@@ -233,12 +233,22 @@ struct DocumentPersistenceService: Sendable {
         _ url: URL,
         fileManager: FileManager = .default
     ) -> Bool {
-        let documentsPath = fileManager.homeDirectoryForCurrentUser
+        let documentsPath = userHomeDirectory(using: fileManager)
             .appendingPathComponent("Documents", isDirectory: true)
             .standardizedFileURL
             .resolvingSymlinksInPath()
             .path
         return url.standardizedFileURL.resolvingSymlinksInPath().path == documentsPath
+    }
+
+    /// The user's home on macOS; the app sandbox home on iOS, where the
+    /// shared service always receives explicit directories from its caller.
+    static func userHomeDirectory(using fileManager: FileManager) -> URL {
+        #if os(macOS)
+        fileManager.homeDirectoryForCurrentUser
+        #else
+        URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+        #endif
     }
 
     private func renamedFileURL(for fileURL: URL, title: String) -> URL {
