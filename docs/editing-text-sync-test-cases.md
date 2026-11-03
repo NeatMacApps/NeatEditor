@@ -26,7 +26,7 @@ Default-name acceptance (2026-10-01): all 42 tests passed, including local-time 
 
 - All document reads/writes and rename/trash operations share an ordered I/O lane. Background saves are enqueued before returning; later synchronous lifecycle saves drain that same lane. Late completions cannot publish stale content or file identity.
 - Retain an accepted content baseline, independent of timestamps and file size. Recheck disk bytes inside native coordinated access before replacement. A clean buffer accepts external updates; equal content is not a conflict. Three-way line reconciliation merges independent edits conservatively, preserving original line terminators; ambiguous/overlapping edits never silently overwrite either side.
-- On conflict, preserve the original disk file and save the local version at a fresh conflict sibling using existing no-clobber publication. Persist a private recovery record containing baseline/local/disk content before publishing a merged or conflicting result. Inform the user with the existing native alert and an action to open the other version. Recovery must survive restart without opening a recovery window proactively. Save failures retain the buffer and offer an explicit Save Copy action using `NSSavePanel`; cancellation changes nothing and publication never clobbers an existing destination. This is the escape path for deleted/missing originals, not an automatic recovery window.
+- On conflict, preserve the original disk file and save the local version at a fresh conflict sibling using existing no-clobber publication. Persist a private recovery record containing baseline/local/disk content before publishing a merged or conflicting result. Inform the user with the existing native alert and an action to open the other version. Recovery must survive restart without opening a recovery window proactively. Save failures retain the buffer and offer an explicit Save Copy action using `NSSavePanel`; cancellation changes nothing and publication never clobbers an existing destination. The only explicit discard exception is Don't Save in the failed document's alert, defined below. This is the escape path for deleted/missing originals, not an automatic recovery window.
 - Conflict notification metadata is transient: dismissing a Keep Both alert must not make a later blank-content save repeat the old notification. The preserved documents/recovery remain intact.
 - Automatic three-way reconciliation is bounded to 20,000 lines per input. Larger simultaneously changed files use Keep Both with recovery instead of unbounded worst-case diff work; clean/one-sided changes still reconcile directly.
 - Use explicit `NSFileCoordinator`/`NSFilePresenter`, with independent file and parent-directory observation for direct-writing applications and atomic replacement. Events wake content reconciliation; active-scene/save checks cover missed events. Moving/deleting an external file must not silently recreate its old path. Preserve iCloud conflict versions as separate files before resolving their version metadata.
@@ -41,7 +41,7 @@ Reference/reuse: the [inspected implementations](code-review.md#external-writer-
 - A failed read must never become document content or mark a placeholder as successfully loaded. The failed tab stays unsaveable, reports the error through the existing native alert, and can retry through Open or reselection.
 - Save and rename errors must be visible. A failed save keeps the tab and its buffer open, including Close Other Tabs and application quit, unless the user explicitly chooses Don't Save in that failed document's alert.
 - Owner request (2026-11-03): save-failure alerts that offer Save Copy also offer Don't Save (Chinese: 放弃保存), using a native destructive button and a concise warning that this closes the document and discards unsaved changes. Only that explicit action bypasses saving: cancel its autosave, invalidate late completions, stop observation, close only the alert's document, and select the normal adjacent tab. Do not delete/recreate/overwrite the disk file or add discarded text to Reopen Closed Tab. Stale/absent alerts cannot discard a different tab. OK remains non-destructive and Save Copy retains its existing behavior. Never exercise Don't Save on real user content during automated acceptance.
-- Reference inspected: `WorkspaceView`'s existing SwiftUI alert and `WorkspaceStore.closeDocument`'s removal/selection path. Reuse those native alert/buttons and shared cleanup, with SwiftUI `ButtonRole.destructive`; no custom dialog or global ignore-save-errors preference. Verify missing files, new unsaved files, wrong/stale IDs, pending autosave, adjacent selection, normal-close/reopen preservation and installed alert pixels/action on disposable fixtures.
+- Reference inspected: `WorkspaceView`'s existing SwiftUI alert and `WorkspaceStore.closeDocument`'s removal/selection path. Reuse those native alert/buttons and shared cleanup, with SwiftUI [`ButtonRole.destructive`](https://developer.apple.com/documentation/swiftui/buttonrole/destructive); no custom dialog or global ignore-save-errors preference. Verify missing files, new unsaved files, wrong/stale IDs, pending autosave, adjacent selection, normal-close/reopen preservation and installed alert pixels/action on disposable fixtures.
 - Editor bindings resolve a stable tab identity on every write; deleting or reordering tabs must not redirect an old editor's final report into another tab.
 - Uncommitted input-method text (pinyin or other marked text still waiting for the user to choose characters) is never document content. Autosave, Save, close, tab switches and app deactivation save only the committed text and must not force the composition to commit. Saving leaves an in-progress composition on screen untouched; once the user commits it, the normal edit path schedules autosave. Switching away from or closing the tab discards the composition and resets the input method through `NSTextInputContext.discardMarkedText()`, so the pinyin lands in neither tab and the input method keeps no stale state. If the system or input method commits text on its own (for example, when another app becomes active), that commit arrives as a normal edit and is saved like typing. Use the public `NSTextView` text system and SwiftUI `alert` APIs; no replacement text control or alert is required.
 - 2026-10-07 regression: the old rule forced `unmarkText()` before every save, which wrote the pinyin display text (for example `hui` while typing Shuangpin `hv` in Rime) into the file and left Rime composing in the background, so later keystrokes produced raw letters such as `hv`.
@@ -49,6 +49,32 @@ Reference/reuse: the [inspected implementations](code-review.md#external-writer-
 - Restoring a workspace must select a document and must not open or foreground Settings proactively.
 - Tests isolate workspace preferences from the user's actual saved session.
 - Search and Settings retain their current product behavior while native controls receive meaningful accessibility labels and no custom control-outline focus frames.
+
+Don't Save verification (2026-11-03, source `2b931a6`): the full native arm64
+suite passes 152 tests in 19 suites; Debug/Release universal builds and analysis
+pass on macOS 27.2 / Xcode 27.2. No Swift compiler/analyzer diagnostics remain;
+the existing AppIntents metadata-step notice is assessed in
+[code-review.md](code-review.md#sidebar-review-2026-10-24). Full diagnostics are
+under `build/tab-switch/logs/discard-*`.
+
+The Developer ID-signed universal Release is installed at
+`/Applications/NeatEditor.app`, retaining version/build 1.0.27/27 with no public
+release. A separately identified, re-signed validation installation using the
+same compiled Release code and isolated preferences reproduced a missing
+**disposable** original. Fresh inspected English/Chinese dark captures show Save
+Copy, the destructive Don't Save button, OK and the discard consequence. Native
+AXPress on Don't Save removed exactly that fixture tab; preference readback was
+empty and the missing file remained absent. Evidence is in
+`build/tab-switch/discard-alert-*.png` and `discard-action-receipt.json`.
+
+Active-process limit: the real existing process still runs the earlier build.
+Its normal guarded quit returns Apple Event error -128 (User canceled) because
+an existing real document cannot save. It was not force-quit, no real buffer was discarded, and no Save Copy action
+was exercised on real content. The new button becomes active only after safe restart;
+handling that existing content requires the owner's explicit preserve/discard
+choice. Fixture tabs were removed without restoring an old preferences snapshot;
+user changes made during the session were not overwritten. Native Intel and
+minimum-macOS execution, and a light-appearance alert capture remain unverified.
 
 ## Document-switch rendering continuity
 
@@ -75,6 +101,24 @@ whole-document layout or third-party dependency is introduced.
 Acceptance must cover repeated short/long, wrapped and scrolled document switches
 through the production workspace host, with sequential frames as well as buffer
 readbacks. A final screenshot or successful model test alone cannot prove continuity.
+
+Repair verification (2026-11-03, source `1680f6b`): the reproduced cause was
+pushing a lazy placeholder's empty string before asynchronous read completion,
+not an established TextKit defect. The realistic full-workspace regression
+covers loaded short/long/wrapped switches, outgoing content during a pending
+load, IME discard, returning to the outgoing document, rapid requests and stale
+completion/close paths. It failed before the fix and the 150-test suite passed
+after it. The native TextKit 2 network and ordinary same-tab synchronization
+remain unchanged.
+
+The signed Release was launched from `/Applications/NeatEditor.app` and a
+native coordinated-write hold delayed a disposable destination's read. Five
+sequential captures were inspected: outgoing A, three pending states retaining
+A with the native spinner, then loaded B. See `build/tab-switch/frames/` and the
+matching executable receipt. These sampled frames establish the delayed-read
+transition, not a frame-by-frame guarantee for every file size or physical IME.
+Reusable ownership/diagnostic guidance lives in the shared
+[AppKit guide](~/Codes/_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md#reusing-a-native-editor-during-lazy-document-loading-2026-11-03).
 
 ## Settings layout revision (2026-10-18)
 
