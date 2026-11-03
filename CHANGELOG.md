@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.27 - 2026-11-03
+
+### Changed
+
+- Clearer app icon at small sizes: the typewriter's roller is now silver so it no longer disappears into the dark background, the sheet is a shorter warm ivory that no longer outshines the typewriter, the whole mark is visually centred, and contrast is slightly higher.
+
+### 简体中文
+
+- 应用图标在小尺寸下更清楚：打字机滚轴改为银色，不再融进深色背景；纸张改为更短的暖象牙色，不再压过打字机本身；整体视觉居中，对比度略有提高。
+
 ## 1.0.26 - 2026-11-03
 
 ### Changed

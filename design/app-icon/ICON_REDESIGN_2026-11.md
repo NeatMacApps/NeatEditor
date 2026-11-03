@@ -1,13 +1,23 @@
 # App icon redesign (started 2026-11-03)
 
-Status: **adopted 2026-11-03** ("定稿D01"). Production master `design/app-icon/AppIcon-1024.png` is
-`explorations/variants-2026-11-03-D/raw/D1.png`: jade-green translucent glass portable typewriter, typebar fan visible
-through the glass, five frosted ivory keys, charcoal roller, white sheet with four typed dots and a cursor block, on
-near-black with a soft jade glow. The previous master (blue roller with serif N) is archived as
-`explorations/AppIcon-before-typewriter.png`.
+Status: **R5 adopted 2026-11-03** ("用r5发版"), shipping in macOS 1.0.27 and iOS build 6. Production master
+`design/app-icon/AppIcon-1024.png` = `explorations/refine-2026-11-03-R/raw/R5.png`: the jade-green translucent glass
+typewriter (typebar fan visible through the glass, five frosted ivory keys) with a satin-silver roller and knobs and a
+shorter warm-ivory sheet carrying four typed dots and a cursor block, on near-black with a soft jade glow; contrast
+raised with a fixed-endpoint S-curve and the whole image visually centred. Superseded masters:
+`explorations/AppIcon-D1-1.0.26.png` (D1, shipped in 1.0.26; charcoal roller vanished at Dock sizes) and
+`explorations/AppIcon-before-typewriter.png` (blue roller with serif N).
 
 Constraints: keep the model's rendering and composition; do not re-centre, flatten, recolour or re-glass it. The `.icon`
 wraps the whole master as one layer with glass, shadow, specular and translucency off. The iOS app uses the same master.
+Centre glow-ground artwork by translating the whole image, never with the flat-ground normaliser.
+
+**Contrast-gate exception (owner, 2026-11-03):** R5 fails only the validator's dominant-pair metric at 48/24 px
+(1.10:1 / 1.09:1) because its graded paper and glass form no 4 % colour cluster, the quantizer limit documented in
+`~/Codes/_standards/workspace-docs/swift-docs/apple-app-icon-assets.md`; luminance span 15.1:1 / 14.4:1 and
+high-contrast share 34.6 % / 31.8 % pass, and the 16-64 px renders were inspected on dark and light backgrounds. The
+owner was told of the failure and approved shipping R5. This exception covers this artwork only; other products and
+later NeatEditor artwork still face the default gate.
 
 ## Brief
 
@@ -69,7 +79,8 @@ wraps the whole master as one layer with glass, shadow, specular and translucenc
   box 0.6 % below centre and the contrast-weighted centre 0.9 % above it. `normalize_icon_center.py` was tried first and
   withheld: it assumes a flat ground and cut the jade glow into a hard rectangle (`withheld/R4-*`); glow grounds need a
   whole-image translation instead. The gate fails only its dominant-pair metric (1.10:1) at 48/24 px, the documented
-  quantizer limit for graded subjects; span 15.1:1 / 14.4:1 and high-contrast share 32-35 % pass. Owner reaction: pending.
+  quantizer limit for graded subjects; span 15.1:1 / 14.4:1 and high-contrast share 32-35 % pass. Owner adopted R5 and
+  approved the gate exception ("用r5发版").
 
 ## Shipping (2026-11-03)
 

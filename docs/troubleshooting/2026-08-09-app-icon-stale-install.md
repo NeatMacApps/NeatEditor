@@ -6,7 +6,7 @@
 
 构建成功并不代表正式安装版已携带新图标；必须同时确认构建产物与 `/Applications/NeatEditor.app` 内的图标一致，再清理旧注册记录并刷新系统图标服务。
 
-**当前正式图标母版（2026-11-03 起）是黑底、带淡绿光晕的翡翠绿半透明玻璃打字机，位于 `design/app-icon/AppIcon-1024.png`；决定与约束见 [ICON_REDESIGN_2026-11.md](../../design/app-icon/ICON_REDESIGN_2026-11.md)。** 工程图标资源（`Sources/NeatEditor/AppIcon.icon` 与兜底 `AppIcon.appiconset`）必须跟母版走。蓝底卷纸衬线 N（2026-10-27 至 2026-11-03）与白底手写 A（2026-03 占位图）都不是现行图标；不得再留在资源集、本地构建产物或已登记的应用包里。从仍含占位图的旧提交拉仓或还原时，装包前先按母版换图标，禁止把占位图装回本机。
+**当前正式图标母版（2026-11-03 起，1.0.27 为银色滚轴、象牙色纸的 R5 精修版）是黑底、带淡绿光晕的翡翠绿半透明玻璃打字机，位于 `design/app-icon/AppIcon-1024.png`；决定与约束见 [ICON_REDESIGN_2026-11.md](../../design/app-icon/ICON_REDESIGN_2026-11.md)。** 工程图标资源（`Sources/NeatEditor/AppIcon.icon` 与兜底 `AppIcon.appiconset`）必须跟母版走。蓝底卷纸衬线 N（2026-10-27 至 2026-11-03）与白底手写 A（2026-03 占位图）都不是现行图标；不得再留在资源集、本地构建产物或已登记的应用包里。从仍含占位图的旧提交拉仓或还原时，装包前先按母版换图标，禁止把占位图装回本机。
 
 ## Previous artwork (2026-10-27, superseded 2026-11-03)
 
