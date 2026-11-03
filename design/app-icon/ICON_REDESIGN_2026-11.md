@@ -61,7 +61,15 @@ wraps the whole master as one layer with glass, shadow, specular and translucenc
   and knobs (roller 11.8:1, body 12.2:1, gate passes); R2 = R1 + ivory paper one third shorter (balanced, but the gate's
   dominant-pair metric fails at 48/24 px because the graded paper no longer forms a 4 % colour cluster); R2b neutral
   grey-white paper (dull, also fails at 24 px); R3 = R2 + jade-black ground (icon edge against a dark Dock only 1.18 to
-  1.24, so it does not solve that). Recommended R1. Owner reaction: pending.
+  1.24, so it does not solve that). Recommended R1. Owner reaction: preferred **R2's paper colour** and asked to centre it visually and raise contrast a
+  little ("我喜欢r2的纸张颜色 帮我视觉居中 加大一点对比").
+- **R5** (`raw/R5.png`, `compare3@2x.png`): deterministic, no regeneration. A per-channel S-curve with fixed end points
+  (smoothstep blend 0.5) raised roller 11.7 to 13.4, paper 13.8 to 15.8 and body 11.8 to 12.8 against the ground while
+  keeping the ivory paper; then the whole image moved up 48 px with the freed bottom band mirrored, leaving the subject
+  box 0.6 % below centre and the contrast-weighted centre 0.9 % above it. `normalize_icon_center.py` was tried first and
+  withheld: it assumes a flat ground and cut the jade glow into a hard rectangle (`withheld/R4-*`); glow grounds need a
+  whole-image translation instead. The gate fails only its dominant-pair metric (1.10:1) at 48/24 px, the documented
+  quantizer limit for graded subjects; span 15.1:1 / 14.4:1 and high-contrast share 32-35 % pass. Owner reaction: pending.
 
 ## Shipping (2026-11-03)
 
