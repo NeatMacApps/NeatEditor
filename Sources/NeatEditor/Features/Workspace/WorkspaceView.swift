@@ -169,6 +169,16 @@ struct WorkspaceView: View {
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+                    if !tab.isContentLoaded, workspaceStore.loadingTabIDs.contains(tab.id) {
+                        ProgressView()
+                            .controlSize(.small)
+                            .padding(10)
+                            .background(EditorChrome.editorSurface, in: Capsule())
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .allowsHitTesting(false)
+                            .accessibilityLabel("Loading Document")
+                    }
+
                     if tab.isContentLoaded,
                        let characters = editorCharacterCount.count(for: tab.id) {
                         EditorCharacterCountView(characters: characters)

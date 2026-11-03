@@ -14,6 +14,7 @@
 "Got it" = "知道了";
 
 "No Document Selected" = "未选中任何文档";
+"Loading Document" = "正在加载文档";
 "Search" = "搜索";
 "Disable Regular Expression Search" = "停用正则表达式搜索";
 "Enable Regular Expression Search" = "启用正则表达式搜索";

@@ -48,6 +48,32 @@ Reference/reuse: the [inspected implementations](code-review.md#external-writer-
 - Tests isolate workspace preferences from the user's actual saved session.
 - Search and Settings retain their current product behavior while native controls receive meaningful accessibility labels and no custom control-outline focus frames.
 
+## Document-switch rendering continuity
+
+Owner report (2026-11-03): switching between files briefly clears the editor to a
+blank surface before the new content appears. Loaded documents must switch without
+an intermediate blank frame. Preserve the native TextKit 2 editor, stable binding
+identity, IME discard, undo isolation, search and save-before-switch behavior.
+Lazy reads stay asynchronous. While the selected destination is loading, keep the
+outgoing committed content visible but noneditable and nonselectable, with a native
+loading indicator. Keep its original binding owner until the destination is ready;
+never bind the outgoing string to the loading document. Discard marked IME text
+without committing it. Rapid selections, failed loads, closing and returning to the
+outgoing tab must not publish stale text. Replace the buffer once with the loaded
+destination. Do not use a fade, synchronous disk I/O or a replacement text control.
+
+Reference inspected: the existing `EditorTextView.updateNSView` rebind/IME path,
+`EditorTextContainerView` TextKit 2 network and workspace bottom-trailing overlay.
+Reuse the native editor and [NSTextView.isSelectable](https://developer.apple.com/documentation/appkit/nstextview/isselectable)
+for suspension, plus Apple's inspected [ProgressView example](https://developer.apple.com/documentation/swiftui/progressview)
+(`ProgressView()` indeterminate indicator) above the retained content. These APIs
+are present in the installed Xcode 27.2 SDK. No new text engine, custom spinner,
+whole-document layout or third-party dependency is introduced.
+
+Acceptance must cover repeated short/long, wrapped and scrolled document switches
+through the production workspace host, with sequential frames as well as buffer
+readbacks. A final screenshot or successful model test alone cannot prove continuity.
+
 ## Settings layout revision (2026-10-18)
 
 Keep Settings inside the existing workspace tab, including the application-menu and Command-comma entry points, under the editor exception in the macOS baseline. Use a centered 480-point native grouped `Form`: Editor (documents folder, tab behavior and language), Updates (the existing two switches), and the app icon/name/version with Check for Updates and Quit. Ordinary settings fit the supported minimum workspace height without scrolling. Remove the custom cards, focus/control borders and orphan update button.

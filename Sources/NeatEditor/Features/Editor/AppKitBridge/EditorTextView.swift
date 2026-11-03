@@ -36,6 +36,7 @@ struct EditorTextView: NSViewRepresentable {
         textView.delegate = context.coordinator
         textView.string = text
         textView.isEditable = isEditable
+        textView.isSelectable = isEditable
         context.coordinator.sync.notePushedText(text, for: tabID, externalRevision: externalRevision)
         containerView.synchronizeLineNumbersToCurrentText()
         textView.onOpenFiles = onOpenFiles
@@ -61,7 +62,14 @@ struct EditorTextView: NSViewRepresentable {
     func updateNSView(_ containerView: EditorTextContainerView, context: Context) {
         let coordinator = context.coordinator
         let textView = containerView.textView
-        var needsCharacterCountReport = coordinator.parent.tabID != tabID || coordinator.parent.isEditable != isEditable
+        var needsCharacterCountReport = coordinator.parent.tabID != tabID || textView.isEditable != isEditable
+
+        // A lazy placeholder has no authoritative text yet. Keep the outgoing
+        // committed buffer and its binding owner until the destination is ready.
+        if !isEditable && coordinator.sync.boundTabID != tabID {
+            coordinator.suspendForPendingDocument(in: containerView)
+            return
+        }
 
         // A tab switch reuses this view for a different binding. Uncommitted
         // IME text (e.g. pinyin awaiting a candidate) is not document content,
@@ -83,6 +91,7 @@ struct EditorTextView: NSViewRepresentable {
         containerView.textView.tabBehavior = tabBehavior
         containerView.textSoftness = textSoftness
         containerView.textView.isEditable = isEditable
+        containerView.textView.isSelectable = isEditable
 
         switch coordinator.sync.update(
             for: tabID,
@@ -158,6 +167,29 @@ struct EditorTextView: NSViewRepresentable {
 
         init(parent: EditorTextView) {
             self.parent = parent
+        }
+
+        func suspendForPendingDocument(in containerView: EditorTextContainerView) {
+            let textView = containerView.textView
+            pendingCharacterCountReport?.cancel()
+            textView.breakUndoCoalescing()
+            textView.undoManager?.removeAllActions()
+            let wasComposing = textView.hasMarkedText()
+            discardComposition(in: textView)
+            if wasComposing, let committedText = sync.lastKnownText {
+                isSyncingFromSwiftUI = true
+                textView.string = committedText
+                isSyncingFromSwiftUI = false
+                containerView.synchronizeLineNumbersToCurrentText()
+                containerView.applyEditorTextAttributes()
+                containerView.reapplySearchHighlightsIfNeeded(
+                    query: parent.searchState.trimmedQuery,
+                    usesRegularExpression: parent.searchState.isRegexEnabled,
+                    isPresented: parent.searchState.isPresented
+                )
+            }
+            textView.isEditable = false
+            textView.isSelectable = false
         }
 
         func registerCommitHandler(for textView: ZoomableTextView) {

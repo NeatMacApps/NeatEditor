@@ -1,10 +1,122 @@
 import AppKit
+import SwiftUI
 import Testing
 
 @testable import NeatEditor
 
 @MainActor
 struct EditorNewlineTests {
+    @Test("document switches retain content until the destination is ready")
+    func documentSwitchContinuity() async throws {
+        let suite = "NeatEditorSwitchTests-\(UUID())"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(suite)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let store = WorkspaceStore(
+            persistenceService: DocumentPersistenceService(
+                defaultDirectory: directory,
+                appLibraryDirectory: directory.appendingPathComponent("legacy"),
+                recoveryDirectory: directory.appendingPathComponent("recovery")
+            ),
+            userDefaults: defaults
+        )
+        defer {
+            store.pendingSaveStateTask?.cancel()
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let documents = [
+            EditorTab(title: "Short.txt", content: "SHORT DOCUMENT\nsecond line"),
+            EditorTab(title: "Long.txt", content: String(repeating: "LONG DOCUMENT 中文🙂 wrapped text\n", count: 300)),
+            EditorTab(title: "Wrapped.txt", content: String(repeating: "WRAPPED 中文🙂 ", count: 100))
+        ]
+        store.tabs = documents
+        store.selectedTabID = documents[0].id
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 500),
+                              styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
+                              backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentViewController = NSHostingController(rootView: WorkspaceView()
+            .frame(minWidth: 700, minHeight: 470).environment(store))
+        window.setContentSize(NSSize(width: 900, height: 500))
+        window.orderFront(nil)
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(200))
+        let original = try #require(findEditor(in: window.contentView))
+        for tab in [documents[1], documents[0], documents[2], documents[1], documents[0]] {
+            original.scrollRangeToVisible(NSRange(location: original.string.utf16.count, length: 0))
+            store.selectTab(tab.id)
+            try await Task.sleep(for: .milliseconds(16))
+            let editor = try #require(findEditor(in: window.contentView))
+            #expect(editor === original)
+            #expect(editor.string == tab.content)
+            #expect(editor.textLayoutManager?.textViewportLayoutController.viewportRange?.isEmpty == false,
+                    "tab=\(tab.title), visible=\(editor.visibleRect), frame=\(editor.frame), selected=\(editor.selectedRange())")
+            #expect(editor.visibleRect.width > 0 && editor.visibleRect.height > 0)
+        }
+
+        let pending = EditorTab(title: "Pending.txt", isContentLoaded: false)
+        store.tabs.append(pending)
+        store.selectTab(pending.id)
+        try await Task.sleep(for: .milliseconds(40))
+        #expect(original.string == documents[0].content)
+        #expect(!original.isEditable && !original.isSelectable)
+        #expect(store.tabs.last?.content == "")
+        store.commitEditorChanges?(pending.id)
+        #expect(store.tabs.last?.content == "")
+
+        // A stale load must not own a later selection; returning to the
+        // outgoing document restores native editing without a blank push.
+        store.selectTab(documents[0].id)
+        try await Task.sleep(for: .milliseconds(40))
+        #expect(original.string == documents[0].content)
+        #expect(original.isEditable && original.isSelectable)
+
+        original.setSelectedRange(NSRange(location: 0, length: 0))
+        original.setMarkedText("pinyin", selectedRange: NSRange(location: 6, length: 0),
+                               replacementRange: NSRange(location: 0, length: 0))
+        #expect(original.hasMarkedText())
+        store.selectTab(pending.id)
+        try await Task.sleep(for: .milliseconds(40))
+        #expect(!original.hasMarkedText())
+        #expect(original.string == documents[0].content)
+        #expect(store.tabs.last?.content == "")
+
+        let index = try #require(store.tabs.firstIndex(where: { $0.id == pending.id }))
+        store.tabs[index].content = "READY DOCUMENT 中文🙂"
+        store.tabs[index].isContentLoaded = true
+        try await Task.sleep(for: .milliseconds(40))
+        #expect(findEditor(in: window.contentView) === original)
+        #expect(original.string == "READY DOCUMENT 中文🙂")
+        #expect(original.isEditable && original.isSelectable)
+        #expect(original.textLayoutManager != nil)
+
+        let otherPending = EditorTab(title: "Other.txt", isContentLoaded: false)
+        let newestPending = EditorTab(title: "Newest.txt", isContentLoaded: false)
+        store.tabs += [otherPending, newestPending]
+        store.selectTab(otherPending.id)
+        try await Task.sleep(for: .milliseconds(40))
+        store.selectTab(newestPending.id)
+        try await Task.sleep(for: .milliseconds(40))
+        let otherIndex = try #require(store.tabs.firstIndex(where: { $0.id == otherPending.id }))
+        store.tabs[otherIndex].content = "STALE LOAD"
+        store.tabs[otherIndex].isContentLoaded = true
+        try await Task.sleep(for: .milliseconds(40))
+        #expect(original.string == "READY DOCUMENT 中文🙂")
+        #expect(!original.isEditable && !original.isSelectable)
+        #expect(original.undoManager?.canUndo != true)
+        store.closeDocument(id: newestPending.id)
+        try await Task.sleep(for: .milliseconds(40))
+        #expect(original.string == "STALE LOAD")
+        #expect(original.isEditable && original.isSelectable)
+    }
+
+    private func findEditor(in view: NSView?) -> ZoomableTextView? {
+        guard let view else { return nil }
+        if let editor = view as? ZoomableTextView { return editor }
+        return view.subviews.lazy.compactMap { findEditor(in: $0) }.first
+    }
+
     private func shiftReturn() throws -> NSEvent {
         try #require(NSEvent.keyEvent(
             with: .keyDown, location: .zero, modifierFlags: .shift,
