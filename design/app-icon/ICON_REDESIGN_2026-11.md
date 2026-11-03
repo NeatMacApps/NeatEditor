@@ -51,3 +51,24 @@ wraps the whole master as one layer with glass, shadow, specular and translucenc
   D1 near-black with a jade glow, D2 midnight blue, D3 oxblood, D4 deep petrol (numbers match the Finder previews).
   Withheld: dark slate (`withheld/D3-slate-near-duplicate-of-G4.png`). Owner reaction 2026-11-03: adopted **D1**
   unchanged ("定稿D01") and asked to publish a new release ("然后发布新版").
+
+## Shipping (2026-11-03)
+
+- macOS: [v1.0.26](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.26) from source `ca678cb`, appcast commit
+  `ba3131d`, built in a fresh clone because this checkout held another session's uncommitted docs (R1). Apple accepted
+  app submission `0b560684-2c9e-4442-b453-6691419d2bcc` and DMG submission `5418f3c1-6e9e-4997-9883-50775b8c6b8c`.
+  Anonymous downloads matched SHA256SUMS and the local notarized files: DMG
+  `deb33eb695512cfeeaa65ab8710e0af950b47dc07a18ce71ae16d52ad9fc3d50`, ZIP
+  `a3275d169d7536f8eb5db5737f8951fb250206ce21e52f745483aa5b012d251d`; the raw appcast serves build 26 with the ZIP's length.
+  The publisher stopped before its appcast commit because the global `sync-agent-files` pre-commit hook tried to
+  `git add` the gitignored `CLAUDE.md` it creates in a fresh clone; the appcast-only commit was retried and pushed
+  (hook fixed: `~/.config/agentsync/docs/WORKSPACE_ORGANIZATION_GUIDE.md`).
+  Gate before release: 149 tests in 19 suites, universal Release build, Debug analyze; the only diagnostic was the
+  retained AppIntents metadata notice. Installed from the public DMG (same Developer ID, strict signature and stapled
+  ticket pass, `spctl`: `source=Notarized Developer ID`, `override=security disabled`), executable SHA256
+  `ce8cf9a4e22f1174a4cd97b7c98958c9a6c23624abf5f742016b5bd6f23b3610`; Finder shows the typewriter icon and the app
+  restored its tabs. The session was locked, so the Dock was not captured. The 1.0.26 entry belongs in `RELEASING.md`,
+  which currently holds another session's staged edits; add it there once that work is committed.
+- iOS: build 5 (`neateditor-ios` `01357eb`) passed 10 simulator tests, was signed and uploaded to AppShelf
+  (release 425, https://apps.caozc.com/a/neateditor). Direct installation failed with `device_unavailable` (phone away);
+  home-screen acceptance on the phone remains open.
