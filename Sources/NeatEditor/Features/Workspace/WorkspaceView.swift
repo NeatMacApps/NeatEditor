@@ -54,6 +54,9 @@ struct WorkspaceView: View {
                     workspaceStore.dismissDocumentFailureAlert()
                     workspaceStore.saveDocumentCopy(id: id)
                 }
+                Button("Don't Save", role: .destructive) {
+                    workspaceStore.discardFailedDocument(id: id)
+                }
             }
             if let url = alert.otherVersionURL {
                 Button("Open Other Version") {
@@ -65,7 +68,11 @@ struct WorkspaceView: View {
                 workspaceStore.dismissDocumentFailureAlert()
             }
         } message: { alert in
-            Text(alert.message)
+            if alert.recoveryTabID != nil {
+                Text("\(alert.message)\n\n\(String(localized: "Don't Save closes this document and discards unsaved changes."))")
+            } else {
+                Text(alert.message)
+            }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {

@@ -15,6 +15,8 @@
 
 "No Document Selected" = "No Document Selected";
 "Loading Document" = "Loading Document";
+"Don't Save" = "Don't Save";
+"Don't Save closes this document and discards unsaved changes." = "Don't Save closes this document and discards unsaved changes.";
 "Search" = "Search";
 "Disable Regular Expression Search" = "Disable Regular Expression Search";
 "Enable Regular Expression Search" = "Enable Regular Expression Search";

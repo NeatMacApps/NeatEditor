@@ -80,17 +80,26 @@ extension WorkspaceStore {
         }
 
         guard saveDocument(id: id) else { return }
-        autoSaveScheduler.cancel(for: id)
+        removeDocument(at: index, preserveForReopening: true)
+    }
 
-        stopObservingDocument(id: id)
+    func discardFailedDocument(id: UUID) {
+        guard documentFailureAlert?.recoveryTabID == id,
+              let index = tabs.firstIndex(where: { $0.id == id }) else { return }
+        dismissDocumentFailureAlert()
+        removeDocument(at: index, preserveForReopening: false)
+    }
+
+    private func removeDocument(at index: Int, preserveForReopening: Bool) {
         let closedTab = tabs[index]
-        if !closedTab.isSettings {
+        autoSaveScheduler.cancel(for: closedTab.id)
+        stopObservingDocument(id: closedTab.id)
+        if preserveForReopening && !closedTab.isSettings {
             closedTabs.append(ClosedTabSnapshot(tab: closedTab, index: index))
         }
-
         tabs.remove(at: index)
 
-        if selectedTabID == id {
+        if selectedTabID == closedTab.id {
             if tabs.indices.contains(index) {
                 selectedTabID = tabs[index].id
             } else {

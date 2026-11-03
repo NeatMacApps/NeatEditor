@@ -15,6 +15,8 @@
 
 "No Document Selected" = "未选中任何文档";
 "Loading Document" = "正在加载文档";
+"Don't Save" = "放弃保存";
+"Don't Save closes this document and discards unsaved changes." = "“放弃保存”会关闭此文档，并丢弃未保存的更改。";
 "Search" = "搜索";
 "Disable Regular Expression Search" = "停用正则表达式搜索";
 "Enable Regular Expression Search" = "启用正则表达式搜索";

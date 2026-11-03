@@ -112,6 +112,64 @@ struct WorkspaceStoreTests {
         #expect(try String(contentsOf: url, encoding: .utf8) == "committed composition")
     }
 
+    @Test("Don't Save closes only the failed document without recreating its missing file",
+          arguments: [true, false])
+    func discardMissingDocument(isSelected: Bool) throws {
+        let (store, directory, defaults, suite) = try makeWorkspace()
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+        let missing = directory.appendingPathComponent("missing.txt")
+        let failed = EditorTab(title: "missing.txt", content: "unsaved buffer", fileURL: missing)
+        let kept = EditorTab(title: "kept")
+        store.tabs = [failed, kept]
+        store.selectedTabID = isSelected ? failed.id : kept.id
+        store.observeDocument(id: failed.id)
+        #expect(!store.saveDocument(id: failed.id))
+        let generation = store.saveGenerations[failed.id, default: 0]
+        #expect(store.documentFailureAlert?.recoveryTabID == failed.id)
+
+        store.discardFailedDocument(id: kept.id)
+        #expect(store.tabs.count == 2)
+        #expect(store.documentFailureAlert != nil)
+        store.discardFailedDocument(id: failed.id)
+
+        #expect(store.tabs.map(\.id) == [kept.id])
+        #expect(store.selectedTabID == kept.id)
+        #expect(store.documentFailureAlert == nil)
+        #expect(store.fileObservers[failed.id] == nil)
+        #expect(store.saveGenerations[failed.id, default: 0] > generation)
+        #expect(store.closedTabs.isEmpty)
+        #expect(!FileManager.default.fileExists(atPath: missing.path))
+        #expect(store.saveAllDocuments())
+    }
+
+    @Test("Don't Save cancels pending autosave and leaves other files and normal reopen intact")
+    func discardCancelsAutosave() async throws {
+        let (store, directory, defaults, suite) = try makeWorkspace()
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+        let sentinel = directory.appendingPathComponent("sentinel.txt")
+        try "original disk content".write(to: sentinel, atomically: true, encoding: .utf8)
+        let failed = EditorTab(title: "bad/name", content: "unsaved buffer")
+        let kept = EditorTab(title: "kept")
+        store.tabs = [failed, kept]
+        store.selectedTabID = failed.id
+        #expect(!store.saveDocument(id: failed.id))
+        var autosaveRan = false
+        store.autoSaveScheduler.schedule(for: failed.id) { autosaveRan = true }
+        store.discardFailedDocument(id: failed.id)
+        try await Task.sleep(for: .milliseconds(2100))
+        #expect(!autosaveRan)
+        #expect(try String(contentsOf: sentinel, encoding: .utf8) == "original disk content")
+        #expect(store.closedTabs.isEmpty)
+        #expect(store.selectedTabID == kept.id)
+
+        store.discardFailedDocument(id: kept.id)
+        #expect(store.tabs.count == 1)
+        store.closeDocument(id: kept.id)
+        #expect(store.closedTabs.last?.tab.id == kept.id)
+        store.reopenLastClosedDocument()
+        #expect(store.tabs.map(\.id) == [kept.id])
+    }
+
     private func makeEditor(for id: UUID, store: WorkspaceStore) -> (EditorTextView.Coordinator, ZoomableTextView) {
         let parent = EditorTextView(
             tabID: id, text: WorkspaceView.textBinding(for: id, in: store),
