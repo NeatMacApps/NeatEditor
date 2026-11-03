@@ -1,0 +1,4 @@
+Edit this app icon artwork; it is the high-fidelity reference.
+Keep unchanged: the jade-green translucent glass typewriter body, its form, proportions, pose and position, the semicircular fan of typebars visible through the glass, the five frosted ivory keys, the satin silver roller and its two silver end knobs, the near-black ground with the soft jade glow, the material, rendering and light from the upper left.
+Change only: the sheet of paper, which is now the brightest and largest element and overpowers the typewriter. Make it a soft warm ivory paper (#E9E4D6 lit, #CFC9B9 toward the bottom) instead of bright blue-white, and make it about one third shorter so its top edge sits lower, keeping its width and the short typed line of four dots and the cursor block near its top.
+Do not add text, symbols, decoration, rounded corners, borders or external frames. Full-bleed opaque 1:1 canvas.

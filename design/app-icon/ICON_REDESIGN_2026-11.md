@@ -52,6 +52,17 @@ wraps the whole master as one layer with glass, shadow, specular and translucenc
   Withheld: dark slate (`withheld/D3-slate-near-duplicate-of-G4.png`). Owner reaction 2026-11-03: adopted **D1**
   unchanged ("定稿D01") and asked to publish a new release ("然后发布新版").
 
+- **Legibility review** (after the 1.0.26 release): owner: "我发现看上去对比度辨识度有点问题". Measured on D1: the
+  charcoal roller is 1.85:1 against the ground and vanishes, so at Dock sizes the mark reads as a white sheet over a
+  green tray; the paper (17:1) outweighs the jade body (5.1:1); the glow (1.31:1) disappears below 64 px. The automated
+  gate passed only because it measures the paper-to-black extreme. Lesson: also check that the feature which names the
+  object survives at 32 px, not just global contrast. Owner delegated the fix ("你自己看着办重新生成").
+- **R round** (`explorations/refine-2026-11-03-R/`, `compare@2x.png`): single-issue edits of D1. R1 satin-silver roller
+  and knobs (roller 11.8:1, body 12.2:1, gate passes); R2 = R1 + ivory paper one third shorter (balanced, but the gate's
+  dominant-pair metric fails at 48/24 px because the graded paper no longer forms a 4 % colour cluster); R2b neutral
+  grey-white paper (dull, also fails at 24 px); R3 = R2 + jade-black ground (icon edge against a dark Dock only 1.18 to
+  1.24, so it does not solve that). Recommended R1. Owner reaction: pending.
+
 ## Shipping (2026-11-03)
 
 - macOS: [v1.0.26](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.26) from source `ca678cb`, appcast commit

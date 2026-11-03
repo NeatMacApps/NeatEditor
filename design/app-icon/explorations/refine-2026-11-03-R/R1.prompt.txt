@@ -1,0 +1,4 @@
+Edit this app icon artwork; it is the high-fidelity reference.
+Keep unchanged: the jade-green translucent glass typewriter body, its form, proportions, pose, composition, scale and crop, the semicircular fan of typebars visible through the glass, the five frosted ivory keys, the white sheet of paper with its typed dots and cursor block, the near-black ground with the soft jade glow, the material, rendering and light from the upper left.
+Change only: the platen roller and its two round end knobs, which are now dark charcoal and disappear into the black ground. Make the roller a clearly visible satin silver-grey cylinder (#A9B2B8 lit top, #6C767D shaded underside) with a crisp highlight along its top, and the two end knobs the same silver with a slightly darker rim, so the roller holding the sheet reads clearly against the black at small sizes.
+Do not add text, symbols, decoration, rounded corners, borders or external frames. Full-bleed opaque 1:1 canvas.
