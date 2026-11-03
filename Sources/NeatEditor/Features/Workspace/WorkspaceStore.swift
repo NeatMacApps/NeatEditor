@@ -68,6 +68,9 @@ final class WorkspaceStore {
     var saveGenerations: [UUID: UInt64] = [:]
 
     @ObservationIgnored
+    var pendingWriteGenerations: [UUID: UInt64] = [:]
+
+    @ObservationIgnored
     var fileObservers: [UUID: DocumentFileObserver] = [:]
 
     @ObservationIgnored

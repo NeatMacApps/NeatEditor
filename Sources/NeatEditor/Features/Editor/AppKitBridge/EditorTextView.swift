@@ -207,8 +207,10 @@ struct EditorTextView: NSViewRepresentable {
                 // the input method composing a buffer it no longer owns.
                 guard let self, let textView, textView.isEditable,
                       sync.boundTabID == id, !textView.hasMarkedText() else { return }
-                if textView.string != sync.lastKnownText {
-                    reportAppKitText(textView.string)
+                var currentText = textView.string
+                currentText.makeContiguousUTF8()
+                if currentText != sync.lastKnownText {
+                    reportAppKitText(currentText)
                 }
             }
         }
@@ -339,8 +341,12 @@ struct EditorTextView: NSViewRepresentable {
         /// binding and record the agreement, so the next `updateNSView` echo
         /// does not push it back and clobber newer keystrokes.
         func reportAppKitText(_ string: String) {
-            parent.text = string
-            sync.noteTextViewContent(string, for: sync.boundTabID ?? parent.tabID)
+            // NSTextView can return an opaque UTF-16 bridge. Materialize once
+            // instead of repeatedly transcoding it in model/save comparisons.
+            var text = string
+            text.makeContiguousUTF8()
+            parent.text = text
+            sync.noteTextViewContent(text, for: sync.boundTabID ?? parent.tabID)
         }
 
         /// After a programmatic push, align the search tracking with the

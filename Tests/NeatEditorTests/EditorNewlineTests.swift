@@ -57,10 +57,12 @@ struct EditorNewlineTests {
 
         let pending = EditorTab(title: "Pending.txt", isContentLoaded: false)
         store.tabs.append(pending)
+        store.loadingTabIDs.insert(pending.id)
         store.selectTab(pending.id)
         try await Task.sleep(for: .milliseconds(40))
         #expect(original.string == documents[0].content)
         #expect(!original.isEditable && !original.isSelectable)
+        #expect(!containsProgressIndicator(in: window.contentView))
         #expect(store.tabs.last?.content == "")
         store.commitEditorChanges?(pending.id)
         #expect(store.tabs.last?.content == "")
@@ -83,6 +85,7 @@ struct EditorNewlineTests {
         #expect(store.tabs.last?.content == "")
 
         let index = try #require(store.tabs.firstIndex(where: { $0.id == pending.id }))
+        store.loadingTabIDs.remove(pending.id)
         store.tabs[index].content = "READY DOCUMENT 中文🙂"
         store.tabs[index].isContentLoaded = true
         try await Task.sleep(for: .milliseconds(40))
@@ -109,6 +112,11 @@ struct EditorNewlineTests {
         try await Task.sleep(for: .milliseconds(40))
         #expect(original.string == "STALE LOAD")
         #expect(original.isEditable && original.isSelectable)
+    }
+
+    private func containsProgressIndicator(in view: NSView?) -> Bool {
+        guard let view else { return false }
+        return view is NSProgressIndicator || view.subviews.contains { containsProgressIndicator(in: $0) }
     }
 
     private func findEditor(in view: NSView?) -> ZoomableTextView? {

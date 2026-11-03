@@ -47,11 +47,13 @@ struct WorkspaceConcurrencyTests {
         defer { cleanup(store, root: root, suite: suite) }
         let id = try await open(store, root: root, text: "base")
         let url = try #require(store.tabs.first(where: { $0.id == id })?.fileURL)
+        let observer = try #require(store.fileObservers[id])
         for (index, atomic) in [true, true, false, true, false].enumerated() {
             let value = "external-\(index)"
             try value.write(to: url, atomically: atomic, encoding: .utf8)
             try await wait { store.tabs.first(where: { $0.id == id })?.content == value }
             #expect(try String(contentsOf: url, encoding: .utf8) == value)
+            #expect(store.fileObservers[id] === observer)
             #expect(store.documentFailureAlert == nil)
         }
     }
@@ -150,6 +152,32 @@ struct WorkspaceConcurrencyTests {
         #expect(try String(contentsOf: #require(closed.tab.fileURL), encoding: .utf8) == "newest")
         #expect(!store.tabs.contains(where: { $0.id == id }))
         #expect(try FileManager.default.contentsOfDirectory(atPath: root.path).count == 1)
+    }
+
+    @Test("transition after reverting a pending background save preserves the newest baseline text")
+    func transitionAfterPendingSaveRevert() async throws {
+        let (store, root, suite) = try fixture()
+        defer { cleanup(store, root: root, suite: suite) }
+        let id = try await open(store, root: root, text: "base")
+        let url = try #require(store.tabs.first(where: { $0.id == id })?.fileURL)
+        let next = EditorTab(title: "next")
+        store.tabs.append(next)
+        let gate = DispatchSemaphore(value: 0)
+        store.persistenceService.fileAccess.enqueue { gate.wait() }
+        store.updateDocumentContent("older queued edit", for: id)
+        store.saveDocumentInBackground(id: id)
+        #expect(store.pendingWriteGenerations[id] != nil)
+        store.updateDocumentContent("base", for: id)
+        gate.signal()
+
+        store.selectTab(next.id)
+
+        #expect(try String(contentsOf: url, encoding: .utf8) == "base")
+        #expect(store.tabs.first(where: { $0.id == id })?.content == "base")
+        #expect(store.tabs.first(where: { $0.id == id })?.diskContent == "base")
+        #expect(store.pendingWriteGenerations[id] == nil)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(store.tabs.first(where: { $0.id == id })?.content == "base")
     }
 
     @Test("typing during background save remains dirty and the next save persists it")

@@ -112,6 +112,65 @@ struct WorkspaceStoreTests {
         #expect(try String(contentsOf: url, encoding: .utf8) == "committed composition")
     }
 
+    @Test("clean transitions commit the native snapshot without requesting another write")
+    func cleanTransitionDoesNotSaveAgain() async throws {
+        let (store, directory, defaults, suite) = try makeWorkspace()
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+        let url = directory.appendingPathComponent("clean.txt")
+        try "accepted text".write(to: url, atomically: true, encoding: .utf8)
+        let clean = try store.persistenceService.openDocument(at: url)
+        let next = EditorTab(title: "next")
+        store.tabs = [clean, next]
+        store.selectedTabID = clean.id
+        store.observeDocument(id: clean.id)
+        let observer = store.fileObservers[clean.id]
+        let generation = store.saveGenerations[clean.id]
+        var committedIDs: [UUID] = []
+        store.commitEditorChanges = { committedIDs.append($0) }
+        var redundantAutosaveRan = false
+        store.autoSaveScheduler.schedule(for: clean.id) { redundantAutosaveRan = true }
+
+        store.selectTab(next.id)
+
+        #expect(committedIDs == [clean.id])
+        #expect(store.selectedTabID == next.id)
+        #expect(store.saveGenerations[clean.id] == generation)
+        #expect(store.fileObservers[clean.id] === observer)
+        #expect(!store.isRefreshingSidebar)
+        try await Task.sleep(for: .milliseconds(2100))
+        #expect(!redundantAutosaveRan)
+
+        // Skipping a no-op transition is not permission to skip validation
+        // for explicit saves or to overwrite a later external version.
+        try "external text".write(to: url, atomically: true, encoding: .utf8)
+        #expect(store.saveDocument(id: clean.id))
+        #expect(store.tabs.first(where: { $0.id == clean.id })?.content == "external text")
+        #expect(try String(contentsOf: url, encoding: .utf8) == "external text")
+        store.stopObservingDocument(id: clean.id)
+    }
+
+    @Test("a pending native edit is still saved before a transition")
+    func transitionSavesPendingNativeEdit() throws {
+        let (store, directory, defaults, suite) = try makeWorkspace()
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+        let url = directory.appendingPathComponent("edited.txt")
+        try "accepted text".write(to: url, atomically: true, encoding: .utf8)
+        let tab = try store.persistenceService.openDocument(at: url)
+        let next = EditorTab(title: "next")
+        store.tabs = [tab, next]
+        store.selectedTabID = tab.id
+        store.commitEditorChanges = { [weak store] id in
+            if id == tab.id { store?.updateDocumentContent("live native edit", for: id) }
+        }
+
+        store.selectTab(next.id)
+
+        #expect(try String(contentsOf: url, encoding: .utf8) == "live native edit")
+        #expect(store.selectedTabID == next.id)
+        #expect(store.tabs.first(where: { $0.id == tab.id })?.diskContent == "live native edit")
+        store.stopObservingDocument(id: tab.id)
+    }
+
     @Test("Don't Save closes only the failed document without recreating its missing file",
           arguments: [true, false])
     func discardMissingDocument(isSelected: Bool) throws {
@@ -197,6 +256,25 @@ struct WorkspaceStoreTests {
         textView.setSelectedRange(NSRange(location: (committed as NSString).length, length: 0))
         textView.setMarkedText(marked, selectedRange: NSRange(location: (marked as NSString).length, length: 0),
                                replacementRange: NSRange(location: NSNotFound, length: 0))
+    }
+
+    @Test("native snapshots own contiguous UTF-8 without changing document scalars or selection")
+    func nativeSnapshotUsesOwnedUTF8() throws {
+        let (store, directory, defaults, suite) = try makeWorkspace()
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+        let id = try #require(store.selectedTabID)
+        let (coordinator, textView) = makeEditor(for: id, store: store)
+        let text = String(repeating: "中文🙂 e\u{301}\r\n", count: 100)
+        textView.string = text
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+        let selection = textView.selectedRange()
+        coordinator.reportAppKitText(textView.string)
+        let snapshot = try #require(store.tabs.first(where: { $0.id == id })?.content)
+        #expect(snapshot.isContiguousUTF8)
+        #expect(snapshot.utf8.elementsEqual(text.utf8))
+        #expect(coordinator.sync.lastKnownText?.isContiguousUTF8 == true)
+        #expect(textView.string.utf8.elementsEqual(text.utf8))
+        #expect(textView.selectedRange() == selection)
     }
 
     @Test("autosave during composition writes committed text and leaves the pinyin marked")

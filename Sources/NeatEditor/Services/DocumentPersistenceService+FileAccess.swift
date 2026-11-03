@@ -18,11 +18,13 @@ extension DocumentPersistenceService {
 
     func enqueueSave(
         tab: EditorTab, in directory: URL, reconcileOnly: Bool = false,
+        filePresenter: DocumentFileObserver? = nil,
         completion: @escaping @Sendable (Result<EditorTab, Error>) -> Void
     ) {
         fileAccess.enqueue {
             completion(Result {
-                try saveInOrder(tab: tab, in: directory, allowsReconciliation: false, reconcileOnly: reconcileOnly)
+                try saveInOrder(tab: tab, in: directory, allowsReconciliation: false,
+                                reconcileOnly: reconcileOnly, filePresenter: filePresenter)
             })
         }
     }
@@ -45,7 +47,8 @@ extension DocumentPersistenceService {
 
     func saveInOrder(
         tab: EditorTab, in directory: URL? = nil,
-        allowsReconciliation: Bool = true, reconcileOnly: Bool = false
+        allowsReconciliation: Bool = true, reconcileOnly: Bool = false,
+        filePresenter: DocumentFileObserver? = nil
     ) throws -> EditorTab {
         guard tab.isContentLoaded else { return tab }
         // Empty on-disk documents can still receive an external update. A
@@ -64,7 +67,11 @@ extension DocumentPersistenceService {
                 }
                 return accept(saved, state: &state, written: true)
             }
-            return try coordinated(at: url, writing: !reconcileOnly) { coordinatedURL in
+            // The FIFO lane orders our I/O; associating its initiating presenter
+            // prevents self-notification/reconciliation from blocking later reads.
+            let coordinator = NSFileCoordinator(filePresenter: filePresenter)
+            return try coordinated(at: url, writing: !reconcileOnly,
+                                   coordinator: coordinator) { coordinatedURL in
                 let data: Data
                 do {
                     data = try Data(contentsOf: coordinatedURL, options: .mappedIfSafe)

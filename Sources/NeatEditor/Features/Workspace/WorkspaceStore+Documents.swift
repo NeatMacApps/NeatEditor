@@ -98,12 +98,19 @@ extension WorkspaceStore {
     @discardableResult
     func saveDocument(id: UUID) -> Bool {
         commitEditorChanges?(id)
+        return saveCommittedDocument(id: id)
+    }
+
+    private func saveCommittedDocument(id: UUID) -> Bool {
         guard let tab = tabs.first(where: { $0.id == id }), !tab.isSettings, tab.isContentLoaded else { return true }
         autoSaveScheduler.cancel(for: id)
         saveGenerations[id, default: 0] += 1
+        // This synchronous lane operation drains all older background writes.
+        pendingWriteGenerations.removeValue(forKey: id)
         do {
             let saved = try persistenceService.save(tab: tab, in: documentsFolder,
-                allowsReconciliation: !(editorHasMarkedText?(id) ?? false))
+                allowsReconciliation: !(editorHasMarkedText?(id) ?? false),
+                filePresenter: fileObservers[id])
             publishSavedDocument(saved)
             return true
         } catch DocumentPersistenceService.FileAccessError.reconciliationRequired {
@@ -129,9 +136,16 @@ extension WorkspaceStore {
             saveGenerations[id, default: 0] += 1
         }
         let generation = saveGenerations[id]
-        persistenceService.enqueueSave(tab: snapshot, in: documentsFolder, reconcileOnly: reconcileOnly) { [weak self] result in
+        if !reconcileOnly, let generation {
+            pendingWriteGenerations[id] = generation
+        }
+        persistenceService.enqueueSave(tab: snapshot, in: documentsFolder,
+                                       reconcileOnly: reconcileOnly, filePresenter: fileObservers[id]) { [weak self] result in
             Task { @MainActor [weak self] in
                 guard let self else { return }
+                if !reconcileOnly, self.pendingWriteGenerations[id] == generation {
+                    self.pendingWriteGenerations.removeValue(forKey: id)
+                }
                 self.reconcilingTabIDs.remove(id)
                 guard self.saveGenerations[id] == generation,
                       let current = self.tabs.first(where: { $0.id == id }) else { return }
@@ -225,7 +239,17 @@ extension WorkspaceStore {
     }
 
     func saveSelectedDocumentIfNeeded() {
-        if let selectedTabID { saveDocument(id: selectedTabID) }
+        guard let id = selectedTabID else { return }
+        commitEditorChanges?(id)
+        guard let tab = tabs.first(where: { $0.id == id }),
+              !tab.isSettings, tab.isContentLoaded else { return }
+        autoSaveScheduler.cancel(for: id)
+        // A clean transition has nothing to write. Requesting a write claim
+        // anyway notifies our own presenters and queues needless reconciliation
+        // ahead of the destination read. Explicit saves still validate disk.
+        guard tab.fileURL == nil || tab.content != tab.diskContent
+                || pendingWriteGenerations[id] != nil else { return }
+        _ = saveCommittedDocument(id: id)
     }
 
     // MARK: - External changes
@@ -244,6 +268,10 @@ extension WorkspaceStore {
     func observeDocument(id: UUID) {
         guard let tab = tabs.first(where: { $0.id == id }), tab.isContentLoaded,
               let url = tab.fileURL else { return }
+        if let observer = fileObservers[id], observer.presentedItemURL == url {
+            observer.refreshFileObservation()
+            return
+        }
         fileObservers.removeValue(forKey: id)?.stop()
         fileObservers[id] = DocumentFileObserver(url: url) { [weak self] event in
             Task { @MainActor [weak self] in
@@ -267,6 +295,7 @@ extension WorkspaceStore {
         persistenceService.releaseDocument(id: id)
         pendingExternalChecks.remove(id)
         reconcilingTabIDs.remove(id)
+        pendingWriteGenerations.removeValue(forKey: id)
         saveGenerations[id, default: 0] += 1
     }
 }

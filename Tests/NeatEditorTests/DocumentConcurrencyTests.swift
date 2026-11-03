@@ -18,6 +18,65 @@ struct DocumentConcurrencyTests {
         return try service.openDocument(at: url)
     }
 
+    @Test("stable observation ignores sibling writes but catches replacement re-arm races and direct writes")
+    func stableObservationTracksOnlyItsFile() async throws {
+        let (service, root) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let tab = try opened(service, root: root, content: "aaaa")
+        let url = try #require(tab.fileURL)
+        let sibling = root.appendingPathComponent("sibling.txt")
+        try "sibling".write(to: sibling, atomically: true, encoding: .utf8)
+        let changes = Mutex(0)
+        let observer = DocumentFileObserver(url: url) { _ in changes.withLock { $0 += 1 } }
+        defer { observer.stop() }
+        try "unrelated".write(to: sibling, atomically: true, encoding: .utf8)
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(changes.withLock { $0 } == 0)
+
+        let stamp = try #require(url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)
+        try "cccc".write(to: url, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.modificationDate: stamp], ofItemAtPath: url.path)
+        observer.refreshFileObservation()
+        #expect(changes.withLock { $0 } > 0)
+        try await Task.sleep(for: .milliseconds(200))
+        changes.withLock { $0 = 0 }
+        try "dddd".write(to: url, atomically: false, encoding: .utf8)
+        try FileManager.default.setAttributes([.modificationDate: stamp], ofItemAtPath: url.path)
+        for _ in 0..<100 where changes.withLock({ $0 }) == 0 {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(changes.withLock { $0 } > 0)
+        #expect(try String(contentsOf: url, encoding: .utf8) == "dddd")
+    }
+
+    @Test("an initiating presenter stays registered and detects subsequent external writes")
+    func saveKeepsItsPresenterActive() async throws {
+        let (service, root) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let tab = try opened(service, root: root, content: "unchanged")
+        let changes = Mutex(0)
+        let observer = DocumentFileObserver(url: try #require(tab.fileURL)) { _ in changes.withLock { $0 += 1 } }
+        defer { observer.stop() }
+        let result = try service.save(tab: tab, filePresenter: observer)
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(result.content == tab.content)
+        #expect(NSFileCoordinator.filePresenters.contains { $0 === observer })
+        changes.withLock { $0 = 0 }
+        var coordinationError: NSError?
+        var writeError: Error?
+        NSFileCoordinator().coordinate(writingItemAt: try #require(tab.fileURL), options: [],
+                                       error: &coordinationError) { url in
+            do { try "external".write(to: url, atomically: true, encoding: .utf8) }
+            catch { writeError = error }
+        }
+        if let error = coordinationError ?? writeError { throw error }
+        for _ in 0..<100 where changes.withLock({ $0 }) == 0 {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(changes.withLock { $0 } > 0)
+        #expect(try String(contentsOf: #require(tab.fileURL), encoding: .utf8) == "external")
+    }
+
     @Test("clean external edits reload without rewriting the disk", arguments: [false, true])
     func cleanExternalEdit(atomic: Bool) throws {
         let (service, root) = try fixture()

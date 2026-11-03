@@ -82,9 +82,56 @@ Owner report (2026-11-03): switching between files briefly clears the editor to 
 blank surface before the new content appears. Loaded documents must switch without
 an intermediate blank frame. Preserve the native TextKit 2 editor, stable binding
 identity, IME discard, undo isolation, search and save-before-switch behavior.
-Lazy reads stay asynchronous. While the selected destination is loading, keep the
-outgoing committed content visible but noneditable and nonselectable, with a native
-loading indicator. Keep its original binding owner until the destination is ready;
+Owner correction (2026-11-03, after trying the earlier repair): ordinary local
+text documents of a few hundred KB must open promptly without a spinner or a
+visible loading mode. Adding ProgressView to hide a slow open was rejected as a
+performance/design failure. Measure the complete sidebar-click → outgoing save →
+queue wait → read/decode → native presentation path, including repeat opens and
+representative small/medium documents; optimize the cause, not just the feedback.
+Keep file I/O asynchronous and preserve save ordering, external-writer checks,
+IME ownership and failure recovery. Before a workspace transition, commit the live
+editor snapshot, but do not request a coordinated write for a loaded document
+whose committed text still equals its accepted disk baseline and has no pending
+background write. Cancel redundant debounced saves on that clean transition.
+An older queued write followed by a user reverting to the baseline still requires
+an ordered save of the newest text; equality with the old baseline alone is not
+a safe skip condition. Dirty/new documents retain the ordered save path; explicit Save/close/quit and external reconciliation
+retain their full disk validation. A no-op transition save is not a replacement
+and must not generate self-write notifications or a redundant sidebar refresh.
+Do not bypass coordination or alter initial Open's presenter-flush semantics to
+make the benchmark faster. Reconciliation and real writes retain native exclusion
+and current content/version validation. For an app-owned save/reconciliation,
+initialize the coordinator with the existing observing presenter, as prescribed by
+[NSFileCoordinator.init(filePresenter:)](https://developer.apple.com/documentation/foundation/nsfilecoordinator/init(filepresenter:)),
+so our own write claim is not reported back as an external change. The existing
+FIFO lane still serializes our operations; other presenters and filesystem
+observations remain active. No time-window suppression or stamp-only filter is
+allowed. Validate dirty transitions as well as clean switches; the clean-only
+optimization alone did not remove the roughly 0.5-second self-coordination delay.
+Keep the same native presenter registered while a tab still owns the same URL;
+saves/reconciliations must not remove and recreate it. Refresh only the file vnode
+watch after atomic replacement, retaining the parent-directory watch and presenter.
+Stop/rebind the presenter only when closing or changing file identity. Verify
+stable observer identity and continued detection of both atomic and direct writes.
+A parent-directory write for an unrelated sibling need not reconcile every open
+file when the target's device/inode still matches its active vnode watch. Never
+apply this filter to target-file events or other directory event types. When
+re-arming onto a different inode, always request a fresh content reconciliation;
+otherwise an atomic replacement racing the re-arm could be missed. Timestamp/size
+preservation must not suppress a real target update.
+Keep editor-to-model snapshots as owned contiguous UTF-8 with Swift's public
+`String.makeContiguousUTF8()`, rather than repeatedly comparing opaque bridged
+NSString buffers across the model/save boundaries. This changes storage only,
+not Unicode scalars, normalization, selection or native text. References:
+[Swift's UTF-8 string model](https://www.swift.org/blog/utf8-string/) and
+[SE-0247](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0247-contiguous-strings.md).
+The API is declared in the installed Swift SDK. Native-buffer readiness timing
+is not a physical display-frame measurement; include actual installed captures. No unbounded eager loading or synchronous
+disk reads on the main actor. True external waits/errors are not evidence of
+ordinary local-open performance.
+
+While a destination is not ready, preserve the outgoing committed content without
+enabling edits or selection. Keep its original binding owner until the destination is ready;
 never bind the outgoing string to the loading document. Discard marked IME text
 without committing it. Rapid selections, failed loads, closing and returning to the
 outgoing tab must not publish stale text. Replace the buffer once with the loaded
@@ -93,16 +140,15 @@ destination. Do not use a fade, synchronous disk I/O or a replacement text contr
 Reference inspected: the existing `EditorTextView.updateNSView` rebind/IME path,
 `EditorTextContainerView` TextKit 2 network and workspace bottom-trailing overlay.
 Reuse the native editor and [NSTextView.isSelectable](https://developer.apple.com/documentation/appkit/nstextview/isselectable)
-for suspension, plus Apple's inspected [ProgressView example](https://developer.apple.com/documentation/swiftui/progressview)
-(`ProgressView()` indeterminate indicator) above the retained content. These APIs
-are present in the installed Xcode 27.2 SDK. No new text engine, custom spinner,
-whole-document layout or third-party dependency is introduced.
+for suspension. The earlier ProgressView overlay is explicitly rejected and must
+be removed, not delayed or replaced with another spinner. No new text engine,
+whole-document layout or third-party dependency is authorized.
 
 Acceptance must cover repeated short/long, wrapped and scrolled document switches
 through the production workspace host, with sequential frames as well as buffer
 readbacks. A final screenshot or successful model test alone cannot prove continuity.
 
-Repair verification (2026-11-03, source `1680f6b`): the reproduced cause was
+Historical partial repair (2026-11-03, source `1680f6b`; spinner rejected by owner): the reproduced cause was
 pushing a lazy placeholder's empty string before asynchronous read completion,
 not an established TextKit defect. The realistic full-workspace regression
 covers loaded short/long/wrapped switches, outgoing content during a pending
@@ -115,8 +161,9 @@ The signed Release was launched from `/Applications/NeatEditor.app` and a
 native coordinated-write hold delayed a disposable destination's read. Five
 sequential captures were inspected: outgoing A, three pending states retaining
 A with the native spinner, then loaded B. See `build/tab-switch/frames/` and the
-matching executable receipt. These sampled frames establish the delayed-read
-transition, not a frame-by-frame guarantee for every file size or physical IME.
+matching executable receipt. These sampled frames establish buffer retention during an artificially delayed
+read only. They do not establish acceptable ordinary-file open latency or owner
+acceptance, nor a frame-by-frame guarantee for every file size or physical IME.
 Reusable ownership/diagnostic guidance lives in the shared
 [AppKit guide](~/Codes/_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md#reusing-a-native-editor-during-lazy-document-loading-2026-11-03).
 

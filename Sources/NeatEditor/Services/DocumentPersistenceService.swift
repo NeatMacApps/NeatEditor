@@ -64,8 +64,14 @@ struct DocumentPersistenceService: Sendable {
         self.fileAccess = DocumentFileAccess(manager: fileManager)
     }
 
-    func save(tab: EditorTab, in directory: URL? = nil, allowsReconciliation: Bool = true) throws -> EditorTab {
-        try fileAccess.sync { try saveInOrder(tab: tab, in: directory, allowsReconciliation: allowsReconciliation) }
+    func save(
+        tab: EditorTab, in directory: URL? = nil, allowsReconciliation: Bool = true,
+        filePresenter: DocumentFileObserver? = nil
+    ) throws -> EditorTab {
+        try fileAccess.sync {
+            try saveInOrder(tab: tab, in: directory, allowsReconciliation: allowsReconciliation,
+                            filePresenter: filePresenter)
+        }
     }
 
     func publishNewDocument(tab: EditorTab, in directory: URL? = nil) throws -> EditorTab {
