@@ -67,13 +67,13 @@ AXPress on Don't Save removed exactly that fixture tab; preference readback was
 empty and the missing file remained absent. Evidence is in
 `build/tab-switch/discard-alert-*.png` and `discard-action-receipt.json`.
 
-Active-process limit: the real existing process still runs the earlier build.
-Its normal guarded quit returns Apple Event error -128 (User canceled) because
-an existing real document cannot save. It was not force-quit, no real buffer was discarded, and no Save Copy action
-was exercised on real content. The new button becomes active only after safe restart;
-handling that existing content requires the owner's explicit preserve/discard
-choice. Fixture tabs were removed without restoring an old preferences snapshot;
-user changes made during the session were not overwritten. Native Intel and
+Historical activation limit before the performance correction: the existing
+process's guarded quit returned Apple Event error -128 for an unsaveable real
+document. That process was not force-quit; no real buffer was discarded and no
+Save Copy action was exercised on real content. The later performance installation
+completed through a successful normal quit, and the current app runs the new
+source. Fresh pre-install workspace/preferences were restored after fixture
+acceptance; no old session snapshot was used to overwrite later user changes. Native Intel and
 minimum-macOS execution, and a light-appearance alert capture remain unverified.
 
 ## Document-switch rendering continuity
@@ -166,6 +166,53 @@ read only. They do not establish acceptable ordinary-file open latency or owner
 acceptance, nor a frame-by-frame guarantee for every file size or physical IME.
 Reusable ownership/diagnostic guidance lives in the shared
 [AppKit guide](~/Codes/_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md#reusing-a-native-editor-during-lazy-document-loading-2026-11-03).
+
+### Small-local-file correction acceptance (2026-11-03)
+
+Source `3d2c26e` removes the editor ProgressView and its localization key. It
+skips only clean transition writes with no pending background write, preserves
+native presenter identity while refreshing replaced vnode watches, filters
+unrelated sibling-directory events without filtering target-file events, and
+materializes editor snapshots as contiguous UTF-8. Dirty/new and pending-write
+transitions retain ordered persistence and external-content validation.
+
+The optimized production-workspace probe used four warmed local CJK/emoji
+fixtures per size and no forced layout. Median call-to-native-buffer readiness:
+
+| Text size | Before, ordinary open | Fixed, clean outgoing | Fixed, just-edited outgoing |
+|---|---:|---:|---:|
+| 100 KB | about 593 ms | 47.7 ms | 60.9 ms |
+| 500 KB | about 612 ms | 67.2 ms | 85.9 ms |
+
+The maximum fixed 500 KB just-edited sample was 103.5 ms. These are small-sample
+native-buffer timings, not cold-storage, cloud-provider or physical display-frame
+latencies. Raw phases, source fingerprints, probe and earlier rejected trials
+remain under `build/open-latency/`; final results are `utf8-clean*.json` and
+`utf8-dirty*.json`. A standalone observed bridged NSString comparison probe
+supported the UTF-8 storage optimization; document scalars and selection are
+pinned by a native regression test.
+
+The full Mac suite passes 158 tests in 19 suites. The shared-service iOS consumer
+passes 10 simulator tests in 2 suites. Universal Mac Debug/Release build/analyze
+and generic iOS-device Debug/Release build/analyze pass. Complete diagnostics are
+under `build/open-latency/logs/`; only the previously assessed AppIntents metadata
+notice remains. A stale generated Sparkle `.cstemp` initially blocked signing;
+removing that generated temporary artifact allowed the unchanged signing checks
+to pass. No diagnostics or data-safety checks were suppressed. Native Intel,
+minimum-OS and physical iOS execution were not covered. The iOS caller already
+avoids the Mac's per-save presenter recreation; no iOS UI/performance change is
+claimed.
+
+The same Developer ID-signed universal Release was installed and launched from
+`/Applications/NeatEditor.app` (version/build remain 1.0.27/27; no public release).
+Native sidebar selections opened 500 KB, 1 KB and 100 KB disposable files; selected
+URL readbacks and inspected fresh screenshots agree on each destination, with
+no editor loading indicator. Evidence: `installed-frames/`,
+`installed-action-receipt.json` and `installation.json` under the same evidence
+directory. Normal guarded quit succeeded; the fresh original workspace, folder,
+tabs and selected file were restored and the installed app relaunched. No real
+content was discarded, no virtual display was attached, and the task-booted
+simulator was shut down.
 
 ## Settings layout revision (2026-10-18)
 
