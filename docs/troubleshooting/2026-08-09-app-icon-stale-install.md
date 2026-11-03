@@ -1,14 +1,16 @@
 # 应用图标更新后仍显示旧图标
 
-改、替换或排查 NeatEditor 应用图标后，桌面、Finder 或系统搜索仍显示旧图标时使用本记录。用户说「图标被还原到几个月之前」「怎么又变成白底手写 A」时也读本篇。
+改、替换或排查 NeatEditor 应用图标后，桌面、Finder 或系统搜索仍显示旧图标时使用本记录。用户说「图标被还原到几个月之前」「怎么又变成白底手写 A」「怎么又变回蓝底卷纸」时也读本篇。
 
 ## 一句话结论
 
 构建成功并不代表正式安装版已携带新图标；必须同时确认构建产物与 `/Applications/NeatEditor.app` 内的图标一致，再清理旧注册记录并刷新系统图标服务。
 
-**当前正式图标母版是蓝底、白纸卷在滚轴上，纸面印有深蓝色衬线 N 的那张，位于 `design/app-icon/AppIcon-1024.png`。** 工程图标资源必须跟母版走。白底手写 A 是 2026-03 占位图，不是现行图标；不得再留在资源集、本地构建产物或已登记的应用包里。从仍含占位图的旧提交拉仓或还原时，装包前先按母版换图标，禁止把占位图装回本机。
+**当前正式图标母版（2026-11-03 起）是黑底、带淡绿光晕的翡翠绿半透明玻璃打字机，位于 `design/app-icon/AppIcon-1024.png`；决定与约束见 [ICON_REDESIGN_2026-11.md](../../design/app-icon/ICON_REDESIGN_2026-11.md)。** 工程图标资源（`Sources/NeatEditor/AppIcon.icon` 与兜底 `AppIcon.appiconset`）必须跟母版走。蓝底卷纸衬线 N（2026-10-27 至 2026-11-03）与白底手写 A（2026-03 占位图）都不是现行图标；不得再留在资源集、本地构建产物或已登记的应用包里。从仍含占位图的旧提交拉仓或还原时，装包前先按母版换图标，禁止把占位图装回本机。
 
-## Approved artwork (2026-10-27)
+## Previous artwork (2026-10-27, superseded 2026-11-03)
+
+Superseded by the typewriter master adopted 2026-11-03 ([ICON_REDESIGN_2026-11.md](../../design/app-icon/ICON_REDESIGN_2026-11.md)); the record below is historical and its master is archived as `design/app-icon/explorations/AppIcon-before-typewriter.png`. The adoption and installation checks remain the procedure to follow.
 
 The owner approved the serif-N revision for production: the foreground roller hides the lower **one third of the complete letter height**, leaving the upper two thirds visible. This is intentional occlusion, not a nearly complete N merely touching the roller. Preserve the existing blue background, white sheet and folded corner, navy roller and cyan ends; do not recenter or resize the approved composition. The 1024 × 1024 master is opaque. Generate all ten existing macOS app-icon slots from that master and keep `docs/images/app-icon.png` synchronized for every localized README. Earlier blank-paper and nearly unoccluded-N candidates are not the current artwork.
 

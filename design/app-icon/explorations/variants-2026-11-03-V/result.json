@@ -1,0 +1,524 @@
+{
+  "ok": true,
+  "data": {
+    "results": [
+      {
+        "line": 1,
+        "ok": true,
+        "data": {
+          "operation_id": "img_20261103T055534_f12ce4a1",
+          "status": "created",
+          "kind": "edit",
+          "route": "codex-images",
+          "out": "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/variants-2026-11-03-V/raw/V1.png",
+          "inputs": [
+            "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/directions-2026-11-03-A/raw/A3b.png"
+          ],
+          "bytes": 1492631,
+          "sha256": "5a6f540b3d35f08b96f6a21d63a8588982c534cec78f3c6628181ba0b0ed68c4",
+          "width": 1254,
+          "height": 1254,
+          "requested": {
+            "model": "gpt-image-2",
+            "size": "1024x1024",
+            "quality": "high",
+            "background": "auto"
+          },
+          "reported": {
+            "size": "1254x1254",
+            "quality": "low",
+            "background": "opaque",
+            "output_format": "png"
+          },
+          "imagegen_request_id": "2ea0ca06-1404-434d-b7e0-1b66a12e031d",
+          "generation_id": "663193d5-9af2-4a0d-81fb-d6769b8441ee",
+          "usage": {
+            "input_tokens": 1785,
+            "input_tokens_details": {
+              "image_tokens": 1521,
+              "text_tokens": 264
+            },
+            "output_tokens": 515,
+            "output_tokens_details": {
+              "image_tokens": 515,
+              "text_tokens": 0
+            },
+            "total_tokens": 2300
+          },
+          "quota": {
+            "limit": "imagegen_premium",
+            "plan_type": "plus",
+            "used_percent": 13,
+            "window_minutes": 1440,
+            "resets_at": "2026-11-03T07:15:37Z",
+            "reset_after_seconds": 4801,
+            "observed_at": "2026-11-03T05:56:06Z"
+          },
+          "attempts": 1,
+          "elapsed_ms": 32776
+        }
+      },
+      {
+        "line": 2,
+        "ok": true,
+        "data": {
+          "operation_id": "img_20261103T055534_1dd31a99",
+          "status": "created",
+          "kind": "edit",
+          "route": "codex-images",
+          "out": "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/variants-2026-11-03-V/raw/V2.png",
+          "inputs": [
+            "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/directions-2026-11-03-A/raw/A3b.png"
+          ],
+          "bytes": 1450746,
+          "sha256": "43e5e9d7dcad1f2dba77192e041ede8c5a63e24c4c312aeb9ac3520bf5936c3e",
+          "width": 1254,
+          "height": 1254,
+          "requested": {
+            "model": "gpt-image-2",
+            "size": "1024x1024",
+            "quality": "high",
+            "background": "auto"
+          },
+          "reported": {
+            "size": "1254x1254",
+            "quality": "low",
+            "background": "opaque",
+            "output_format": "png"
+          },
+          "imagegen_request_id": "e379340e-3900-48a7-be18-790a98e7a5eb",
+          "generation_id": "cf590a38-0659-4ed7-86be-586e68eb0d4e",
+          "usage": {
+            "input_tokens": 1763,
+            "input_tokens_details": {
+              "image_tokens": 1521,
+              "text_tokens": 242
+            },
+            "output_tokens": 515,
+            "output_tokens_details": {
+              "image_tokens": 515,
+              "text_tokens": 0
+            },
+            "total_tokens": 2278
+          },
+          "quota": {
+            "limit": "imagegen_premium",
+            "plan_type": "plus",
+            "used_percent": 13,
+            "window_minutes": 1440,
+            "resets_at": "2026-11-03T07:15:37Z",
+            "reset_after_seconds": 4801,
+            "observed_at": "2026-11-03T05:56:07Z"
+          },
+          "attempts": 1,
+          "elapsed_ms": 33472
+        }
+      },
+      {
+        "line": 3,
+        "ok": true,
+        "data": {
+          "operation_id": "img_20261103T055534_2b693ff5",
+          "status": "created",
+          "kind": "edit",
+          "route": "codex-images",
+          "out": "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/variants-2026-11-03-V/raw/V3.png",
+          "inputs": [
+            "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/directions-2026-11-03-A/raw/A3b.png"
+          ],
+          "bytes": 1506716,
+          "sha256": "fa642591a4897017c447463287cbfb7d5b63286c11fb87ffb4e53069050cb06b",
+          "width": 1254,
+          "height": 1254,
+          "requested": {
+            "model": "gpt-image-2",
+            "size": "1024x1024",
+            "quality": "high",
+            "background": "auto"
+          },
+          "reported": {
+            "size": "1254x1254",
+            "quality": "low",
+            "background": "opaque",
+            "output_format": "png"
+          },
+          "imagegen_request_id": "e2fd1e61-05e7-4e76-9731-e7a4b2ba62ad",
+          "generation_id": "b0cb1e9a-07b1-457f-adeb-58d2fc784e2d",
+          "usage": {
+            "input_tokens": 1780,
+            "input_tokens_details": {
+              "image_tokens": 1521,
+              "text_tokens": 259
+            },
+            "output_tokens": 515,
+            "output_tokens_details": {
+              "image_tokens": 515,
+              "text_tokens": 0
+            },
+            "total_tokens": 2295
+          },
+          "quota": {
+            "limit": "imagegen_premium",
+            "plan_type": "plus",
+            "used_percent": 13,
+            "window_minutes": 1440,
+            "resets_at": "2026-11-03T07:15:37Z",
+            "reset_after_seconds": 4801,
+            "observed_at": "2026-11-03T05:56:04Z"
+          },
+          "attempts": 1,
+          "elapsed_ms": 30830
+        }
+      },
+      {
+        "line": 4,
+        "ok": true,
+        "data": {
+          "operation_id": "img_20261103T055604_d9c51ebd",
+          "status": "created",
+          "kind": "edit",
+          "route": "codex-images",
+          "out": "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/variants-2026-11-03-V/raw/V4.png",
+          "inputs": [
+            "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/directions-2026-11-03-A/raw/A3b.png"
+          ],
+          "bytes": 1514355,
+          "sha256": "94a702a753bf226c2f1c97daad60d1766f6e133c8d1fc9f1e94845f932c96e75",
+          "width": 1254,
+          "height": 1254,
+          "requested": {
+            "model": "gpt-image-2",
+            "size": "1024x1024",
+            "quality": "high",
+            "background": "auto"
+          },
+          "reported": {
+            "size": "1254x1254",
+            "quality": "low",
+            "background": "opaque",
+            "output_format": "png"
+          },
+          "imagegen_request_id": "789477a4-a5e3-4c8d-9f46-deb2fe601eb5",
+          "generation_id": "4afd45db-7ed4-4435-8bd4-773f4b5db569",
+          "usage": {
+            "input_tokens": 1775,
+            "input_tokens_details": {
+              "image_tokens": 1521,
+              "text_tokens": 254
+            },
+            "output_tokens": 515,
+            "output_tokens_details": {
+              "image_tokens": 515,
+              "text_tokens": 0
+            },
+            "total_tokens": 2290
+          },
+          "quota": {
+            "limit": "imagegen_premium",
+            "plan_type": "plus",
+            "used_percent": 13,
+            "window_minutes": 1440,
+            "resets_at": "2026-11-03T07:15:37Z",
+            "reset_after_seconds": 4771,
+            "observed_at": "2026-11-03T05:56:34Z"
+          },
+          "attempts": 1,
+          "elapsed_ms": 29560
+        }
+      },
+      {
+        "line": 5,
+        "ok": true,
+        "data": {
+          "operation_id": "img_20261103T055606_fa512cd3",
+          "status": "created",
+          "kind": "edit",
+          "route": "codex-images",
+          "out": "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/variants-2026-11-03-V/raw/V5.png",
+          "inputs": [
+            "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/directions-2026-11-03-A/raw/A3b.png"
+          ],
+          "bytes": 1523526,
+          "sha256": "276dcec6198b029f1c2e281068f3d6daefea9317d67ce23cc74ad74f9aa21f00",
+          "width": 1254,
+          "height": 1254,
+          "requested": {
+            "model": "gpt-image-2",
+            "size": "1024x1024",
+            "quality": "high",
+            "background": "auto"
+          },
+          "reported": {
+            "size": "1254x1254",
+            "quality": "medium",
+            "background": "opaque",
+            "output_format": "png"
+          },
+          "imagegen_request_id": "8e964e65-5c8c-4d2b-89c9-2cddbb6ac927",
+          "generation_id": "6a17cfd5-c438-4bb7-b5f4-c55a381a1b3d",
+          "usage": {
+            "input_tokens": 1784,
+            "input_tokens_details": {
+              "image_tokens": 1521,
+              "text_tokens": 263
+            },
+            "output_tokens": 915,
+            "output_tokens_details": {
+              "image_tokens": 915,
+              "text_tokens": 0
+            },
+            "total_tokens": 2699
+          },
+          "quota": {
+            "limit": "imagegen_premium",
+            "plan_type": "plus",
+            "used_percent": 14,
+            "window_minutes": 1440,
+            "resets_at": "2026-11-03T07:15:37Z",
+            "reset_after_seconds": 4769,
+            "observed_at": "2026-11-03T05:56:42Z"
+          },
+          "attempts": 1,
+          "elapsed_ms": 35588
+        }
+      },
+      {
+        "line": 6,
+        "ok": true,
+        "data": {
+          "operation_id": "img_20261103T055607_14dde05d",
+          "status": "created",
+          "kind": "edit",
+          "route": "codex-images",
+          "out": "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/variants-2026-11-03-V/raw/V6.png",
+          "inputs": [
+            "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/directions-2026-11-03-A/raw/A3b.png"
+          ],
+          "bytes": 1213390,
+          "sha256": "a5a33900530ec9f2cdc96dd4ee8681900fad91ce120a34485b6202f8f2ac2a1d",
+          "width": 1254,
+          "height": 1254,
+          "requested": {
+            "model": "gpt-image-2",
+            "size": "1024x1024",
+            "quality": "high",
+            "background": "auto"
+          },
+          "reported": {
+            "size": "1254x1254",
+            "quality": "low",
+            "background": "opaque",
+            "output_format": "png"
+          },
+          "imagegen_request_id": "1c3056fa-15c7-9adb-8dc9-9054a5bcd87e",
+          "generation_id": "beaf4ed4-6ac7-4df1-83ae-445b75bf2784",
+          "usage": {
+            "input_tokens": 1775,
+            "input_tokens_details": {
+              "image_tokens": 1521,
+              "text_tokens": 254
+            },
+            "output_tokens": 515,
+            "output_tokens_details": {
+              "image_tokens": 515,
+              "text_tokens": 0
+            },
+            "total_tokens": 2290
+          },
+          "quota": {
+            "limit": "imagegen_premium",
+            "plan_type": "plus",
+            "used_percent": 14,
+            "window_minutes": 1440,
+            "resets_at": "2026-11-03T07:15:37Z",
+            "reset_after_seconds": 4769,
+            "observed_at": "2026-11-03T05:56:37Z"
+          },
+          "attempts": 1,
+          "elapsed_ms": 29530
+        }
+      },
+      {
+        "line": 7,
+        "ok": true,
+        "data": {
+          "operation_id": "img_20261103T055634_8cddf4f0",
+          "status": "created",
+          "kind": "edit",
+          "route": "codex-images",
+          "out": "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/variants-2026-11-03-V/raw/V7.png",
+          "inputs": [
+            "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/directions-2026-11-03-A/raw/A3b.png"
+          ],
+          "bytes": 1595376,
+          "sha256": "1b2b77e42de17b0df3b3b157d922c314ca82d9a707ee34cbc2da63ab6e2a6702",
+          "width": 1254,
+          "height": 1254,
+          "requested": {
+            "model": "gpt-image-2",
+            "size": "1024x1024",
+            "quality": "high",
+            "background": "auto"
+          },
+          "reported": {
+            "size": "1254x1254",
+            "quality": "low",
+            "background": "opaque",
+            "output_format": "png"
+          },
+          "imagegen_request_id": "c954a3e5-857c-416e-b02b-5d09c16d0e60",
+          "generation_id": "d7f6a52a-3936-4036-89a9-aa8169feb5fd",
+          "usage": {
+            "input_tokens": 1770,
+            "input_tokens_details": {
+              "image_tokens": 1521,
+              "text_tokens": 249
+            },
+            "output_tokens": 515,
+            "output_tokens_details": {
+              "image_tokens": 515,
+              "text_tokens": 0
+            },
+            "total_tokens": 2285
+          },
+          "quota": {
+            "limit": "imagegen_premium",
+            "plan_type": "plus",
+            "used_percent": 14,
+            "window_minutes": 1440,
+            "resets_at": "2026-11-03T07:15:37Z",
+            "reset_after_seconds": 4742,
+            "observed_at": "2026-11-03T05:57:07Z"
+          },
+          "attempts": 1,
+          "elapsed_ms": 33551
+        }
+      },
+      {
+        "line": 8,
+        "ok": true,
+        "data": {
+          "operation_id": "img_20261103T055637_1424b4b5",
+          "status": "created",
+          "kind": "edit",
+          "route": "codex-images",
+          "out": "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/variants-2026-11-03-V/raw/V8.png",
+          "inputs": [
+            "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/directions-2026-11-03-A/raw/A3b.png"
+          ],
+          "bytes": 1534562,
+          "sha256": "a5701903c1aa581bdb1c62023e827aaf0f7fc1040b5185c3b1eede5aa73e5441",
+          "width": 1254,
+          "height": 1254,
+          "requested": {
+            "model": "gpt-image-2",
+            "size": "1024x1024",
+            "quality": "high",
+            "background": "auto"
+          },
+          "reported": {
+            "size": "1254x1254",
+            "quality": "medium",
+            "background": "opaque",
+            "output_format": "png"
+          },
+          "imagegen_request_id": "3a5ffb27-4351-4c68-984e-deb576b51db1",
+          "generation_id": "d0329855-6437-4699-afad-daa3a719b76c",
+          "usage": {
+            "input_tokens": 1787,
+            "input_tokens_details": {
+              "image_tokens": 1521,
+              "text_tokens": 266
+            },
+            "output_tokens": 915,
+            "output_tokens_details": {
+              "image_tokens": 915,
+              "text_tokens": 0
+            },
+            "total_tokens": 2702
+          },
+          "quota": {
+            "limit": "imagegen_premium",
+            "plan_type": "plus",
+            "used_percent": 14,
+            "window_minutes": 1440,
+            "resets_at": "2026-11-03T07:15:37Z",
+            "reset_after_seconds": 4739,
+            "observed_at": "2026-11-03T05:57:22Z"
+          },
+          "attempts": 1,
+          "elapsed_ms": 44973
+        }
+      },
+      {
+        "line": 9,
+        "ok": true,
+        "data": {
+          "operation_id": "img_20261103T055642_68b97686",
+          "status": "created",
+          "kind": "edit",
+          "route": "codex-images",
+          "out": "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/variants-2026-11-03-V/raw/V9.png",
+          "inputs": [
+            "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/directions-2026-11-03-A/raw/A3b.png"
+          ],
+          "bytes": 1205071,
+          "sha256": "81765f60c94369d1f97926af72ec9e3059a4176a8f27b7ed0af9bcbe5e4bee78",
+          "width": 1254,
+          "height": 1254,
+          "requested": {
+            "model": "gpt-image-2",
+            "size": "1024x1024",
+            "quality": "high",
+            "background": "auto"
+          },
+          "reported": {
+            "size": "1254x1254",
+            "quality": "low",
+            "background": "opaque",
+            "output_format": "png"
+          },
+          "imagegen_request_id": "230aee96-c3c5-4fac-8eac-f2cca667201d",
+          "generation_id": "372ed988-c92c-4f18-b3c9-6753a2c6d9e1",
+          "usage": {
+            "input_tokens": 1777,
+            "input_tokens_details": {
+              "image_tokens": 1521,
+              "text_tokens": 256
+            },
+            "output_tokens": 515,
+            "output_tokens_details": {
+              "image_tokens": 515,
+              "text_tokens": 0
+            },
+            "total_tokens": 2292
+          },
+          "quota": {
+            "limit": "imagegen_premium",
+            "plan_type": "plus",
+            "used_percent": 14,
+            "window_minutes": 1440,
+            "resets_at": "2026-11-03T07:15:37Z",
+            "reset_after_seconds": 4734,
+            "observed_at": "2026-11-03T05:57:17Z"
+          },
+          "attempts": 1,
+          "elapsed_ms": 35541
+        }
+      }
+    ],
+    "summary": {
+      "created": 9,
+      "failed": 0,
+      "planned": 0,
+      "total": 9,
+      "unchanged": 0
+    }
+  },
+  "error": null,
+  "meta": {
+    "dry_run": false,
+    "partial": false,
+    "schema_version": 1
+  }
+}

@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.26 - 2026-11-03
+
+### Changed
+
+- New app icon: a jade-green glass typewriter on a dark background, shipped as a layered Icon Composer icon for macOS 26 with the classic icon set kept for older surfaces.
+- The sidebar lists documents by modification date, newest first.
+
+### Fixed
+
+- Edits made to the same document from another app or device are no longer lost: independent changes merge, and overlapping changes keep both versions side by side instead of overwriting one.
+- Saves to the same document are applied in order, so a slower earlier save can no longer replace newer text.
+- File rows refresh after a document is moved or renamed outside NeatEditor.
+- The floating character count no longer clips the bottom of the editor, and the last lines keep their normal bottom padding.
+
+### 简体中文
+
+- 新应用图标：深色背景上的翡翠绿玻璃打字机；在 macOS 26 上使用 Icon Composer 分层图标，并保留传统图标集供旧界面使用。
+- 侧边栏文档改为按修改时间排列，最新的在最前。
+- 在其他应用或其他设备上同时修改同一文档时不再丢稿：互不冲突的改动自动合并，重叠的改动会把两个版本并排保留，而不是互相覆盖。
+- 同一文档的多次保存按顺序落盘，较慢的旧保存不会再覆盖较新的内容。
+- 文档在 NeatEditor 之外被移动或改名后，文件列表会及时刷新。
+- 浮动字数统计不再遮住编辑区底部，最后几行恢复正常的底部留白。
+
 ## 1.0.25 - 2026-10-29
 
 ### Changed

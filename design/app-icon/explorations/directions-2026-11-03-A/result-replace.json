@@ -1,0 +1,73 @@
+{
+  "ok": true,
+  "data": {
+    "results": [
+      {
+        "line": 1,
+        "ok": true,
+        "data": {
+          "operation_id": "img_20261103T021346_dc9083a1",
+          "status": "created",
+          "kind": "generate",
+          "route": "codex-images",
+          "out": "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/directions-2026-11-03-A/raw/A3b.png",
+          "bytes": 1355873,
+          "sha256": "86e82370987f9137f2bf5c21fe2cce8b806b4bc02df3d3b3c8f0277e2530a794",
+          "width": 1254,
+          "height": 1254,
+          "requested": {
+            "model": "gpt-image-2",
+            "size": "1024x1024",
+            "quality": "high",
+            "background": "auto"
+          },
+          "reported": {
+            "size": "1254x1254",
+            "quality": "medium",
+            "background": "opaque",
+            "output_format": "png"
+          },
+          "imagegen_request_id": "dab5940b-d2f1-4716-bfdd-bf2221e73b2b",
+          "generation_id": "64e79c92-273f-4b65-bd6d-f7095e003e59",
+          "usage": {
+            "input_tokens": 373,
+            "input_tokens_details": {
+              "image_tokens": 0,
+              "text_tokens": 373
+            },
+            "output_tokens": 915,
+            "output_tokens_details": {
+              "image_tokens": 915,
+              "text_tokens": 0
+            },
+            "total_tokens": 1288
+          },
+          "quota": {
+            "limit": "imagegen_premium",
+            "plan_type": "plus",
+            "used_percent": 13,
+            "window_minutes": 1440,
+            "resets_at": "2026-11-03T07:15:37Z",
+            "reset_after_seconds": 18111,
+            "observed_at": "2026-11-03T02:14:20Z"
+          },
+          "attempts": 1,
+          "elapsed_ms": 34245
+        }
+      }
+    ],
+    "summary": {
+      "created": 1,
+      "failed": 0,
+      "planned": 0,
+      "total": 1,
+      "unchanged": 0
+    }
+  },
+  "error": null,
+  "meta": {
+    "dry_run": false,
+    "partial": false,
+    "schema_version": 1
+  }
+}

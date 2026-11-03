@@ -1,0 +1,76 @@
+{
+  "ok": true,
+  "data": {
+    "results": [
+      {
+        "line": 1,
+        "ok": true,
+        "data": {
+          "operation_id": "img_20261103T055746_bb53bb8e",
+          "status": "created",
+          "kind": "edit",
+          "route": "codex-images",
+          "out": "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/variants-2026-11-03-V/raw/V7b.png",
+          "inputs": [
+            "~/Codes/NeatEditor/app-macos/design/app-icon/explorations/directions-2026-11-03-A/raw/A3b.png"
+          ],
+          "bytes": 2230739,
+          "sha256": "d74ef3dbd40d735fbb1b4d17102396a9b0fef4763f1be484054ca914479630b2",
+          "width": 1254,
+          "height": 1254,
+          "requested": {
+            "model": "gpt-image-2",
+            "size": "1024x1024",
+            "quality": "high",
+            "background": "auto"
+          },
+          "reported": {
+            "size": "1254x1254",
+            "quality": "low",
+            "background": "opaque",
+            "output_format": "png"
+          },
+          "imagegen_request_id": "d7a816c4-b89b-4cac-bb88-a84be6523e7f",
+          "generation_id": "6d3d5d6e-8d67-461e-9afb-cb751f4fb765",
+          "usage": {
+            "input_tokens": 1841,
+            "input_tokens_details": {
+              "image_tokens": 1521,
+              "text_tokens": 320
+            },
+            "output_tokens": 515,
+            "output_tokens_details": {
+              "image_tokens": 515,
+              "text_tokens": 0
+            },
+            "total_tokens": 2356
+          },
+          "quota": {
+            "limit": "imagegen_premium",
+            "plan_type": "plus",
+            "used_percent": 15,
+            "window_minutes": 1440,
+            "resets_at": "2026-11-03T07:15:37Z",
+            "reset_after_seconds": 4669,
+            "observed_at": "2026-11-03T05:58:20Z"
+          },
+          "attempts": 1,
+          "elapsed_ms": 33583
+        }
+      }
+    ],
+    "summary": {
+      "created": 1,
+      "failed": 0,
+      "planned": 0,
+      "total": 1,
+      "unchanged": 0
+    }
+  },
+  "error": null,
+  "meta": {
+    "dry_run": false,
+    "partial": false,
+    "schema_version": 1
+  }
+}

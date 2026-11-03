@@ -69,6 +69,7 @@
 		EE8FDF1E46F208FEEE81F43F /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56530C158F57A8758BF0D6FF /* AppLanguage.swift */; };
 		F06062D1F0E725C1BEB44E45 /* LaunchProfiler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F940423B3470B32EA92D1D9 /* LaunchProfiler.swift */; };
 		F294F12E2A20AE8FFE734E66 /* TabBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57BC26D5C7240FEF483712F5 /* TabBehavior.swift */; };
+		F81E7E041FE870553FB40E52 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 490A78F198CBE0D621CA42B8 /* AppIcon.icon */; };
 		F9F0759B221E03E66297E6D5 /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF4FFD7351F34190C76B4C7D /* WorkspaceView.swift */; };
 /* End PBXBuildFile section */
 
@@ -100,6 +101,7 @@
 		3DB9D86BBC9C10E24C2579C1 /* TitleBarTrafficLightAlignmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleBarTrafficLightAlignmentView.swift; sourceTree = "<group>"; };
 		3DC995CE28879B63ADA21A6B /* DocumentConcurrencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentConcurrencyTests.swift; sourceTree = "<group>"; };
 		41100292C0909F81989C8A6B /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		490A78F198CBE0D621CA42B8 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		49617A697F3FCB69D04AD6E2 /* DocumentTextMerge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentTextMerge.swift; sourceTree = "<group>"; };
 		55DE5AD03818E9C68100D77F /* DocumentPersistenceService+Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DocumentPersistenceService+Sidebar.swift"; sourceTree = "<group>"; };
 		56530C158F57A8758BF0D6FF /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
@@ -269,6 +271,7 @@
 				20ABEE1AEF7A035E14B03F13 /* Resources */,
 				A22CFA8E6AABC86E0B1F852D /* Services */,
 				2EBD0DB1ACC72C10C561D621 /* SharedUI */,
+				490A78F198CBE0D621CA42B8 /* AppIcon.icon */,
 				CC4981C6B05519CD1877B4D5 /* Assets.xcassets */,
 			);
 			path = NeatEditor;
@@ -451,6 +454,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F81E7E041FE870553FB40E52 /* AppIcon.icon in Resources */,
 				2F0D92985DE89AFB1227039E /* Assets.xcassets in Resources */,
 				39BD2850BB05C043F8377344 /* Localizable.strings in Resources */,
 			);
@@ -630,7 +634,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 25;
+				CURRENT_PROJECT_VERSION = 26;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -645,7 +649,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0.25;
+				MARKETING_VERSION = 1.0.26;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";
@@ -732,7 +736,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 25;
+				CURRENT_PROJECT_VERSION = 26;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -753,7 +757,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0.25;
+				MARKETING_VERSION = 1.0.26;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
