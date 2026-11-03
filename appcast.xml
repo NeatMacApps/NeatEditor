@@ -3,6 +3,39 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.26</title>
+            <pubDate>Tue, 03 Nov 2026 14:54:19 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>26</sparkle:version>
+            <sparkle:shortVersionString>1.0.26</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.26
+
+
+### Changed
+
+- New app icon: a jade-green glass typewriter on a dark background, shipped as a layered Icon Composer icon for macOS 26 with the classic icon set kept for older surfaces.
+- The sidebar lists documents by modification date, newest first.
+
+### Fixed
+
+- Edits made to the same document from another app or device are no longer lost: independent changes merge, and overlapping changes keep both versions side by side instead of overwriting one.
+- Saves to the same document are applied in order, so a slower earlier save can no longer replace newer text.
+- File rows refresh after a document is moved or renamed outside NeatEditor.
+- The floating character count no longer clips the bottom of the editor, and the last lines keep their normal bottom padding.
+
+### 简体中文
+
+- 新应用图标：深色背景上的翡翠绿玻璃打字机；在 macOS 26 上使用 Icon Composer 分层图标，并保留传统图标集供旧界面使用。
+- 侧边栏文档改为按修改时间排列，最新的在最前。
+- 在其他应用或其他设备上同时修改同一文档时不再丢稿：互不冲突的改动自动合并，重叠的改动会把两个版本并排保留，而不是互相覆盖。
+- 同一文档的多次保存按顺序落盘，较慢的旧保存不会再覆盖较新的内容。
+- 文档在 NeatEditor 之外被移动或改名后，文件列表会及时刷新。
+- 浮动字数统计不再遮住编辑区底部，最后几行恢复正常的底部留白。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.26/NeatEditor-1.0.26.zip" length="5508120" type="application/octet-stream" sparkle:edSignature="eBwP6m2xRCaIEVZWNMr2iNsAcl86OddNT6+en25lyImXcMyxxvOaWnohixV9+dvPhLEj3m5n4gykAZDFHRucDw=="/>
+        </item>
+        <item>
             <title>1.0.25</title>
             <pubDate>Thu, 29 Oct 2026 13:42:01 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
@@ -232,37 +265,6 @@
 - 顶部栏空白区域交还系统处理拖窗与双击，同时保留标签选择和行内重命名。
 ]]></description>
             <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.16/NeatEditor-1.0.16.zip" length="3582246" type="application/octet-stream" sparkle:edSignature="pUdch7Ned88Yzx9J9fFS952zImKOdl1rdbCz+fvESV2k97ynYnvW4uCZreLNyCshD7leM9S6qDJ1+6uvdNXZDA=="/>
-        </item>
-        <item>
-            <title>1.0.15</title>
-            <pubDate>Sun, 25 Oct 2026 15:28:14 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatEditor</link>
-            <sparkle:version>15</sparkle:version>
-            <sparkle:shortVersionString>1.0.15</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.15
-
-
-### Changed
-
-- Require macOS 26.0 or later and Xcode 26.0 or later to build. Keep universal Apple silicon and Intel packages; CI validates with Xcode 26.0.1 on macOS 26.
-- Use the macOS 26 native prominent toolbar style while Always on Top is enabled.
-- Replace deprecated SwiftUI text concatenation with a complete localizable sentence and styled shortcut interpolation.
-
-### Fixed
-
-- Keep the selected tab's filename, fill and outline together during rapid window resizing and overflow scrolling. Resize no longer queues competing reveal animations.
-- Shift+Enter now inserts at the logical content end without splitting CRLF or overlooking Unicode line terminators. The insertion still supports native undo. Line numbers now count the same native line boundaries, including the final empty line.
-
-### 简体中文
-
-- 最低系统版本提高到 macOS 26.0，构建要求 Xcode 26.0 或更新版本；继续提供 Apple silicon 和 Intel 通用安装包，CI 改用 macOS 26 与 Xcode 26.0.1。
-- 置顶启用时使用 macOS 26 原生工具栏强调样式，清楚显示当前状态。
-- 用完整句子的本地化插值替换已废弃的 SwiftUI 文本拼接，保留快捷键的加粗显示。
-- 修复快速调整窗口大小和溢出滚动时，标签文件名、底色与轮廓各自移动的问题；缩放不再叠加相互竞争的滚动动画。
-- 修复 Shift+Enter 拆开 CRLF 或漏判 Unicode 换行符的问题；插入操作仍可原生撤销，行号也按相同的原生换行边界计数（包含末尾空行）。
-]]></description>
-            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.15/NeatEditor-1.0.15.zip" length="3579887" type="application/octet-stream" sparkle:edSignature="kWMk8Tow67u2eqkr5nNF2V54D1T9wKuqwK5bFnJlBUPI1UNKsK+RGOMELXOKe/QU3DBPQOWmmnFsUGo732QtBQ=="/>
         </item>
         <item>
             <title>1.0.14</title>
