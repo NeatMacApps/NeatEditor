@@ -2,9 +2,7 @@
 <!-- source: ~/Codes/NeatEditor/AGENTS.md -->
 # NeatEditor
 
-macOS 纯文本编辑器（SwiftUI + AppKit）。
-
-产品方向（2026-11-03 确认）：要做 iOS 版本，macOS 为当前主体，iOS 规划中，范围与时间待定。
+纯文本编辑器：macOS 为主体（SwiftUI + AppKit），另有 iPhone/iPad 客户端（SwiftUI + UIKit，v1 于 2026-11-03 交付，先自用）。
 
 通用工程规范：[Swift 规范](~/Codes/_standards/swift.md)
 
@@ -14,6 +12,8 @@ macOS 纯文本编辑器（SwiftUI + AppKit）。
 - Read the documents whose described content is relevant to the current task.
 
 - [app-macos/AGENTS.md](~/Codes/NeatEditor/app-macos/AGENTS.md)：改、评审或排查编辑器功能前必读。
+- [app-ios/AGENTS.md](~/Codes/NeatEditor/app-ios/AGENTS.md): iPhone/iPad client repository — layout, build/test/device-delivery commands, signing, and the rule that persistence is compiled from `app-macos/Sources/NeatEditor/Services` (side-by-side checkout). Remote: `ssh://git@forgejo.caozc.top:2222/Max/neateditor-ios.git`.
+- [app-ios/docs/IOS_APP_KNOWLEDGE_BASE.md](~/Codes/NeatEditor/app-ios/docs/IOS_APP_KNOWLEDGE_BASE.md): iOS product decisions (same Documents folder as the Mac, granted once in the system folder picker; document list + single editor; personal distribution), behavior contract, iCloud download handling, baseline applicability and known limits.
 - 标题栏、标签外观与液态玻璃等界面约束仍以全局 CLIENT_UI 与现有 design 文档为准（本仓无独立标题栏指南）。
 
 - [docs/WORKSPACE_TABS_KNOWLEDGE_BASE.md](~/Codes/NeatEditor/docs/WORKSPACE_TABS_KNOWLEDGE_BASE.md): 工作区与多标签管理：标签新建/切换/关闭/重开/废纸篓、存旧前置、状态快照、标题栏手势.
@@ -41,6 +41,7 @@ macOS 纯文本编辑器（SwiftUI + AppKit）。
 | 应用启动与外部打开 | app-macos/Sources/NeatEditor/App/ |
 | 偏好设置与本地化 | app-macos/Sources/NeatEditor/Models/ · app-macos/Sources/NeatEditor/Features/Workspace/SettingsView.swift |
 | 发布与更新分发 | app-macos/RELEASING.md · app-macos/scripts/publish-release.sh |
+| iOS 客户端 | app-ios/Sources/NeatEditorMobile/ · app-ios/project.yml |
 
 <!-- managed:inherited-agents:end -->
 

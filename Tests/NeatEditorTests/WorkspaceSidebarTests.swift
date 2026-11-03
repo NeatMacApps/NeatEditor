@@ -70,7 +70,7 @@ struct WorkspaceSidebarTests {
         )
     }
 
-    @Test("sidebar lists supported files in stable descending filename order")
+    @Test("sidebar lists supported files by latest modification date and reorders after changes")
     func sidebarListsSupportedFilesNewestFirst() throws {
         let (service, directory) = try makeService()
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -105,15 +105,32 @@ struct WorkspaceSidebarTests {
         try touch(directory.appendingPathComponent("upper.MD"), date: Date(timeIntervalSince1970: 200))
         try touch(directory.appendingPathComponent("note.markdown"), date: Date(timeIntervalSince1970: 250))
         try touch(directory.appendingPathComponent("plain.text"), date: Date(timeIntervalSince1970: 150))
+        try touch(directory.appendingPathComponent("noext"), date: Date(timeIntervalSince1970: 50))
 
         let files = try service.sidebarTextFiles()
         let names = files.map(\.fileURL.lastPathComponent)
 
         #expect(
-            names == ["upper.MD", "plain.text", "older.txt", "note.markdown", "noext", "newer.md"]
+            names == ["newer.md", "note.markdown", "upper.MD", "plain.text", "older.txt", "noext"]
         )
-        try touch(directory.appendingPathComponent("newer.md"), date: .now)
-        #expect(try service.sidebarTextFiles().map(\.fileURL.lastPathComponent) == names)
+        try touch(directory.appendingPathComponent("older.txt"), date: Date(timeIntervalSince1970: 400))
+        #expect(try service.sidebarTextFiles().map(\.fileURL.lastPathComponent) == [
+            "older.txt", "newer.md", "note.markdown", "upper.MD", "plain.text", "noext"
+        ])
+    }
+
+    @Test("equal modification dates use stable natural descending filename order")
+    func sidebarEqualDatesUseFilenameOrder() throws {
+        let (service, directory) = try makeService()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        for name in ["note2.txt", "note10.txt", "note1.txt"] {
+            let url = directory.appendingPathComponent(name)
+            try "text".write(to: url, atomically: true, encoding: .utf8)
+            try touch(url, date: Date(timeIntervalSince1970: 100))
+        }
+        let expected = ["note10.txt", "note2.txt", "note1.txt"]
+        #expect(try service.sidebarTextFiles().map(\.fileURL.lastPathComponent) == expected)
+        #expect(try service.sidebarTextFiles().map(\.fileURL.lastPathComponent) == expected)
     }
 
     @Test("sidebar preview excerpt keeps the first three lines")

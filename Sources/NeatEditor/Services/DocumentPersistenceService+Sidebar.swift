@@ -71,12 +71,13 @@ extension DocumentPersistenceService {
                 fileSize: values.fileSize ?? 0
             ))
         }
-        // Pre-extract the display name once per file: the old comparator
-        // recomputed `lastPathComponent` on every comparison (O(N log N)
-        // extractions). Sorting on precomputed keys keeps the exact same
-        // order (natural descending, path fallback).
+        // Keep filename extraction out of comparisons; names only break
+        // ties between files with the same content modification date.
         let keyed = infos.map { ($0.fileURL.lastPathComponent, $0) }
         return keyed.sorted { lhs, rhs in
+            if lhs.1.modificationDate != rhs.1.modificationDate {
+                return lhs.1.modificationDate > rhs.1.modificationDate
+            }
             let comparison = lhs.0.localizedStandardCompare(rhs.0)
             if comparison != .orderedSame {
                 return comparison == .orderedDescending

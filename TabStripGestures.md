@@ -16,9 +16,13 @@ Owner corrections (2026-10-24):
   notices remain in the editor column.
 - Closing the sidebar leaves no rail and never removes the tab control.
   Repeated collapse/expand and minimum-window resizing must keep tabs clickable.
-- Sidebar files use descending natural filename order with a path tie-breaker.
-  Save/autosave and tab switching do not change their positions. Creating or
-  renaming files may change their positions.
+- Sidebar files use descending content modification date (latest first), then
+  descending natural filename and path for equal dates. Missing dates sort last.
+  Owner revision 2026-11-03 supersedes the previous filename-first order.
+  Reference: the existing native `WorkspaceSidebarView` List and metadata-only
+  `DocumentPersistenceService.sidebarTextFiles`; retain their UI and filtering.
+  Save/autosave and external edits may move a file when its disk modification
+  date changes. Tab switching and preview-only updates do not invent dates.
 - Owner correction: preserve the existing rounded, stepped document tabs joined
   to the editor surface. The owner explicitly rejected replacing this component
   with `NSSegmentedControl` and instructed continuation of its restoration.
@@ -691,7 +695,9 @@ Use the installed `/Applications/NeatEditor.app`, not just a build/test result.
 2. Click the actual sidebar toolbar control repeatedly; inspect expanded and
    collapsed screenshots and select a tab in both states.
 3. Repeat at normal/minimum width; resize the native divider.
-4. Save, switch documents and refresh; sidebar filename order must remain stable.
+4. Save, switch documents and refresh; the most recently modified file must
+   appear first. Equal-date files retain deterministic filename/path order;
+   preview-only refreshes must not alter dates.
 5. Drag from a tab and from empty tab-strip space; the window must follow the
    pointer, and releasing must not select or rename the starting tab. Double-click
    the top gutter and trailing blank area: each must perform the native configured
