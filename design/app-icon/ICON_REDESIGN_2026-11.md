@@ -102,3 +102,14 @@ later NeatEditor artwork still face the default gate.
 - iOS: build 5 (`neateditor-ios` `01357eb`) passed 10 simulator tests, was signed and uploaded to AppShelf
   (release 425, https://apps.caozc.com/a/neateditor). Direct installation failed with `device_unavailable` (phone away);
   home-screen acceptance on the phone remains open.
+- macOS 1.0.27 (R5): [v1.0.27](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.27) from source `3b9ee97`,
+  appcast commit `4a3161d` pushed by the publisher itself (the hook fix held). Apple submissions
+  `5e5d830b-6cab-438f-a772-54e54fc89148` (app) and `22d80c4e-aa8b-47b3-b78b-41c6f73d1386` (DMG). Anonymous downloads
+  matched SHA256SUMS and the local files: DMG `913a22b93fcb759527195f19893d28d36cee4c77e1a3b95b1db35d13cab8bba9`, ZIP
+  `c19c5abc3754f837f69792a44dbf23ac843a18800aa0ec1f6756d6511682473d`; the raw appcast serves build 27 with the ZIP's
+  length. Gate: 149 tests, universal Release build, only the retained AppIntents notice; slots packaged by the skill's
+  generator with only the owner-approved dominant-pair check bypassed. Installed from the public DMG (same Developer ID,
+  strict signature and staple pass), executable SHA256 `288a0fbe5b99529a12dcd25757b47fa42f423dd0fa3e1309b80bc7255d3bdf83`;
+  Finder shows the R5 icon. Dock not captured (session locked).
+- iOS build 6 (`aaf418a`): 10 simulator tests passed; signed and uploaded to AppShelf (release 426); direct install
+  failed with `device_unavailable`, phone home-screen acceptance still open.
