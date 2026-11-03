@@ -687,6 +687,26 @@ without committing marked IME text. Closed-file rename shares document validatio
 and migrates remembered font preferences. Blank autosave and collision protection
 remain unchanged.
 
+### Modification-date ordering verification (2026-11-03)
+
+Source `38dea03`: 149 macOS tests pass on arm64; Debug universal analysis and
+universal Release build pass on Xcode 27.2. The signed Release was installed to
+`/Applications/NeatEditor.app`; installed/product executable SHA256 matches
+`53fa2a5a37a6d51426bb3a7171da0a3720c3c51d559d39314b9c2c89c21647ac`.
+A fresh installed-window capture showed the first three files in the same order
+as their descending on-disk content modification dates. Regression tests cover
+changed-date reordering and equal-date natural filename ordering.
+
+Complete logs, result bundle and private capture are retained under
+`~/.config/neateditor/verification/2026-11-03-file-order/`; captures may contain
+private document content and must not be published. The only build diagnostic
+is the existing AppIntents metadata-step warning assessed in
+`docs/code-review.md` (Sidebar review, 2026-10-24); no compiler,
+analyzer or structured runtime warnings were found. Native Intel tests, dark
+appearance and pointer interaction were not established by this check. iOS
+uses the same ordering and has a cross-client metadata-order regression; its
+device-delivery limits are recorded in the iOS knowledge base.
+
 ## Acceptance
 
 Use the installed `/Applications/NeatEditor.app`, not just a build/test result.
