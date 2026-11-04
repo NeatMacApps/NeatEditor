@@ -1,14 +1,14 @@
 {
   "fill" : {
-    "solid" : "srgb:0.01961,0.02745,0.03529,1.00000"
+    "solid" : "srgb:0.00000,0.33333,0.92157,1.00000"
   },
   "groups" : [
     {
       "layers" : [
         {
           "glass" : false,
-          "image-name" : "Typewriter.png",
-          "name" : "Glass typewriter"
+          "image-name" : "Pencil.png",
+          "name" : "Yellow pencil"
         }
       ],
       "shadow" : {

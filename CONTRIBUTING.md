@@ -11,7 +11,7 @@ Thank you for your interest in contributing to NeatEditor.
 ## Setup
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/NeatMacApps/NeatEditor.git
 cd NeatEditor
 xcodegen generate
 open NeatEditor.xcodeproj

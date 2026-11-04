@@ -423,7 +423,7 @@ user tabs and the active UI agent's application session were left intact.
 ## Sidebar review (2026-10-24)
 
 The layout requirement and inspected native reference are recorded in
-[TabStripGestures.md](../TabStripGestures.md#product-requirements).
+[TabStripGestures.md](./TabStripGestures.md#product-requirements).
 The sidebar uses `NSSplitViewController`, `List(selection:)` and a real
 `NSToolbar` with a tracking separator. Tabs are custom content of that same
 native toolbar row above the detail column, not a second content row; search

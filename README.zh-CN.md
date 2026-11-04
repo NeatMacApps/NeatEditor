@@ -4,7 +4,7 @@
   <img src="./docs/images/app-icon.png" width="128" height="128" alt="NeatEditor 应用图标">
 </p>
 
-[![Platform](https://img.shields.io/badge/platform-macOS%2015%2B-1f6feb)](https://developer.apple.com/macos/)
+[![Platform](https://img.shields.io/badge/platform-macOS%2026%2B-1f6feb)](https://developer.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-6-orange)](https://www.swift.org/)
 [![UI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20AppKit-0a7ea4)](https://developer.apple.com/xcode/swiftui/)
 [![Project](https://img.shields.io/badge/Project-XcodeGen-6f42c1)](https://github.com/yonaskolb/XcodeGen)
@@ -74,7 +74,7 @@ NeatEditor 现在已经可以作为一个轻量 macOS 纯文本编辑器使用�
 
 ### 安装（macOS）
 
-1. 打开 [GitHub Releases](https://github.com/NeatEditor/NeatEditor/releases)，选择发行说明中写明 Developer ID 签名 + 公证的版本。只有签名产物才是安装路径：旧的 `*-macOS-universal.*` 文件（例如 v1.0.3 上的）是未签名 CI 占位文件，不要安装。如提供 `SHA256SUMS.txt` 可自行校验。
+1. 打开 [GitHub Releases](https://github.com/NeatMacApps/NeatEditor/releases)，选择发行说明中写明 Developer ID 签名 + 公证的版本。只有签名产物才是安装路径：旧的 `*-macOS-universal.*` 文件（例如 v1.0.3 上的）是未签名 CI 占位文件，不要安装。如提供 `SHA256SUMS.txt` 可自行校验。
 2. 打开 DMG，把 `NeatEditor.app` 拖入 `Applications`。
 3. 首次启动：
 
@@ -98,7 +98,7 @@ open -a NeatEditor
 ### 克隆并打开
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/NeatMacApps/NeatEditor.git
 cd NeatEditor
 xcodegen generate
 open NeatEditor.xcodeproj
@@ -151,7 +151,7 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 - [CONTRIBUTING.md](./CONTRIBUTING.md)：贡献和开发说明
 - [CHANGELOG.md](./CHANGELOG.md)：版本变更记录
 - [RELEASING.md](./RELEASING.md)：GitHub Release 流程
-- [TabStripGestures.md](./TabStripGestures.md)：标签栏交互设计说明
+- [TabStripGestures.md](./docs/TabStripGestures.md)：标签栏交互设计说明
 
 ## 已知后续改进方向
 
@@ -165,3 +165,12 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 ## 许可证
 
 NeatEditor 使用 [MIT License](./LICENSE) 开源。
+
+## 相关工具
+
+| 工具 | 简介 |
+|---|---|
+| [HandySwitch](https://github.com/x0c/HandySwitch) | 在菜单栏切换 macOS 深色模式、防止睡眠。 |
+| [MacResourceMonitor](https://github.com/x0c/MacResourceMonitor) | 菜单栏 macOS CPU 监视器；找出并结束占用 CPU 的进程。 |
+| [NeatPaste](https://github.com/NeatMacApps/NeatPaste) | macOS 菜单栏剪贴板管理器；在 Mac 上保留复制历史。 |
+| [NeatEditor](https://github.com/NeatMacApps/NeatEditor) | 极简、快速启动的 macOS 纯文本编辑器（本仓库）。 |

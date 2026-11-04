@@ -1,0 +1,60 @@
+{
+  "ok": true,
+  "data": {
+    "operation_id": "img_20261103T071738_17abdd0d",
+    "status": "created",
+    "kind": "edit",
+    "route": "codex-images",
+    "out": "/Users/geraltgraham/Codes/NeatEditor/app-macos/design/app-icon/explorations/refine-2026-11-03-R/raw/R2.png",
+    "inputs": [
+      "/Users/geraltgraham/Codes/NeatEditor/app-macos/design/app-icon/explorations/refine-2026-11-03-R/raw/R1.png"
+    ],
+    "bytes": 1637689,
+    "sha256": "9c2e9c0c80520496eabcd59b2ad58b692300a144759b58d1bf7b4b6d1b9452c7",
+    "width": 1254,
+    "height": 1254,
+    "requested": {
+      "model": "gpt-image-2",
+      "size": "auto",
+      "quality": "high",
+      "background": "auto"
+    },
+    "reported": {
+      "size": "1254x1254",
+      "quality": "low",
+      "background": "opaque",
+      "output_format": "png"
+    },
+    "imagegen_request_id": "a161d265-b3ab-4d8f-a8d1-d9cbff5bdf66",
+    "generation_id": "504601fc-0ea4-426e-b138-00e5537aef03",
+    "usage": {
+      "input_tokens": 1739,
+      "input_tokens_details": {
+        "image_tokens": 1521,
+        "text_tokens": 218
+      },
+      "output_tokens": 515,
+      "output_tokens_details": {
+        "image_tokens": 515,
+        "text_tokens": 0
+      },
+      "total_tokens": 2254
+    },
+    "quota": {
+      "limit": "imagegen_premium",
+      "plan_type": "plus",
+      "used_percent": 1,
+      "window_minutes": 1440,
+      "resets_at": "2026-11-04T07:17:27Z",
+      "reset_after_seconds": 86387,
+      "observed_at": "2026-11-03T07:18:08Z"
+    },
+    "attempts": 1,
+    "elapsed_ms": 29693
+  },
+  "error": null,
+  "meta": {
+    "dry_run": false,
+    "schema_version": 1
+  }
+}

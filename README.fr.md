@@ -4,7 +4,7 @@
   <img src="./docs/images/app-icon.png" width="128" height="128" alt="Icône de NeatEditor">
 </p>
 
-[![Platform](https://img.shields.io/badge/platform-macOS%2015%2B-1f6feb)](https://developer.apple.com/macos/)
+[![Platform](https://img.shields.io/badge/platform-macOS%2026%2B-1f6feb)](https://developer.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-6-orange)](https://www.swift.org/)
 [![UI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20AppKit-0a7ea4)](https://developer.apple.com/xcode/swiftui/)
 [![Project](https://img.shields.io/badge/Project-XcodeGen-6f42c1)](https://github.com/yonaskolb/XcodeGen)
@@ -78,7 +78,7 @@ NeatEditor est déjà prêt comme éditeur léger de texte brut pour macOS et es
 ### Cloner et ouvrir
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/NeatMacApps/NeatEditor.git
 cd NeatEditor
 xcodegen generate
 open NeatEditor.xcodeproj
@@ -125,7 +125,7 @@ Voir [RELEASING.md](./RELEASING.md) pour les détails.
 - [CONTRIBUTING.md](./CONTRIBUTING.md) : environnement de développement et contribution
 - [CHANGELOG.md](./CHANGELOG.md) : historique des versions
 - [RELEASING.md](./RELEASING.md) : workflow GitHub Release
-- [TabStripGestures.md](./TabStripGestures.md) : notes de conception des gestes d’onglets
+- [TabStripGestures.md](./docs/TabStripGestures.md) : notes de conception des gestes d’onglets
 
 ## Lacunes connues
 

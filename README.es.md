@@ -4,7 +4,7 @@
   <img src="./docs/images/app-icon.png" width="128" height="128" alt="Icono de NeatEditor">
 </p>
 
-[![Platform](https://img.shields.io/badge/platform-macOS%2015%2B-1f6feb)](https://developer.apple.com/macos/)
+[![Platform](https://img.shields.io/badge/platform-macOS%2026%2B-1f6feb)](https://developer.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-6-orange)](https://www.swift.org/)
 [![UI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20AppKit-0a7ea4)](https://developer.apple.com/xcode/swiftui/)
 [![Project](https://img.shields.io/badge/Project-XcodeGen-6f42c1)](https://github.com/yonaskolb/XcodeGen)
@@ -78,7 +78,7 @@ NeatEditor ya está listo para usarse como un editor ligero de texto plano para 
 ### Clonar y abrir
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/NeatMacApps/NeatEditor.git
 cd NeatEditor
 xcodegen generate
 open NeatEditor.xcodeproj
@@ -125,7 +125,7 @@ Consulta [RELEASING.md](./RELEASING.md) para más detalles.
 - [CONTRIBUTING.md](./CONTRIBUTING.md): entorno de desarrollo y contribuciones
 - [CHANGELOG.md](./CHANGELOG.md): historial de versiones
 - [RELEASING.md](./RELEASING.md): flujo de GitHub Release
-- [TabStripGestures.md](./TabStripGestures.md): notas de diseño sobre gestos de pestañas
+- [TabStripGestures.md](./docs/TabStripGestures.md): notas de diseño sobre gestos de pestañas
 
 ## Próximos huecos
 

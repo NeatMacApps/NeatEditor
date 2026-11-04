@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.28 - 2026-11-04
+
+### Changed
+
+- App icon is now the yellow pencil on electric blue from WriteDown (owner-directed move; WriteDown will adopt a different mark later).
+
+### 简体中文
+
+- 应用图标换成 WriteDown 现用的黄铅笔电光蓝底（owner 决定转给 NeatEditor；WriteDown 后续再换）。
+
 ## 1.0.27 - 2026-11-03
 
 ### Changed

@@ -4,7 +4,7 @@
   <img src="./docs/images/app-icon.png" width="128" height="128" alt="NeatEditor 앱 아이콘">
 </p>
 
-[![Platform](https://img.shields.io/badge/platform-macOS%2015%2B-1f6feb)](https://developer.apple.com/macos/)
+[![Platform](https://img.shields.io/badge/platform-macOS%2026%2B-1f6feb)](https://developer.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-6-orange)](https://www.swift.org/)
 [![UI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20AppKit-0a7ea4)](https://developer.apple.com/xcode/swiftui/)
 [![Project](https://img.shields.io/badge/Project-XcodeGen-6f42c1)](https://github.com/yonaskolb/XcodeGen)
@@ -78,7 +78,7 @@ NeatEditor는 가벼운 macOS 일반 텍스트 편집기로 이미 사용할 수
 ### 클론 후 열기
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/NeatMacApps/NeatEditor.git
 cd NeatEditor
 xcodegen generate
 open NeatEditor.xcodeproj
@@ -125,7 +125,7 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 - [CONTRIBUTING.md](./CONTRIBUTING.md): 개발 환경과 기여 안내
 - [CHANGELOG.md](./CHANGELOG.md): 릴리스 이력
 - [RELEASING.md](./RELEASING.md): GitHub Release 흐름
-- [TabStripGestures.md](./TabStripGestures.md): 탭 상호작용 설계 메모
+- [TabStripGestures.md](./docs/TabStripGestures.md): 탭 상호작용 설계 메모
 
 ## 다음 개선 후보
 

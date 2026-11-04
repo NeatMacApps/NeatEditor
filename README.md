@@ -4,7 +4,7 @@
   <img src="./docs/images/app-icon.png" width="128" height="128" alt="NeatEditor app icon">
 </p>
 
-[![Platform](https://img.shields.io/badge/platform-macOS%2015%2B-1f6feb)](https://developer.apple.com/macos/)
+[![Platform](https://img.shields.io/badge/platform-macOS%2026%2B-1f6feb)](https://developer.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-6-orange)](https://www.swift.org/)
 [![UI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20AppKit-0a7ea4)](https://developer.apple.com/xcode/swiftui/)
 [![Project](https://img.shields.io/badge/Project-XcodeGen-6f42c1)](https://github.com/yonaskolb/XcodeGen)
@@ -74,7 +74,7 @@ NeatEditor is ready to use as a lightweight macOS plain text editor.
 
 ### Install (macOS)
 
-1. Open [GitHub Releases](https://github.com/NeatEditor/NeatEditor/releases) and pick a Release whose notes state Developer ID-signed + notarized. Only signed artifacts are an install path: older `*-macOS-universal.*` assets (for example on v1.0.3) are unsigned CI placeholders — do not install those. Verify with `SHA256SUMS.txt` when provided.
+1. Open [GitHub Releases](https://github.com/NeatMacApps/NeatEditor/releases) and pick a Release whose notes state Developer ID-signed + notarized. Only signed artifacts are an install path: older `*-macOS-universal.*` assets (for example on v1.0.3) are unsigned CI placeholders — do not install those. Verify with `SHA256SUMS.txt` when provided.
 2. Open the DMG and drag `NeatEditor.app` to `Applications`.
 3. First launch:
 
@@ -98,7 +98,7 @@ The app opens with a ready-to-use document; press `Command + N` for a new one.
 ### Clone And Open
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/NeatMacApps/NeatEditor.git
 cd NeatEditor
 xcodegen generate
 open NeatEditor.xcodeproj
@@ -174,7 +174,7 @@ NeatEditor/
 - [CONTRIBUTING.md](./CONTRIBUTING.md): development environment and contribution notes
 - [CHANGELOG.md](./CHANGELOG.md): project release history
 - [RELEASING.md](./RELEASING.md): tag-driven GitHub Release workflow
-- [TabStripGestures.md](./TabStripGestures.md): design notes for tab click and rename interactions
+- [TabStripGestures.md](./docs/TabStripGestures.md): design notes for tab click and rename interactions
 
 ## Known Gaps
 
@@ -187,3 +187,12 @@ Issues, suggestions, and pull requests are welcome. Please read [CONTRIBUTING.md
 ## License
 
 NeatEditor is released under the [MIT License](./LICENSE).
+
+## Related Tools
+
+| Tool | Description |
+|---|---|
+| [HandySwitch](https://github.com/x0c/HandySwitch) | Toggle macOS dark mode and prevent sleep from the menu bar. |
+| [MacResourceMonitor](https://github.com/x0c/MacResourceMonitor) | macOS CPU monitor in the menu bar; find and kill CPU-hungry processes. |
+| [NeatPaste](https://github.com/NeatMacApps/NeatPaste) | macOS menu-bar clipboard manager; keep copy history on your Mac. |
+| [NeatEditor](https://github.com/NeatMacApps/NeatEditor) | Minimal, fast-launching macOS plain-text editor (this repo). |

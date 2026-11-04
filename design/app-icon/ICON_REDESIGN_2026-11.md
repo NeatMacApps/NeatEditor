@@ -1,16 +1,13 @@
 # App icon redesign (started 2026-11-03)
 
-Status: **R5 adopted 2026-11-03** ("用r5发版"), shipping in macOS 1.0.27 and iOS build 6. Production master
-`design/app-icon/AppIcon-1024.png` = `explorations/refine-2026-11-03-R/raw/R5.png`: the jade-green translucent glass
-typewriter (typebar fan visible through the glass, five frosted ivory keys) with a satin-silver roller and knobs and a
-shorter warm-ivory sheet carrying four typed dots and a cursor block, on near-black with a soft jade glow; contrast
-raised with a fixed-endpoint S-curve and the whole image visually centred. Superseded masters:
-`explorations/AppIcon-D1-1.0.26.png` (D1, shipped in 1.0.26; charcoal roller vanished at Dock sizes) and
-`explorations/AppIcon-before-typewriter.png` (blue roller with serif N).
+Status: **pencil adopted 2026-11-04** (owner: WriteDown pencil moves to NeatEditor; WriteDown changes later). Production master
+`design/app-icon/AppIcon-1024.png` = WriteDown `app-ios/design/app-icon/AppIcon-1024.png` (electric-blue field, yellow pencil touching off-white paper; SHA256 `14d16c8a8947932f614c2c93e53272056eafb1c20e5885d3df9e7cef75b40183`).
+Superseded: `explorations/AppIcon-typewriter-R5-1.0.27.png` (R5 jade glass typewriter, macOS 1.0.27 / iOS build 6);
+earlier: `explorations/AppIcon-D1-1.0.26.png`, `explorations/AppIcon-before-typewriter.png`.
 
-Constraints: keep the model's rendering and composition; do not re-centre, flatten, recolour or re-glass it. The `.icon`
-wraps the whole master as one layer with glass, shadow, specular and translucency off. The iOS app uses the same master.
-Centre glow-ground artwork by translating the whole image, never with the flat-ground normaliser.
+Constraints: keep the WriteDown-approved rendering and edge-bleed composition; do not re-centre, flatten, recolour or re-glass it. The `.icon`
+wraps the whole master as one layer with glass, shadow, specular and translucency off and fill `srgb:0.00000,0.33333,0.92157,1.00000` (blue ground). Both macOS and iOS use the same master.
+Centre glow-ground artwork by translating the whole image, never with the flat-ground normaliser. This supersedes the earlier “avoid WriteDown yellow pencil” constraint; WriteDown will adopt a different mark later.
 
 **Contrast-gate exception (owner, 2026-11-03):** R5 fails only the validator's dominant-pair metric at 48/24 px
 (1.10:1 / 1.09:1) because its graded paper and glass form no 4 % colour cluster, the quantizer limit documented in

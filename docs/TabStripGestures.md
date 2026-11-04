@@ -482,7 +482,7 @@ probe with the production band and accessory reported the blank point between
 the window to the screen's visible frame instead of doing nothing. The installed
 Release window was captured after relaunch and retains the tabs, `+`, pin and
 open join. The only retained diagnostic is the
-[assessed AppIntents metadata notice](docs/code-review.md#verification).
+[assessed AppIntents metadata notice](./code-review.md#verification).
 An earlier Debug signing attempt failed because the timestamp service was
 unavailable; that test/analyze invocation alone used `--timestamp=none`. The
 local Release uses the existing Developer ID identity and a valid timestamp.

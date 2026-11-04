@@ -1,0 +1,132 @@
+{
+  "ok": true,
+  "data": {
+    "results": [
+      {
+        "line": 1,
+        "ok": true,
+        "data": {
+          "operation_id": "img_20261103T071827_38f37c33",
+          "status": "created",
+          "kind": "edit",
+          "route": "codex-images",
+          "out": "/Users/geraltgraham/Codes/NeatEditor/app-macos/design/app-icon/explorations/refine-2026-11-03-R/raw/R2b.png",
+          "inputs": [
+            "/Users/geraltgraham/Codes/NeatEditor/app-macos/design/app-icon/explorations/refine-2026-11-03-R/raw/R1.png"
+          ],
+          "bytes": 1630650,
+          "sha256": "4b1cfd1a344393b804157346c652a3ef219662bba8c7af62b30739c42f866491",
+          "width": 1254,
+          "height": 1254,
+          "requested": {
+            "model": "gpt-image-2",
+            "size": "1024x1024",
+            "quality": "high",
+            "background": "auto"
+          },
+          "reported": {
+            "size": "1254x1254",
+            "quality": "low",
+            "background": "opaque",
+            "output_format": "png"
+          },
+          "imagegen_request_id": "01fe08be-907d-416e-be5f-83b660d08f39",
+          "generation_id": "96e5861e-de54-46cf-8201-35b8b43a64a2",
+          "usage": {
+            "input_tokens": 1745,
+            "input_tokens_details": {
+              "image_tokens": 1521,
+              "text_tokens": 224
+            },
+            "output_tokens": 515,
+            "output_tokens_details": {
+              "image_tokens": 515,
+              "text_tokens": 0
+            },
+            "total_tokens": 2260
+          },
+          "quota": {
+            "limit": "imagegen_premium",
+            "plan_type": "plus",
+            "used_percent": 1,
+            "window_minutes": 1440,
+            "resets_at": "2026-11-04T07:17:27Z",
+            "reset_after_seconds": 86337,
+            "observed_at": "2026-11-03T07:18:58Z"
+          },
+          "attempts": 1,
+          "elapsed_ms": 30942
+        }
+      },
+      {
+        "line": 2,
+        "ok": true,
+        "data": {
+          "operation_id": "img_20261103T071827_0da7415b",
+          "status": "created",
+          "kind": "edit",
+          "route": "codex-images",
+          "out": "/Users/geraltgraham/Codes/NeatEditor/app-macos/design/app-icon/explorations/refine-2026-11-03-R/raw/R3.png",
+          "inputs": [
+            "/Users/geraltgraham/Codes/NeatEditor/app-macos/design/app-icon/explorations/refine-2026-11-03-R/raw/R2.png"
+          ],
+          "bytes": 1620375,
+          "sha256": "7521d6bc62b46dcf8772f4eea7cc0abbb36c06dd862b82a3b2500c63b15fad20",
+          "width": 1254,
+          "height": 1254,
+          "requested": {
+            "model": "gpt-image-2",
+            "size": "1024x1024",
+            "quality": "high",
+            "background": "auto"
+          },
+          "reported": {
+            "size": "1254x1254",
+            "quality": "medium",
+            "background": "opaque",
+            "output_format": "png"
+          },
+          "imagegen_request_id": "2edbcb7c-cd65-4a32-8613-4248d60b1f6e",
+          "generation_id": "fde210fb-1346-4533-884e-33080c4170c7",
+          "usage": {
+            "input_tokens": 1696,
+            "input_tokens_details": {
+              "image_tokens": 1521,
+              "text_tokens": 175
+            },
+            "output_tokens": 915,
+            "output_tokens_details": {
+              "image_tokens": 915,
+              "text_tokens": 0
+            },
+            "total_tokens": 2611
+          },
+          "quota": {
+            "limit": "imagegen_premium",
+            "plan_type": "plus",
+            "used_percent": 1,
+            "window_minutes": 1440,
+            "resets_at": "2026-11-04T07:17:27Z",
+            "reset_after_seconds": 86337,
+            "observed_at": "2026-11-03T07:19:01Z"
+          },
+          "attempts": 1,
+          "elapsed_ms": 33918
+        }
+      }
+    ],
+    "summary": {
+      "created": 2,
+      "failed": 0,
+      "planned": 0,
+      "total": 2,
+      "unchanged": 0
+    }
+  },
+  "error": null,
+  "meta": {
+    "dry_run": false,
+    "partial": false,
+    "schema_version": 1
+  }
+}

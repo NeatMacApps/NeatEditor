@@ -459,7 +459,7 @@ missed: the 8 pt first-tab clearance showed a stray band-colored column, and the
 opaque titlebar adopted for blank-titlebar routing clipped every selected tab's
 corner arcs and capped the sidebar with a white titlebar section background in
 the key window. Root causes and decisions are in
-[TabStripGestures.md](TabStripGestures.md).
+[TabStripGestures.md](docs/TabStripGestures.md).
 
 - [v1.0.20](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.20):
   corner arcs rejoined and first-tab clearance reduced to the 3 pt foot. Source
@@ -494,7 +494,7 @@ the key window. Root causes and decisions are in
 
 The owner clarified the original report: the tab bar's bottom line must continue
 left across the sidebar (see "Full-width tab rule" in
-[TabStripGestures.md](TabStripGestures.md)); 1.0.19-1.0.21 had fixed adjacent
+[TabStripGestures.md](docs/TabStripGestures.md)); 1.0.19-1.0.21 had fixed adjacent
 defects but not this. [v1.0.22](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.22)
 moves the rule to the split view (full width, above both panes) and paints the
 band color behind the transparent titlebar in the editor column. Source
@@ -522,7 +522,7 @@ only when inactive).
 1.0.21 and 1.0.22 regressed double-click zoom above the sidebar and behind the
 traffic lights (transparent titlebar plus content-side frame-view redirect; see
 "Top band color, light surface and native titlebar gestures" in
-[TabStripGestures.md](TabStripGestures.md)). [v1.0.23](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.23)
+[TabStripGestures.md](docs/TabStripGestures.md)). [v1.0.23](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.23)
 returns to the opaque titlebar, paints the full-width band over AppKit's section
 backgrounds and makes the window base the light surface. Source `f192200`;
 appcast commit `02f5703`; Apple submissions `5cfce233-e90c-4906-8bb3-6a3b0a35c30f`
