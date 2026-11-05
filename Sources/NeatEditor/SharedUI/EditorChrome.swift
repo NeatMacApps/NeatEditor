@@ -2,12 +2,12 @@ import AppKit
 import SwiftUI
 
 enum EditorChrome {
-    static let tabBarBackgroundColor = adaptiveColor(name: "TabBand", light: 0xEEE8E0, dark: 0x2D2925)
+    static let tabBarBackgroundColor = adaptiveColor(name: "TabBand", light: EditorTheme.warm.bandRGB(dark: false), dark: EditorTheme.warm.bandRGB(dark: true))
     static let tabBarBackground = Color(nsColor: tabBarBackgroundColor)
-    static let editorSurfaceColor = adaptiveColor(name: "EditorSurface", light: 0xFAF8F5, dark: 0x211F1D)
+    static let editorSurfaceColor = adaptiveColor(name: "EditorSurface", light: EditorTheme.warm.surfaceRGB(dark: false), dark: EditorTheme.warm.surfaceRGB(dark: true))
     static let editorSurface = Color(editorSurfaceColor)
-    private static let neutralTabBarColor = adaptiveColor(name: "NeutralTabBand", light: 0xEEEEEE, dark: 0x1C1C1E)
-    private static let neutralEditorColor = adaptiveColor(name: "NeutralEditorSurface", light: 0xFFFFFF, dark: 0x000000)
+    private static let neutralTabBarColor = adaptiveColor(name: "NeutralTabBand", light: EditorTheme.whiteBlack.bandRGB(dark: false), dark: EditorTheme.whiteBlack.bandRGB(dark: true))
+    private static let neutralEditorColor = adaptiveColor(name: "NeutralEditorSurface", light: EditorTheme.whiteBlack.surfaceRGB(dark: false), dark: EditorTheme.whiteBlack.surfaceRGB(dark: true))
 
     static func tabBarBackgroundColor(for theme: EditorTheme) -> NSColor {
         theme == .warm ? tabBarBackgroundColor : neutralTabBarColor

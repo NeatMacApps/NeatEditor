@@ -66,6 +66,7 @@
 		B94CDB60C07A6AB1960668D4 /* ExternalFileOpenCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C74314E17C1CDECDF2EDB4 /* ExternalFileOpenCoordinator.swift */; };
 		BD9F954901E066BF3EC44DD4 /* WorkspaceSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE6C7B02FE5A439B3DE095 /* WorkspaceSidebarView.swift */; };
 		D62538211034D72288350D02 /* MacScrollerPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6743BBA23D3A2A288FDAFA0A /* MacScrollerPreference.swift */; };
+		DB3B4488FB8964DB17261234 /* TabHoverCloseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3A7A3F922331F2EE3DB50F /* TabHoverCloseTests.swift */; };
 		DCDC8B0D5BE86A4D3B12A9E1 /* WorkspaceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63FEBB9D3DE2E196F6FABC88 /* WorkspaceStore.swift */; };
 		E917B9388888A5204C2FF244 /* EditorTabStripView+Interaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298CFF49960692E41536FB25 /* EditorTabStripView+Interaction.swift */; };
 		ED897329FE6AEC90D16696B9 /* EditorCharacterCountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D049BE5437111809BD8E49EE /* EditorCharacterCountView.swift */; };
@@ -144,6 +145,7 @@
 		BF4FFD7351F34190C76B4C7D /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
 		C50807406F37393832E921EC /* WorkspaceSidebarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSidebarTests.swift; sourceTree = "<group>"; };
 		C59982890BA0049E8CC31E4F /* NeatEditor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeatEditor.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CB3A7A3F922331F2EE3DB50F /* TabHoverCloseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabHoverCloseTests.swift; sourceTree = "<group>"; };
 		CC4981C6B05519CD1877B4D5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CE02D7D1B8648861CEB95405 /* WorkspaceStore+Documents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Documents.swift"; sourceTree = "<group>"; };
 		CEE07E7303361F05267B1085 /* EditorTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTab.swift; sourceTree = "<group>"; };
@@ -264,6 +266,7 @@
 				5A3812B102B3FA8E24D10FEE /* EditorTextSyncStateTests.swift */,
 				39F05C2872C0FB22FC3DEAE9 /* EditorThemeTests.swift */,
 				6B6594887CEEA1D1B0EF81A6 /* HoverFocusTopmostCheckTests.swift */,
+				CB3A7A3F922331F2EE3DB50F /* TabHoverCloseTests.swift */,
 				A41C9532D37805DEF85522A1 /* WorkspaceConcurrencyTests.swift */,
 				F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */,
 				C50807406F37393832E921EC /* WorkspaceSidebarTests.swift */,
@@ -491,6 +494,7 @@
 				49CA09DC3AAEE99AB71E569E /* EditorTextSyncStateTests.swift in Sources */,
 				188C50D53BAD542FBC636C89 /* EditorThemeTests.swift in Sources */,
 				7538ECC920EF461816EFFBF7 /* HoverFocusTopmostCheckTests.swift in Sources */,
+				DB3B4488FB8964DB17261234 /* TabHoverCloseTests.swift in Sources */,
 				30EE4D1B05E748C44FAA9A9A /* WorkspaceConcurrencyTests.swift in Sources */,
 				97DF5482D6F249403D615719 /* WorkspacePreferencesTests.swift in Sources */,
 				34C2AC68775F3BA373AC7357 /* WorkspaceSidebarTests.swift in Sources */,

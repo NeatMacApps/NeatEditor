@@ -607,6 +607,29 @@ build or hit-testing results alone.
   pixels; the owner's active-window report must be rechecked when an unlocked
   active capture is available.
 
+## Hover close button (owner, 2026-11-05)
+
+- Entering a tab reveals a native trailing `NSButton` with the × symbol; leaving
+  hides it. Selected and inactive tabs use the same fixed geometry. Hide it
+  during inline rename. Closing uses the existing save-before-close action,
+  without first selecting an inactive tab. Context menu, middle click and
+  Command-W remain unchanged.
+- Keep the title's frame stable. A small transparent-to-opaque background
+  gradient beneath the button fades the filename into that tab's actual
+  selected/unselected surface. Do not add a rounded hover tab background or
+  cover the stepped outline. Repaint it on theme/appearance/selection changes.
+- Inspected reference: existing `EditorTabStripView.configureNewDocumentButton`
+  (`NSButton`) and its overflow `CAGradientLayer` fades, adapted inside
+  `EditorTabItemView`. Reuse the product-owned stepped tab and native button;
+  do not replace them with a new tab design. Public
+  [NSTrackingArea](https://developer.apple.com/documentation/appkit/nstrackingarea)
+  supplies enter/exit tracking and
+  [CAGradientLayer](https://developer.apple.com/documentation/quartzcore/cagradientlayer)
+  supplies the fade; checked against installed Xcode 27.2 headers.
+- Acceptance: short/long/CJK titles together, selected/inactive and light/dark,
+  both themes, overflow and minimum width; entering the button must not hide
+  it or select/drag the tab, and closing must preserve existing save failures.
+
 ## Interaction contract
 
 - Single click selects immediately; no multi-click recognition delay.

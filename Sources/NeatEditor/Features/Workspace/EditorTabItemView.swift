@@ -7,6 +7,10 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
     private(set) var descriptor: EditorTabDescriptor
     let titleField = NSTextField(labelWithString: "")
     private var isSelected = false
+    let closeButton = NSButton()
+    private let closeFade = CAGradientLayer()
+    private var hoverArea: NSTrackingArea?
+    private var isPointerInside = false
 
     var tabBounds: CGRect {
         CGRect(x: ConnectedTabGeometry.baselineOutset, y: 0,
@@ -31,6 +35,28 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
         titleField.delegate = self
         titleField.setAccessibilityElement(false)
         addSubview(titleField)
+        wantsLayer = true
+        closeFade.startPoint = CGPoint(x: 0, y: 0.5)
+        closeFade.endPoint = CGPoint(x: 1, y: 0.5)
+        closeFade.locations = [0, 0.45, 1]
+        closeFade.zPosition = 1
+        layer?.addSublayer(closeFade)
+        let closeLabel = String(localized: "Close Tab")
+        closeButton.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: closeLabel)
+        closeButton.symbolConfiguration = .init(pointSize: 10, weight: .medium)
+        closeButton.isBordered = false
+        closeButton.imagePosition = .imageOnly
+        closeButton.contentTintColor = .secondaryLabelColor
+        closeButton.focusRingType = .none
+        closeButton.toolTip = closeLabel
+        closeButton.setAccessibilityLabel(closeLabel)
+        closeButton.setAccessibilityIdentifier("close-tab-\(id)")
+        closeButton.target = self
+        closeButton.action = #selector(closeTab(_:))
+        closeButton.wantsLayer = true
+        closeButton.layer?.zPosition = 2
+        addSubview(closeButton)
+        updateCloseVisibility()
         setAccessibilityElement(true)
         setAccessibilityRole(.radioButton)
         setAccessibilityIdentifier("document-tab-\(id)")
@@ -61,9 +87,65 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
                                   y: EditorTabLayout.tabTitleCenterY - titleHeight / 2,
                                   width: max(0, rect.width - 2 * EditorTabLayout.horizontalPadding),
                                   height: titleHeight)
+        closeButton.frame = CGRect(x: rect.maxX - EditorTabLayout.horizontalPadding - 20,
+                                   y: EditorTabLayout.tabTitleCenterY - 10, width: 20, height: 20)
+        updateCloseFade()
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: .zero,
+                                  options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                                  owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverArea = area
+        if let window {
+            isPointerInside = visibleRect.contains(convert(window.mouseLocationOutsideOfEventStream, from: nil))
+        } else {
+            isPointerInside = false
+        }
+        updateCloseVisibility()
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        isPointerInside = true
+        updateCloseVisibility()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        isPointerInside = false
+        updateCloseVisibility()
+    }
+
+    private func updateCloseVisibility() {
+        let hidden = !isPointerInside || strip?.editingTabID == id
+        closeButton.isHidden = hidden
+        closeFade.isHidden = hidden
+    }
+
+    private func updateCloseFade() {
+        let theme = strip?.theme ?? .defaultValue
+        let background = EditorChrome.resolvedColor(
+            isSelected ? EditorChrome.editorSurfaceColor(for: theme) : EditorChrome.tabBarBackgroundColor(for: theme),
+            for: effectiveAppearance
+        )
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        closeFade.frame = CGRect(x: closeButton.frame.minX - EditorTabLayout.fadeWidth,
+                                 y: closeButton.frame.minY - 2,
+                                 width: EditorTabLayout.fadeWidth + closeButton.frame.width + 2,
+                                 height: closeButton.frame.height + 4)
+        closeFade.colors = [background.withAlphaComponent(0).cgColor, background.cgColor, background.cgColor]
+        CATransaction.commit()
+    }
+
+    @objc private func closeTab(_ sender: Any?) {
+        strip?.actions.onClose(id)
     }
 
     override func draw(_ dirtyRect: NSRect) {
+        updateCloseFade()
         guard let context = NSGraphicsContext.current?.cgContext else { return }
         // Whether the titlebar clips below the band varies with window state;
         // the outline's lowest row always belongs to the editor's top rule.
@@ -81,7 +163,7 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
 
     override func hitTest(_ point: NSPoint) -> NSView? {
         let hit = super.hitTest(point)
-        if strip?.editingTabID == id { return hit }
+        if strip?.editingTabID == id || hit === closeButton { return hit }
         return hit == nil ? nil : self
     }
 
@@ -116,6 +198,8 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
         titleField.isEditable = editing
         titleField.isSelectable = editing
         titleField.setAccessibilityElement(editing)
+        closeButton.isHidden = editing || !isPointerInside
+        closeFade.isHidden = closeButton.isHidden
         if editing {
             titleField.stringValue = descriptor.title
             window?.makeFirstResponder(titleField)
