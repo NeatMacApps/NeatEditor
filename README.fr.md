@@ -41,10 +41,10 @@ Pour les notes, les brouillons et les petites modifications de fichiers texte.
 - **Sauvegarde automatique :** après 2 secondes sans saisie, au changement d’onglet et lorsque l’app devient inactive. Les écritures sont ordonnées.
 - **Modifications externes :** gérez les modifications d’un autre éditeur, d’un script ou d’un agent de programmation. Les tampons non modifiés sont rechargés, les modifications indépendantes fusionnées prudemment, et les conflits détectés conservent les deux versions.
 - **Protection du contenu vide :** un texte vide ou composé uniquement d’espaces blancs n’écrase pas un fichier existant. Vider l’éditeur ne vide donc pas le fichier sur disque.
-- **Dossier de documents :** `~/Documents` par défaut, modifiable dans Réglages → Éditeur → Dossier de documents. Les nouveaux documents sont enregistrés dans le dossier choisi.
+- **Dossier de documents :** `~/Documents` par défaut, modifiable dans Settings → Editor → Documents Folder. Les nouveaux documents sont enregistrés dans le dossier choisi.
 - **Toujours visible :** épinglez la fenêtre au premier plan et profitez des menus et de la barre de titre natifs.
 
-La protection des modifications simultanées n’empêche pas un autre programme d’écrire dans le fichier. Sauvegardez les fichiers importants.
+D’autres programmes peuvent encore modifier le fichier ; sauvegardez les fichiers importants.
 
 ## Raccourcis principaux
 

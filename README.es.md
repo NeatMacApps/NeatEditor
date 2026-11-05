@@ -41,10 +41,10 @@ Para notas, borradores y cambios rápidos en archivos de texto.
 - **Guardado automático:** tras 2 segundos sin escribir, al cambiar de pestaña y cuando la app deja de estar activa. Las escrituras se ejecutan en orden.
 - **Cambios externos:** gestiona los cambios de otro editor, script o agente de programación. Los búferes sin cambios se recargan; los cambios independientes se fusionan de forma conservadora; los conflictos detectados conservan ambas versiones.
 - **Protección de contenido vacío:** el texto vacío o con solo espacios en blanco no sobrescribe un archivo existente. Vaciar el editor no vacía el archivo en disco.
-- **Tu carpeta de documentos:** por defecto `~/Documents`; cámbiala en Ajustes → Editor → Carpeta de documentos. Los nuevos documentos se guardan en la carpeta elegida.
+- **Tu carpeta de documentos:** por defecto `~/Documents`; cámbiala en Settings → Editor → Documents Folder. Los nuevos documentos se guardan en la carpeta elegida.
 - **Siempre a la vista:** fija la ventana sobre otras y usa los menús y la barra de título nativos.
 
-La protección de edición simultánea no impide que otros programas escriban en el archivo. Haz copias de seguridad de lo importante.
+Otros programas también pueden cambiar el archivo, así que haz copias de seguridad de lo importante.
 
 ## Atajos principales
 

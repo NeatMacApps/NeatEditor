@@ -41,10 +41,10 @@ Für Notizen, Entwürfe und schnelle Änderungen an Textdateien.
 - **Automatisches Speichern:** nach 2 Sekunden Eingabepause, beim Tab-Wechsel und wenn die App inaktiv wird. Schreibvorgänge erfolgen der Reihe nach.
 - **Externe Änderungen:** Änderungen durch einen anderen Editor, ein Skript oder einen Coding-Agenten übernehmen. Unveränderte Puffer werden neu geladen, unabhängige Änderungen vorsichtig zusammengeführt; bei erkannten Konflikten bleiben beide Versionen erhalten.
 - **Schutz bei leerem Inhalt:** leerer Text oder reine Leerraumzeichen überschreiben keine vorhandene Datei. Das Leeren des Editors leert daher nicht die Datei auf dem Datenträger.
-- **Dokumentordner:** standardmäßig `~/Documents`, änderbar unter Einstellungen → Editor → Dokumentordner. Neue Dokumente werden im gewählten Ordner gespeichert.
+- **Dokumentordner:** standardmäßig `~/Documents`, änderbar unter Settings → Editor → Documents Folder. Neue Dokumente werden im gewählten Ordner gespeichert.
 - **Im Blick behalten:** Fenster im Vordergrund anheften und native Menüs und Titelleistenaktionen nutzen.
 
-Der Schutz bei gleichzeitiger Bearbeitung verhindert keine Schreibzugriffe anderer Programme. Wichtige Dateien solltest du zusätzlich sichern.
+Andere Programme können die Datei weiterhin ändern; sichere wichtige Dateien zusätzlich.
 
 ## Wichtige Kurzbefehle
 
