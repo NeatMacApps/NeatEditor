@@ -1,7 +1,7 @@
 # NeatEditor
 
 <p align="center">
-  <img src="./docs/images/app-icon.png" width="128" height="128" alt="Icono de NeatEditor">
+  <img src="./docs/images/app-icon-rounded.png" width="128" height="128" alt="Icono de NeatEditor">
 </p>
 
 [![Platform](https://img.shields.io/badge/platform-macOS%2026%2B-1f6feb)](https://developer.apple.com/macos/)
