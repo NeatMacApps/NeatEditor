@@ -10,7 +10,8 @@ release tooling. Behavior requirements are recorded before implementation in
 Scope: `v1.0.28..e298115`, including theme preferences/native repaint,
 regex search, CRLF gutter indexing, deferred external revisions, coordinated
 sidebar duplication and publisher guards. This is a review, not authorization
-or evidence of a new public release. The following findings remain **open**:
+or evidence of a new public release. The historical findings and required
+corrections are listed below; integrated repair acceptance follows the table:
 
 | Priority | Finding and trigger | Required correction |
 |---|---|---|
@@ -18,6 +19,70 @@ or evidence of a new public release. The following findings remain **open**:
 | P2 | `EditorTextContainerView.finishSearch` uses the 2,000-entry highlight prefix for navigation too, including literal searches. With 3,000 `a ` matches and match 2,000 selected, Find Next selected offset 0 instead of the next match at offset 4,000. Later matches are silently unreachable. | Limit painting independently of navigation; retain access to all matches. |
 | P2 | Closed-file duplication now calls `publishStagedFile`, which unconditionally publishes with `FileManager.linkItem`. Previously this branch used `copyItem` directly. A Documents Folder on exFAT/FAT32 therefore gains an unsupported hard-link dependency and duplication fails. Original bytes are not overwritten. | Retain coordinated source reads and no-overwrite safety without requiring hard-link support for a previously supported copy operation. Add unsupported-filesystem coverage. |
 | P3 | `DocumentConcurrencyTests.boundedValue` races `task.value` inside a throwing task group. On deadline expiry the group still waits for its child awaiting the detached task; cancellation does not release that wait. The exact helper with a 50 ms deadline returned only when one-second work finished (1.045 seconds), so a coordination deadlock can still hang the suite. | Use a deadline mechanism whose caller can finish independently of non-cooperative work; test that deadline path explicitly. |
+
+### Integrated repair acceptance (2026-11-05)
+
+All four code findings are repaired. The same unsafe move assumption was also
+removed from sibling document rename; it now maps an atomic exclusive collision
+to the existing error without retargeting the source binding.
+
+- **Search:** native ICU matching stops on progress/cancellation/deadline, with
+  one active evaluator and one replaceable pending request. Navigation uses the
+  full match set; only painting retains the 2,000-range budget. Nine focused tests
+  / 13 executions and full-workspace native component captures cover timeout,
+  recovery, stale/dismissed results and match 2001. The parser switch and reusable
+  mechanism live in the [search contract](editing-text-sync-test-cases.md) and
+  [shared Swift recipe](~/Codes/_standards/swift.md#cancellable-regular-expression-work).
+- **Publication and rename:** retain exclusive hard-link publication where
+  supported, otherwise use native `renamex_np(RENAME_EXCL)` only on recognized
+  link-capability errors. Unsupported exclusive operations fail closed; unrelated
+  permission/I/O errors propagate. A syscall-boundary fixture linked to the fresh
+  product module planted different `RACER` bytes immediately before the exclusive
+  rename. Publication preserved them and wrote `STAGED` to the next candidate;
+  document rename preserved both files and the original binding. An injected
+  `ENOTSUP` produced no final file and cleaned staging. Actual mounted exFAT/FAT32
+  execution remains unverified; no universal filesystem success is claimed.
+- **Test deadlines:** the checked-Sendable `Mutex` gate returns without joining
+  non-cooperative work, cancels late-registered children and resumes exactly once.
+  Independent verification passed all 27 concurrency tests, including pending,
+  pre-cancelled and late-registration cases. Synthetic blocked work was drained.
+
+Fresh final gates on Xcode 27.2 (27B5028f), macOS 27.2 (26B123) passed **199 tests
+in 23 suites / 273 executions**, with zero failures, skips or structured runtime
+warnings. Universal macOS Debug and Release build/analysis passed; the Release
+binary contains arm64 and x86_64 and passes strict nested signature verification
+with the existing Developer ID team `SHZQ3MWP3B`. Generic device-platform iOS
+Debug/Release build/analysis also passed with signing disabled. No iOS runtime,
+physical device, native Intel or macOS 26 execution is inferred from these checks.
+Source input fingerprints remained unchanged across all five gates.
+
+Full logs, result bundles, input hashes and native/component receipts are under
+`~/.config/neateditor/development/release-fixes-20261105/`. No compiler/analyzer
+warning was found. The retained AppIntents metadata notice appears in the macOS
+app/test host and iOS target: neither target declares intents or requires metadata
+for these features; no suppression or artificial dependency was added. Residual
+limit is absent Shortcuts metadata; reassess on adopting App Intents. The native
+rename fixture additionally logs Foundation's related-item sandbox-extension
+lookup for a not-yet-created destination (`ENOENT`); collision, source/binding and
+byte assertions pass. No sandbox/permission setting was changed; security-scoped
+file-provider behavior remains outside this fixture's acceptance.
+
+Two OpenCode workers used Muse Spark 1.3 Contributor (`xhigh`). Publication:
+**attempts 3 (1 true-defect steer + 0 brief-clarity steers + 1 authorized same-root
+follow-up)**. The first patch's ordinary `moveItem` overwrote an injected racer
+and was rejected before commit; the follow-up fixed sibling rename and narrowed
+error fallback. Deadline: two attempts, with the first child-registration race
+corrected before independent acceptance. Both workers are accepted and closed.
+General publication requirements and the observed Foundation limitation are in
+the [shared-file recipe](~/Codes/_standards/workspace-docs/swift-docs/offline-first-sync.md#shared-file-editing-researched-mechanisms-and-limits-2026-10-30).
+Adversarial evidence is in `research/publication-race-probe/`: `native-fixed.log`
+establishes the rejected primitive; `accepted-*.log` and
+`accepted-probe-receipt.json` establish the current repair. The earlier recursive
+`native.log` is a failed diagnostic fixture, not product evidence.
+
+The local artifact remains version 1.0.28 (28); `CHANGELOG.md` contains bilingual
+Unreleased notes. No tag, notarization or public release was performed. Installed
+acceptance and the signed local handoff receipt are recorded at delivery below.
 
 The cancellation semantics are documented by Apple:
 [`Task.cancel()`](https://developer.apple.com/documentation/swift/task/cancel()).
@@ -27,7 +92,7 @@ analysis, **not** a mounted-exFAT reproduction: both task-owned image-creation
 routes were rejected, with the hdiutil retry reporting `Operation not permitted`.
 No test volume was attached and no existing disk was modified.
 
-Verification of the reviewed `e298115` source snapshot on Xcode 27.2
+Historical baseline verification of `e298115` on Xcode 27.2
 (27B5028f), macOS 27.2 (26B123):
 
 - Fresh arm64 Debug `xcodebuild test`: 174 tests, 241 executions, zero failures,
@@ -49,11 +114,10 @@ installed app. Existing Theme Picker interaction, regex-status display, exact
 CRLF merge and deferred external-update installed-acceptance gaps in
 [the editing contract](editing-text-sync-test-cases.md) remain open. Native Intel,
 macOS 26 and iOS runtime behavior were not accepted; the independently changing
-iOS UI was outside this review's scope. Uncommitted application edits from an
-independent tab-hover/shared-palette task appeared after these checks; the results
-above do not validate that later candidate. Fix the open product findings
-and repeat the affected native and installed paths on the final combined source
-before releasing.
+iOS UI was outside this review's scope. These baseline results do not validate
+later edits. Current combined-source gates are recorded in Integrated repair
+acceptance above; installed interaction coverage remains a separate requirement
+before public release.
 
 ## External-writer safety research (2026-10-30)
 

@@ -4,7 +4,7 @@ import Testing
 
 @testable import NeatEditor
 
-struct DocumentConcurrencyTests {
+struct DocumentConcurrencyTests: Sendable {
     private func fixture() throws -> (DocumentPersistenceService, URL) {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("NeatEditorConcurrency-\(UUID())")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -35,20 +35,150 @@ struct DocumentConcurrencyTests {
 
     private struct TimeoutError: Error {}
 
+    private struct ControlledFailure: Error {}
+
+    private struct DeadlineState<T: Sendable>: Sendable {
+        var completed = false
+        var cancelRequested = false
+        var continuation: CheckedContinuation<T, Error>?
+        var worker: Task<Void, Never>?
+        var timer: Task<Void, Never>?
+    }
+
+    /// Checked gate for the deadline race. A single `Mutex` guards all state so
+    /// child registration races against completion atomically: a child stored
+    /// after a winner is cancelled immediately instead of leaking a full-timeout
+    /// timer, and a win clears stored handles. Heap-allocated so unstructured
+    /// workers can safely outlive the helper's return.
+    private final class DeadlineGate<T: Sendable>: Sendable {
+        private let state: Mutex<DeadlineState<T>>
+
+        init() {
+            state = Mutex(DeadlineState())
+        }
+
+        func setContinuation(_ value: CheckedContinuation<T, Error>) {
+            state.withLock { $0.continuation = value }
+        }
+
+        func markCancelRequested() {
+            state.withLock { $0.cancelRequested = true }
+        }
+
+        func hasContinuation() -> Bool {
+            state.withLock { $0.continuation != nil }
+        }
+
+        func isCancelRequested() -> Bool {
+            state.withLock { $0.cancelRequested }
+        }
+
+        /// Stores `task` unless a winner already claimed completion, in which
+        /// case the late child is cancelled immediately. Returns whether a
+        /// winner had already completed.
+        @discardableResult
+        func registerWorker(_ task: Task<Void, Never>) -> Bool {
+            let already: Bool = state.withLock {
+                if $0.completed { return true }
+                $0.worker = task
+                return false
+            }
+            if already { task.cancel() }
+            return already
+        }
+
+        @discardableResult
+        func registerTimer(_ task: Task<Void, Never>) -> Bool {
+            let already: Bool = state.withLock {
+                if $0.completed { return true }
+                $0.timer = task
+                return false
+            }
+            if already { task.cancel() }
+            return already
+        }
+
+        /// Atomically claim the single win and clear stored handles. Only the
+        /// first caller receives a non-nil continuation; losers receive nil and
+        /// must do nothing.
+        func claimWin() -> (CheckedContinuation<T, Error>?, Task<Void, Never>?, Task<Void, Never>?) {
+            state.withLock {
+                if $0.completed { return (nil, nil, nil) }
+                $0.completed = true
+                let cont = $0.continuation
+                $0.continuation = nil
+                let currentWorker = $0.worker
+                $0.worker = nil
+                let currentTimer = $0.timer
+                $0.timer = nil
+                return (cont, currentWorker, currentTimer)
+            }
+        }
+    }
+
     /// Bounds a result that depends on file coordination so a claim that is
     /// never released fails the case instead of hanging the suite.
+    ///
+    /// A throwing task group cannot bound a non-cooperative wait: exiting the
+    /// group joins every child, so `cancelAll` still waits for the child
+    /// blocked in `task.value` (`Task.cancel()` is cooperative and awaiting
+    /// `Task.value` does not unblock on cancel). This helper therefore races
+    /// the underlying value against the deadline with unstructured workers and
+    /// a single exactly-once continuation. The caller resumes as soon as the
+    /// first branch wins; the loser is cancelled best-effort and never joined.
     private func boundedValue<T: Sendable>(
         of task: Task<T, Error>, timeout: Duration = .seconds(20)
     ) async throws -> T {
-        try await withThrowingTaskGroup(of: T.self) { group in
-            group.addTask { try await task.value }
-            group.addTask {
-                try await Task.sleep(for: timeout)
-                throw TimeoutError()
+        let gate = DeadlineGate<T>()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<T, Error>) in
+                gate.setContinuation(continuation)
+                let worker = Task.detached {
+                    do {
+                        let value = try await task.value
+                        let (cont, _, timer) = gate.claimWin()
+                        guard let cont else { return }
+                        timer?.cancel()
+                        cont.resume(returning: value)
+                    } catch {
+                        let (cont, _, timer) = gate.claimWin()
+                        guard let cont else { return }
+                        timer?.cancel()
+                        cont.resume(throwing: error)
+                    }
+                }
+                gate.registerWorker(worker)
+                let timer = Task.detached {
+                    do {
+                        try await Task.sleep(for: timeout)
+                    } catch {
+                        return
+                    }
+                    let (cont, workerToCancel, _) = gate.claimWin()
+                    guard let cont else { return }
+                    task.cancel()
+                    workerToCancel?.cancel()
+                    cont.resume(throwing: TimeoutError())
+                }
+                gate.registerTimer(timer)
+                if Task.isCancelled || gate.isCancelRequested() {
+                    let (cont, workerToCancel, timerToCancel) = gate.claimWin()
+                    guard let cont else { return }
+                    workerToCancel?.cancel()
+                    timerToCancel?.cancel()
+                    task.cancel()
+                    cont.resume(throwing: CancellationError())
+                }
             }
-            defer { group.cancelAll() }
-            guard let value = try await group.next() else { throw TimeoutError() }
-            return value
+        } onCancel: {
+            gate.markCancelRequested()
+            guard gate.hasContinuation() else { return }
+            let (cont, workerToCancel, timerToCancel) = gate.claimWin()
+            guard let cont else { return }
+            workerToCancel?.cancel()
+            timerToCancel?.cancel()
+            task.cancel()
+            cont.resume(throwing: CancellationError())
         }
     }
 
@@ -452,5 +582,194 @@ struct DocumentConcurrencyTests {
         #expect(DocumentTextMerge.merge(base: "a\nb\nc\n", local: "A\nb\nc\n", disk: "a\nb\nc\nnew\n") == "A\nb\nc\nnew\n")
         #expect(DocumentTextMerge.merge(base: "a\n", local: "x\na\n", disk: "y\na\n") == nil)
         #expect(DocumentTextMerge.merge(base: "same\nsame\nend", local: "new\nsame\nend", disk: "same\nsame\nEND") == "new\nsame\nEND")
+    }
+
+    @Test("deadline returns while a controlled task is still pending, then drains it")
+    func deadlineReturnsWhilePending() async throws {
+        let gate = Mutex<CheckedContinuation<Void, Never>?>(nil)
+        let finished = Mutex(false)
+        let pending: Task<String, Error> = Task.detached {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                gate.withLock { $0 = continuation }
+            }
+            finished.withLock { $0 = true }
+            return "late"
+        }
+        var registered = false
+        for _ in 0..<500 where !registered {
+            registered = gate.withLock { $0 != nil }
+            if !registered {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+        }
+        #expect(registered)
+        let start = ContinuousClock.now
+        do {
+            _ = try await boundedValue(of: pending, timeout: .milliseconds(50))
+            Issue.record("boundedValue must time out while the controlled task is still pending")
+        } catch is TimeoutError {
+        } catch {
+            Issue.record("expected TimeoutError, got \(type(of: error))")
+        }
+        let elapsed = ContinuousClock.now - start
+        #expect(elapsed < .seconds(2))
+        #expect(finished.withLock { $0 } == false)
+        #expect(gate.withLock { $0 != nil })
+        gate.withLock { $0 }?.resume()
+        let drained = try await pending.value
+        #expect(drained == "late")
+        #expect(finished.withLock { $0 } == true)
+    }
+
+    @Test("deadline passes through success before expiry, including already-completed close races")
+    func deadlineSuccess() async throws {
+        let fast: Task<String, Error> = Task.detached { "fast" }
+        let value = try await boundedValue(of: fast, timeout: .seconds(5))
+        #expect(value == "fast")
+        for _ in 0..<50 {
+            let immediate: Task<String, Error> = Task.detached { "ok" }
+            _ = try await immediate.value
+            let raced = try await boundedValue(of: immediate, timeout: .milliseconds(20))
+            #expect(raced == "ok")
+        }
+    }
+
+    @Test("deadline propagates the original error, including already-failed close races")
+    func deadlineError() async throws {
+        let failing: Task<String, Error> = Task.detached { throw ControlledFailure() }
+        do {
+            _ = try await boundedValue(of: failing, timeout: .seconds(5))
+            Issue.record("expected ControlledFailure")
+        } catch is ControlledFailure {
+        } catch {
+            Issue.record("expected ControlledFailure, got \(type(of: error))")
+        }
+        for _ in 0..<20 {
+            let alreadyFailed: Task<String, Error> = Task.detached { throw ControlledFailure() }
+            do {
+                _ = try await boundedValue(of: alreadyFailed, timeout: .milliseconds(20))
+                Issue.record("expected ControlledFailure")
+            } catch is ControlledFailure {
+            } catch {
+                Issue.record("expected ControlledFailure, got \(type(of: error))")
+            }
+        }
+    }
+
+    @Test("caller cancellation returns without joining pending work, then drains it")
+    func deadlineCallerCancellation() async throws {
+        let gate = Mutex<CheckedContinuation<Void, Never>?>(nil)
+        let finished = Mutex(false)
+        let pending: Task<String, Error> = Task.detached {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                gate.withLock { $0 = continuation }
+            }
+            finished.withLock { $0 = true }
+            return "late"
+        }
+        var registered = false
+        for _ in 0..<500 where !registered {
+            registered = gate.withLock { $0 != nil }
+            if !registered {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+        }
+        #expect(registered)
+        let caller: Task<String, Error> = Task.detached {
+            try await boundedValue(of: pending, timeout: .seconds(5))
+        }
+        try await Task.sleep(for: .milliseconds(20))
+        caller.cancel()
+        do {
+            _ = try await caller.value
+            Issue.record("expected CancellationError")
+        } catch is CancellationError {
+        } catch {
+            Issue.record("expected CancellationError, got \(type(of: error))")
+        }
+        #expect(finished.withLock { $0 } == false)
+        gate.withLock { $0 }?.resume()
+        let drained = try await pending.value
+        #expect(drained == "late")
+        #expect(finished.withLock { $0 } == true)
+    }
+
+    @Test("pre-cancelled caller throws CancellationError without running pending work")
+    func deadlinePreCancelledCaller() async throws {
+        let gate = Mutex<CheckedContinuation<Void, Never>?>(nil)
+        let finished = Mutex(false)
+        let pending: Task<String, Error> = Task.detached {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                gate.withLock { $0 = continuation }
+            }
+            finished.withLock { $0 = true }
+            return "late"
+        }
+        var pendingRegistered = false
+        for _ in 0..<500 where !pendingRegistered {
+            pendingRegistered = gate.withLock { $0 != nil }
+            if !pendingRegistered {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+        }
+        #expect(pendingRegistered)
+        let startGate = Mutex<CheckedContinuation<Void, Never>?>(nil)
+        let caller: Task<String, Error> = Task.detached {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                startGate.withLock { $0 = continuation }
+            }
+            return try await boundedValue(of: pending, timeout: .seconds(5))
+        }
+        var callerParked = false
+        for _ in 0..<500 where !callerParked {
+            callerParked = startGate.withLock { $0 != nil }
+            if !callerParked {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+        }
+        #expect(callerParked)
+        caller.cancel()
+        #expect(caller.isCancelled)
+        startGate.withLock { $0 }?.resume()
+        do {
+            _ = try await caller.value
+            Issue.record("expected CancellationError")
+        } catch is CancellationError {
+        } catch {
+            Issue.record("expected CancellationError, got \(type(of: error))")
+        }
+        #expect(finished.withLock { $0 } == false)
+        gate.withLock { $0 }?.resume()
+        let drained = try await pending.value
+        #expect(drained == "late")
+        #expect(finished.withLock { $0 } == true)
+    }
+
+    @Test("gate cancels children registered after a win and clears handles")
+    func deadlineGateLateRegistration() async throws {
+        let gate = DeadlineGate<String>()
+        let dummyWorker: Task<Void, Never> = Task.detached {}
+        #expect(gate.registerWorker(dummyWorker) == false)
+        await dummyWorker.value
+        let (firstCont, firstWorker, firstTimer) = gate.claimWin()
+        #expect(firstCont == nil)
+        #expect(firstWorker != nil)
+        #expect(firstTimer == nil)
+        let lateTimer: Task<Void, Never> = Task.detached {
+            try? await Task.sleep(for: .seconds(5))
+        }
+        #expect(gate.registerTimer(lateTimer) == true)
+        #expect(lateTimer.isCancelled)
+        lateTimer.cancel()
+        await lateTimer.value
+        let lateWorker: Task<Void, Never> = Task.detached {
+            try? await Task.sleep(for: .seconds(5))
+        }
+        #expect(gate.registerWorker(lateWorker) == true)
+        #expect(lateWorker.isCancelled)
+        lateWorker.cancel()
+        await lateWorker.value
+        let (secondCont, secondWorker, secondTimer) = gate.claimWin()
+        #expect(secondCont == nil && secondWorker == nil && secondTimer == nil)
     }
 }

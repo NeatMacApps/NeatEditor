@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+### Added
+
+- Warm and White / Black editor themes, with a close button revealed when hovering over a document tab.
+
+### Changed
+
+- Regular-expression search uses the system ICU syntax and can stop long-running or superseded matching.
+
+### Fixed
+
+- Find Next can reach matches beyond the 2,000-highlight painting budget.
+- File duplication retains coordinated reads and can use exclusive rename when hard links are unavailable. Unsupported exclusive operations fail safely without overwriting another file.
+- Renaming a document no longer overwrites a different file created concurrently at the destination.
+- CRLF edits keep line numbers consistent, and deferred external changes are not recorded as applied before reaching the editor.
+
+### 简体中文
+
+- 新增暖色和纯白 / 纯黑编辑器主题，鼠标悬停文档标签时显示关闭按钮。
+- 正则搜索改用系统 ICU 语法，可停止耗时或已过时的匹配计算。
+- “查找下一处”不再受 2,000 处高亮绘制上限限制。
+- 文件复制保留协调读取；硬链接不可用时可使用原子独占重命名。不支持安全发布操作时保留其他文件并报错，不会覆盖。
+- 重命名文档时，不再覆盖刚被其他程序创建的同名文件。
+- 修复 CRLF 编辑后的行号一致性，以及外部内容尚未应用到编辑器时被提前记录为已同步的问题。
+
 ## 1.0.28 - 2026-11-04
 
 ### Changed

@@ -1,50 +1,46 @@
 import AppKit
 
-/// Result of one off-main regular-expression evaluation. `timedOut` means the
-/// deadline won the race; the evaluator is abandoned, never interrupted.
-enum EditorSearchOutcome: Equatable {
+enum EditorSearchOutcome: Equatable, Sendable {
     case matches([NSRange])
     case timedOut
+    case cancelled
 }
 
-/// Runs one regular-expression evaluation away from the main actor. Injectable
-/// so tests can substitute instant, slow or externally controlled evaluators.
-typealias EditorSearchEvaluator = @Sendable (_ pattern: String, _ text: String) async -> [NSRange]
+/// The deadline includes time spent waiting behind the previous evaluation.
+typealias EditorSearchEvaluator = @Sendable (
+    _ pattern: String, _ text: String, _ deadline: ContinuousClock.Instant
+) async -> EditorSearchOutcome
 
 private func evaluateRegularExpressionOffMain(
     _ pattern: String,
-    _ text: String
-) async -> [NSRange] {
-    do {
-        let regex = try Regex(pattern).ignoresCase()
-        return text.matches(of: regex).compactMap { NSRange($0.range, in: text) }
-    } catch {
-        return []
+    _ text: String,
+    _ deadline: ContinuousClock.Instant
+) async -> EditorSearchOutcome {
+    guard !Task.isCancelled else { return .cancelled }
+    guard ContinuousClock.now < deadline else { return .timedOut }
+    guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else {
+        return .matches([])
     }
-}
-
-/// Resumes once, when either the evaluation or the deadline arrives first.
-/// The regex engine does not poll cancellation, so the losing side is left to
-/// finish in the background instead of being awaited on the main actor.
-private actor EditorSearchGate {
-    private var outcome: EditorSearchOutcome?
-    private var waiter: CheckedContinuation<EditorSearchOutcome, Never>?
-
-    func wait() async -> EditorSearchOutcome {
-        if let outcome {
-            return outcome
+    var ranges: [NSRange] = []
+    var stopped: EditorSearchOutcome?
+    // Progress callbacks run even during a single backtracking match, unlike
+    // checking cancellation only between completed matches.
+    regex.enumerateMatches(
+        in: text, options: .reportProgress,
+        range: NSRange(location: 0, length: text.utf16.count)
+    ) { match, _, stop in
+        if Task.isCancelled {
+            stopped = .cancelled
+        } else if ContinuousClock.now >= deadline {
+            stopped = .timedOut
         }
-        return await withCheckedContinuation { continuation in
-            waiter = continuation
+        if stopped != nil {
+            stop.pointee = true
+        } else if let match {
+            ranges.append(match.range)
         }
     }
-
-    func resolve(_ outcome: EditorSearchOutcome) {
-        guard self.outcome == nil else { return }
-        self.outcome = outcome
-        waiter?.resume(returning: outcome)
-        waiter = nil
-    }
+    return stopped ?? .matches(ranges)
 }
 
 final class EditorTextContainerView: NSView {
@@ -118,15 +114,28 @@ final class EditorTextContainerView: NSView {
     /// documents.
     private static let regularExpressionSearchDeadline: Duration = .milliseconds(250)
 
-    /// Highlights beyond this count are dropped so the attribute pass stays
-    /// bounded; navigation still visits the first entries.
+    /// Limit painting, never navigation through the complete match set.
     private static let maximumAppliedMatchCount = 2000
 
-    /// Single-flight regex search: a new request cancels the previous task and
-    /// advances the generation, so an abandoned evaluation cannot apply stale
-    /// ranges even though the engine keeps running.
+    private struct SearchRequest: Sendable {
+        let pattern: String
+        let text: String
+        let navigate: Bool
+        let generation: Int
+        let deadline: ContinuousClock.Instant
+        let evaluator: EditorSearchEvaluator
+    }
+
+    /// Keep the running handle until its evaluator really ends. Replacing only
+    /// the pending slot bounds retained work even if cancellation is ignored.
     private var searchTask: Task<Void, Never>?
+    private var searchDeadlineTask: Task<Void, Never>?
+    private var pendingSearch: SearchRequest?
     private var searchRequestGeneration = 0
+
+    var retainedRegularExpressionRequestCount: Int {
+        (searchTask == nil ? 0 : 1) + (pendingSearch == nil ? 0 : 1)
+    }
 
     override var isFlipped: Bool {
         true
@@ -175,6 +184,11 @@ final class EditorTextContainerView: NSView {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        searchTask?.cancel()
+        searchDeadlineTask?.cancel()
     }
 
     func refreshLineNumbers() {
@@ -245,47 +259,56 @@ final class EditorTextContainerView: NSView {
         beginRegularExpressionSearch(pattern: trimmedQuery, text: fullText, navigate: navigate)
     }
 
-    /// Evaluate a user-entered pattern away from the main actor and apply the
-    /// result only if it is still the newest request. Regex matching has no
-    /// interruptible API: a pattern like `(a+)+$` can run for minutes, so the
-    /// main actor waits for a bounded deadline instead of the engine.
     private func beginRegularExpressionSearch(pattern: String, text: String, navigate: Bool) {
         cancelPendingSearch()
         let generation = searchRequestGeneration
-        let gate = EditorSearchGate()
-        let evaluator = searchEvaluator
-        let deadline = Self.regularExpressionSearchDeadline
-
-        searchTask = Task { [weak self] in
-            let evaluation = Task.detached(priority: .userInitiated) {
-                let ranges = await evaluator(pattern, text)
-                await gate.resolve(.matches(ranges))
-            }
-            let timeout = Task.detached {
-                try? await Task.sleep(for: deadline)
-                guard !Task.isCancelled else { return }
-                await gate.resolve(.timedOut)
-            }
-
-            let outcome = await gate.wait()
-            timeout.cancel()
-            evaluation.cancel()
-
-            guard !Task.isCancelled,
-                  let self,
-                  self.searchRequestGeneration == generation else {
+        let deadline = ContinuousClock.now.advanced(by: Self.regularExpressionSearchDeadline)
+        pendingSearch = SearchRequest(
+            pattern: pattern, text: text, navigate: navigate,
+            generation: generation, deadline: deadline, evaluator: searchEvaluator
+        )
+        searchDeadlineTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(until: deadline, clock: .continuous)
+            } catch {
                 return
             }
-            self.applySearchOutcome(outcome, navigate: navigate)
+            guard !Task.isCancelled, let self,
+                  self.searchRequestGeneration == generation else { return }
+            self.applySearchOutcome(.timedOut, navigate: false)
+        }
+        startPendingSearchIfNeeded()
+    }
+
+    private func startPendingSearchIfNeeded() {
+        guard searchTask == nil, let request = pendingSearch else { return }
+        pendingSearch = nil
+        searchTask = Task { @MainActor [weak self] in
+            let evaluation = Task.detached(priority: .userInitiated) {
+                await request.evaluator(request.pattern, request.text, request.deadline)
+            }
+            let outcome = await withTaskCancellationHandler {
+                await evaluation.value
+            } onCancel: {
+                evaluation.cancel()
+            }
+            guard let self else { return }
+            self.searchTask = nil
+            if !Task.isCancelled, self.searchRequestGeneration == request.generation {
+                self.searchDeadlineTask?.cancel()
+                self.searchDeadlineTask = nil
+                self.applySearchOutcome(outcome, navigate: request.navigate)
+            }
+            self.startPendingSearchIfNeeded()
         }
     }
 
     private func cancelPendingSearch() {
-        searchTask?.cancel()
-        searchTask = nil
-        // Identity, not cancellation, discards results: a running evaluation
-        // resolves its own gate but the generation guard rejects it.
         searchRequestGeneration &+= 1
+        pendingSearch = nil
+        searchDeadlineTask?.cancel()
+        searchDeadlineTask = nil
+        searchTask?.cancel()
     }
 
     /// Clears a reported timeout once no evaluation can match anything. The
@@ -307,6 +330,8 @@ final class EditorTextContainerView: NSView {
         case .matches(let matchRanges):
             onSearchTimeoutChange(false)
             finishSearch(with: matchRanges, navigate: navigate)
+        case .cancelled:
+            break
         }
     }
 
@@ -328,7 +353,7 @@ final class EditorTextContainerView: NSView {
             ? 0
             : min(NSMaxRange(selectedRange), textLength)
         let matchRange = NSIntersectionRange(
-            nextMatchRange(from: appliedRanges, selectionEnd: selectionEnd),
+            nextMatchRange(from: matchRanges, selectionEnd: selectionEnd),
             NSRange(location: 0, length: textLength)
         )
 

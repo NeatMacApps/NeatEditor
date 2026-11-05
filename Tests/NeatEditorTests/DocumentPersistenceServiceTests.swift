@@ -1,7 +1,42 @@
 import Foundation
+import Synchronization
 import Testing
 
 @testable import NeatEditor
+
+/// Rejects hard links with ENOTSUP while copy and native rename stay
+/// available. Stateless, so the inherited unchecked conformance stays safe.
+private final class LinkUnsupportedFileManager: FileManager, @unchecked Sendable {
+    override func linkItem(at srcURL: URL, to dstURL: URL) throws {
+        throw NSError(domain: NSPOSIXErrorDomain, code: Int(ENOTSUP), userInfo: [NSFilePathErrorKey: dstURL.path])
+    }
+}
+
+/// Plants a different-bytes competitor at the first candidate before link.
+/// Exclusive claim must fail EEXIST; retry preserves both. Immutable
+/// configuration only, so the inherited unchecked conformance stays safe.
+private final class PlantRacerLinkManager: FileManager, @unchecked Sendable {
+    let firstCandidate: String
+    init(firstCandidate: String) {
+        self.firstCandidate = firstCandidate
+        super.init()
+    }
+    override func linkItem(at srcURL: URL, to dstURL: URL) throws {
+        if dstURL.lastPathComponent == firstCandidate {
+            try? Data("RACER".utf8).write(to: dstURL, options: .withoutOverwriting)
+        }
+        try super.linkItem(at: srcURL, to: dstURL)
+    }
+}
+
+/// Fails hard-link publication with a non-capability I/O error. Stateless,
+/// so the inherited unchecked conformance stays safe. Publication must
+/// propagate this error without trying the rename fallback.
+private final class NonCapabilityLinkManager: FileManager, @unchecked Sendable {
+    override func linkItem(at srcURL: URL, to dstURL: URL) throws {
+        throw NSError(domain: NSPOSIXErrorDomain, code: Int(EACCES), userInfo: [NSFilePathErrorKey: dstURL.path])
+    }
+}
 
 /// Persistence regression tests: saving must never write placeholder or
 /// blank content over a real file, and rename must keep title/URL coherent.
@@ -300,5 +335,352 @@ struct DocumentPersistenceServiceTests {
             DocumentPersistenceService(environment: ["XDG_CONFIG_HOME": "relative/path"])
                 .appLibraryDirectory.path.hasSuffix(".config/neateditor/documents")
         )
+    }
+
+    @Test("exclusive link publishes complete bytes on a supporting volume")
+    func duplicateViaExclusiveLink() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeatEditorExcl-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("note.txt")
+        let payload = "complete bytes 中文 👨‍👩‍👧‍👦\n"
+        try payload.write(to: source, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o640], ofItemAtPath: source.path)
+        let sourcePermissions = try FileManager.default.attributesOfItem(atPath: source.path)[.posixPermissions] as? Int
+
+        let service = DocumentPersistenceService(defaultDirectory: directory)
+        let duplicate = try service.duplicateSidebarFile(at: source)
+
+        #expect(duplicate.lastPathComponent == "note copy.txt")
+        #expect(try String(contentsOf: duplicate, encoding: .utf8) == payload)
+        #expect(try String(contentsOf: source, encoding: .utf8) == payload)
+        #expect(try FileManager.default.attributesOfItem(atPath: source.path)[.posixPermissions] as? Int == sourcePermissions)
+        let duplicatePermissions = try FileManager.default.attributesOfItem(atPath: duplicate.path)[.posixPermissions] as? Int
+        #expect(duplicatePermissions == sourcePermissions)
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+            .filter { $0.hasPrefix(".neateditor-staging-") }
+        #expect(leftovers.isEmpty)
+    }
+
+    @Test("hard-link rejection falls through to exclusive rename")
+    func duplicateFallsBackToExclusiveRename() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeatEditorNoLink-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("note.txt")
+        let payload = "complete bytes 中文 👨‍👩‍👧‍👦\n"
+        try payload.write(to: source, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o640], ofItemAtPath: source.path)
+
+        let linkless = LinkUnsupportedFileManager()
+        #expect(throws: (any Error).self) { try linkless.linkItem(at: source, to: directory.appendingPathComponent("probe.txt")) }
+        #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("probe.txt").path))
+
+        // Native RENAME_EXCL still publishes exclusively on APFS.
+        let service = DocumentPersistenceService(fileManager: linkless, defaultDirectory: directory)
+        let duplicate = try service.duplicateSidebarFile(at: source)
+
+        #expect(duplicate.lastPathComponent == "note copy.txt")
+        #expect(try String(contentsOf: duplicate, encoding: .utf8) == payload)
+        #expect(try String(contentsOf: source, encoding: .utf8) == payload)
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+            .filter { $0.hasPrefix(".neateditor-staging-") }
+        #expect(leftovers.isEmpty)
+    }
+
+    @Test("unsupported exclusive primitives fail closed without overwriting")
+    func duplicateFailsClosedWhenExclusiveUnsupported() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeatEditorNoExcl-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("doc.txt")
+        try "original".write(to: source, atomically: true, encoding: .utf8)
+        let preexisting = directory.appendingPathComponent("doc copy.txt")
+        try "kept".write(to: preexisting, atomically: true, encoding: .utf8)
+
+        let linkless = LinkUnsupportedFileManager()
+        let unsupportedRename: @Sendable (URL, URL) throws -> Void = { _, dst in
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(ENOTSUP), userInfo: [NSFilePathErrorKey: dst.path])
+        }
+        let service = DocumentPersistenceService(
+            fileManager: linkless, defaultDirectory: directory, exclusiveRename: unsupportedRename
+        )
+        do {
+            _ = try service.duplicateSidebarFile(at: source)
+            Issue.record("unsupported exclusive publication must throw instead of overwriting")
+        } catch {
+            let nsError = error as NSError
+            #expect(nsError.domain == NSPOSIXErrorDomain && nsError.code == Int(ENOTSUP))
+        }
+        // Fail closed: preexisting preserved, no new copy, source intact, staging cleaned.
+        #expect(try String(contentsOf: preexisting, encoding: .utf8) == "kept")
+        #expect(try String(contentsOf: source, encoding: .utf8) == "original")
+        #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("doc copy 2.txt").path))
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+            .filter { $0.hasPrefix(".neateditor-staging-") }
+        #expect(leftovers.isEmpty)
+    }
+
+    @Test("duplication never overwrites a pre-existing destination")
+    func duplicateNeverOverwritesPreexisting() throws {
+        let (service, directory) = try makeService()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("doc.txt")
+        try "original".write(to: source, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o640], ofItemAtPath: source.path)
+        let existing = directory.appendingPathComponent("doc copy.txt")
+        try "existing copy".write(to: existing, atomically: true, encoding: .utf8)
+
+        let duplicate = try service.duplicateSidebarFile(at: source)
+
+        #expect(duplicate.lastPathComponent == "doc copy 2.txt")
+        #expect(try String(contentsOf: duplicate, encoding: .utf8) == "original")
+        #expect(try String(contentsOf: existing, encoding: .utf8) == "existing copy")
+        #expect(try String(contentsOf: source, encoding: .utf8) == "original")
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+            .filter { $0.hasPrefix(".neateditor-staging-") }
+        #expect(leftovers.isEmpty)
+    }
+
+    @Test("duplication advances through numbered collisions")
+    func duplicateAdvancesThroughCollisions() throws {
+        let (service, directory) = try makeService()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("record.md")
+        try "v1".write(to: source, atomically: true, encoding: .utf8)
+        try "kept-1".write(to: directory.appendingPathComponent("record copy.md"), atomically: true, encoding: .utf8)
+        try "kept-2".write(to: directory.appendingPathComponent("record copy 2.md"), atomically: true, encoding: .utf8)
+
+        let duplicate = try service.duplicateSidebarFile(at: source)
+
+        #expect(duplicate.lastPathComponent == "record copy 3.md")
+        #expect(try String(contentsOf: duplicate, encoding: .utf8) == "v1")
+        #expect(try String(contentsOf: directory.appendingPathComponent("record copy.md"), encoding: .utf8) == "kept-1")
+        #expect(try String(contentsOf: directory.appendingPathComponent("record copy 2.md"), encoding: .utf8) == "kept-2")
+        #expect(try String(contentsOf: source, encoding: .utf8) == "v1")
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+            .filter { $0.hasPrefix(".neateditor-staging-") }
+        #expect(leftovers.isEmpty)
+    }
+
+    @Test("racing competitor at the link primitive is preserved")
+    func racingCompetitorPreservedViaLink() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeatEditorRaceLink-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("doc.txt")
+        try "STAGED".write(to: source, atomically: true, encoding: .utf8)
+
+        let racer = PlantRacerLinkManager(firstCandidate: "doc copy.txt")
+        let service = DocumentPersistenceService(fileManager: racer, defaultDirectory: directory)
+        let duplicate = try service.duplicateSidebarFile(at: source)
+
+        // Competitor planted immediately before linkItem keeps different bytes;
+        // the exclusive claim fails EEXIST and the retry publishes elsewhere.
+        #expect(try String(contentsOf: directory.appendingPathComponent("doc copy.txt"), encoding: .utf8) == "RACER")
+        #expect(duplicate.lastPathComponent == "doc copy 2.txt")
+        #expect(try String(contentsOf: duplicate, encoding: .utf8) == "STAGED")
+        #expect(try String(contentsOf: source, encoding: .utf8) == "STAGED")
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+            .filter { $0.hasPrefix(".neateditor-staging-") }
+        #expect(leftovers.isEmpty)
+    }
+
+    @Test("racing competitor at the exclusive rename is preserved")
+    func racingCompetitorPreservedViaRename() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeatEditorRaceRename-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("note.txt")
+        try "STAGED".write(to: source, atomically: true, encoding: .utf8)
+
+        let linkless = LinkUnsupportedFileManager()
+        let racerRename: @Sendable (URL, URL) throws -> Void = { src, dst in
+            if dst.lastPathComponent == "note copy.txt" {
+                try? Data("RACER".utf8).write(to: dst, options: .withoutOverwriting)
+            }
+            try DocumentPersistenceService.nativeExclusiveRename(src, dst)
+        }
+        let service = DocumentPersistenceService(
+            fileManager: linkless, defaultDirectory: directory, exclusiveRename: racerRename
+        )
+        let duplicate = try service.duplicateSidebarFile(at: source)
+
+        #expect(try String(contentsOf: directory.appendingPathComponent("note copy.txt"), encoding: .utf8) == "RACER")
+        #expect(duplicate.lastPathComponent == "note copy 2.txt")
+        #expect(try String(contentsOf: duplicate, encoding: .utf8) == "STAGED")
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+            .filter { $0.hasPrefix(".neateditor-staging-") }
+        #expect(leftovers.isEmpty)
+    }
+
+    @Test("failed staged publication cleans up without publishing")
+    func failedStagedPublicationCleansUp() throws {
+        let (service, directory) = try makeService()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        do {
+            _ = try service.publishStagedFile(named: "never.txt", in: directory) { stagingURL in
+                try Data("partial".utf8).write(to: stagingURL, options: .withoutOverwriting)
+                throw CocoaError(.fileWriteNoPermission)
+            }
+            Issue.record("a throwing write must propagate")
+        } catch let error as CocoaError {
+            #expect(error.code == .fileWriteNoPermission)
+        }
+        #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("never.txt").path))
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+            .filter { $0.hasPrefix(".neateditor-staging-") }
+        #expect(leftovers.isEmpty)
+    }
+
+    @Test("fresh rename claims destination exclusively and notifies before move")
+    func renameFreshClaimsExclusively() throws {
+        let (service, _) = try makeService()
+        let saved = try service.save(tab: EditorTab(title: "orig", content: "fresh-bytes"))
+        let sourceURL = try #require(saved.fileURL)
+        var notified: [(URL, URL)] = []
+
+        let renamed = try service.moveDocumentFile(tab: saved, to: "renamed.txt", beforeMove: { src, dst in
+            notified.append((src, dst))
+        })
+
+        #expect(notified.count == 1)
+        #expect(notified[0].0 == service.normalizedFileURL(for: sourceURL))
+        #expect(notified[0].1.lastPathComponent == "renamed.txt")
+        #expect(renamed.id == saved.id)
+        #expect(renamed.title == "renamed.txt")
+        #expect(renamed.fileURL?.lastPathComponent == "renamed.txt")
+        #expect(renamed.content == "fresh-bytes")
+        #expect(!FileManager.default.fileExists(atPath: sourceURL.path))
+        #expect(try String(contentsOf: #require(renamed.fileURL), encoding: .utf8) == "fresh-bytes")
+    }
+
+    @Test("rename onto pre-existing name throws and preserves both files")
+    func renamePreexistingPreservesBoth() throws {
+        let (service, _) = try makeService()
+        let first = try service.save(tab: EditorTab(title: "a", content: "SOURCE-BYTES"))
+        let second = try service.save(tab: EditorTab(title: "b", content: "COMPETITOR-BYTES"))
+        let firstURL = try #require(first.fileURL)
+        let secondURL = try #require(second.fileURL)
+        var notified = 0
+
+        do {
+            _ = try service.moveDocumentFile(tab: first, to: "b.txt", beforeMove: { _, _ in notified += 1 })
+            Issue.record("renaming onto an existing file must throw")
+        } catch let error as DocumentPersistenceService.PersistenceError {
+            guard case .destinationAlreadyExists(let url) = error else {
+                Issue.record("wrong persistence error: \(error)")
+                return
+            }
+            #expect(url.lastPathComponent == "b.txt")
+        }
+        #expect(try String(contentsOf: firstURL, encoding: .utf8) == "SOURCE-BYTES")
+        #expect(try String(contentsOf: secondURL, encoding: .utf8) == "COMPETITOR-BYTES")
+        #expect(FileManager.default.fileExists(atPath: firstURL.path))
+        #expect(FileManager.default.fileExists(atPath: secondURL.path))
+        #expect(notified == 0)
+        #expect(first.fileURL == firstURL)
+    }
+
+    @Test("rename racing competitor with different bytes is preserved")
+    func renameRacedTargetPreserved() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeatEditorRaceRename-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let base = DocumentPersistenceService(defaultDirectory: directory)
+        let saved = try base.save(tab: EditorTab(title: "orig", content: "STAGED"))
+        let sourceURL = try #require(saved.fileURL)
+        var notified: [(URL, URL)] = []
+        let racerRename: @Sendable (URL, URL) throws -> Void = { src, dst in
+            if dst.lastPathComponent == "renamed.txt" {
+                try? Data("RACER".utf8).write(to: dst, options: .withoutOverwriting)
+            }
+            try DocumentPersistenceService.nativeExclusiveRename(src, dst)
+        }
+        let racerService = DocumentPersistenceService(defaultDirectory: directory, exclusiveRename: racerRename)
+
+        do {
+            _ = try racerService.moveDocumentFile(tab: saved, to: "renamed.txt", beforeMove: { src, dst in
+                notified.append((src, dst))
+            })
+            Issue.record("raced rename must throw instead of overwriting")
+        } catch let error as DocumentPersistenceService.PersistenceError {
+            guard case .destinationAlreadyExists = error else {
+                Issue.record("wrong persistence error: \(error)")
+                return
+            }
+        }
+        #expect(try String(contentsOf: directory.appendingPathComponent("renamed.txt"), encoding: .utf8) == "RACER")
+        #expect(try String(contentsOf: sourceURL, encoding: .utf8) == "STAGED")
+        #expect(FileManager.default.fileExists(atPath: sourceURL.path))
+        #expect(notified.count == 1)
+        #expect(saved.fileURL == sourceURL)
+    }
+
+    @Test("unsupported rename fails closed without creating destination")
+    func renameUnsupportedFailsClosed() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeatEditorRenameNoExcl-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let base = DocumentPersistenceService(defaultDirectory: directory)
+        let saved = try base.save(tab: EditorTab(title: "orig", content: "hello"))
+        let sourceURL = try #require(saved.fileURL)
+        let unsupported: @Sendable (URL, URL) throws -> Void = { _, dst in
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(ENOTSUP), userInfo: [NSFilePathErrorKey: dst.path])
+        }
+        let service = DocumentPersistenceService(defaultDirectory: directory, exclusiveRename: unsupported)
+        var notified = 0
+
+        do {
+            _ = try service.moveDocumentFile(tab: saved, to: "fresh.txt", beforeMove: { _, _ in notified += 1 })
+            Issue.record("unsupported rename must throw instead of overwriting")
+        } catch {
+            let nsError = error as NSError
+            #expect(nsError.domain == NSPOSIXErrorDomain && nsError.code == Int(ENOTSUP))
+        }
+        #expect(try String(contentsOf: sourceURL, encoding: .utf8) == "hello")
+        #expect(FileManager.default.fileExists(atPath: sourceURL.path))
+        #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("fresh.txt").path))
+        #expect(notified == 1)
+    }
+
+    @Test("non-capability link error never tries rename fallback")
+    func nonCapabilityLinkErrorSkipsRenameFallback() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeatEditorNonCap-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("doc.txt")
+        try "original".write(to: source, atomically: true, encoding: .utf8)
+
+        let invoked = Mutex(false)
+        let renameOverride: @Sendable (URL, URL) throws -> Void = { src, dst in
+            invoked.withLock { $0 = true }
+            try DocumentPersistenceService.nativeExclusiveRename(src, dst)
+        }
+        let service = DocumentPersistenceService(
+            fileManager: NonCapabilityLinkManager(), defaultDirectory: directory, exclusiveRename: renameOverride
+        )
+        do {
+            _ = try service.duplicateSidebarFile(at: source)
+            Issue.record("non-capability link failure must propagate")
+        } catch {
+            let nsError = error as NSError
+            #expect(nsError.domain == NSPOSIXErrorDomain && nsError.code == Int(EACCES))
+        }
+        #expect(invoked.withLock { $0 } == false)
+        #expect(try String(contentsOf: source, encoding: .utf8) == "original")
+        #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("doc copy.txt").path))
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+            .filter { $0.hasPrefix(".neateditor-staging-") }
+        #expect(leftovers.isEmpty)
     }
 }

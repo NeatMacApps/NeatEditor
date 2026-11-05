@@ -46,13 +46,18 @@ struct DocumentPersistenceService: Sendable {
     }
     let fileAccess: DocumentFileAccess
     let recoveryDirectory: URL
+    /// Test seam for the exclusive-rename fallback. Production uses the
+    /// native `renamex_np(..., RENAME_EXCL)` below; tests inject ENOTSUP to
+    /// prove fail-closed behavior. `nil` means native.
+    let exclusiveRenameOverride: (@Sendable (URL, URL) throws -> Void)?
 
     init(
         fileManager: sending FileManager = FileManager(),
         defaultDirectory: URL? = nil,
         appLibraryDirectory: URL? = nil,
         recoveryDirectory: URL? = nil,
-        environment: [String: String]? = nil
+        environment: [String: String]? = nil,
+        exclusiveRename: (@Sendable (URL, URL) throws -> Void)? = nil
     ) {
         let environment = environment ?? ProcessInfo.processInfo.environment
         self.defaultDirectory = defaultDirectory
@@ -62,6 +67,7 @@ struct DocumentPersistenceService: Sendable {
         self.recoveryDirectory = recoveryDirectory ?? self.appLibraryDirectory
             .deletingLastPathComponent().appendingPathComponent("recovery", isDirectory: true)
         self.fileAccess = DocumentFileAccess(manager: fileManager)
+        self.exclusiveRenameOverride = exclusiveRename
     }
 
     func save(
@@ -133,12 +139,10 @@ struct DocumentPersistenceService: Sendable {
             )
         }
 
-        // moveItem itself refuses to overwrite an existing destination, so
-        // a file created at the destination between the check above and
-        // now still cannot be clobbered; map that race to the same error.
+        // Sibling rename; exclusive claim, no overwriting move.
         do {
             beforeMove(normalizedFileURL, destinationURL)
-            try withFileManager { try $0.moveItem(at: normalizedFileURL, to: destinationURL) }
+            try exclusiveRenameItem(at: normalizedFileURL, to: destinationURL)
         } catch where isFileExistsError(error) {
             throw PersistenceError.destinationAlreadyExists(destinationURL)
         }
@@ -298,9 +302,14 @@ struct DocumentPersistenceService: Sendable {
     /// existing one. The content is written once to a unique private staging
     /// sibling (never at a candidate name, so a failed or interrupted write
     /// cannot leave a partial document), then each candidate name is claimed
-    /// with an exclusive hard-link publication reusing that same inode; a
-    /// name taken in the meantime yields the next numbered sibling, leaving
-    /// both contents intact. Pre-existing files are never modified.
+    /// with an atomic exclusive primitive reusing that complete file and its
+    /// mode; a name taken in the meantime yields the next numbered sibling,
+    /// leaving both contents intact. Pre-existing files are never modified.
+    /// Publication tries a hard link first (original exclusive contract on
+    /// link-capable volumes), then `renamex_np(..., RENAME_EXCL)` (exclusive
+    /// rename, no hard-link support needed). If neither exclusive primitive
+    /// is supported the publish fails closed: it throws, removes staging,
+    /// and never falls back to an overwriting move/rename.
     func exclusivePublish(data: Data, named fileName: String, in directory: URL? = nil) throws -> URL {
         try publishStagedFile(named: fileName, in: directory) { stagingURL in
             // .withoutOverwriting guards the staging name itself; it is never
@@ -313,10 +322,9 @@ struct DocumentPersistenceService: Sendable {
     }
 
     /// Publishes bytes produced at a private staging sibling by the same
-    /// no-overwrite hard-link contract as a first save. Only a complete
-    /// staging file is ever linked, so a partial destination name cannot
-    /// become visible; `write` must fill the staging URL entirely and leaves
-    /// its final attributes in place for publication.
+    /// no-overwrite exclusive contract as a first save. Only a complete
+    /// staging file is ever published; staging and candidates share one
+    /// directory and no overwriting primitive is used.
     func publishStagedFile(
         named fileName: String,
         in directory: URL? = nil,
@@ -335,9 +343,91 @@ struct DocumentPersistenceService: Sendable {
         try write(stagingURL)
 
         return try publishFile(named: fileName, in: directory) { destination in
-            // Every candidate reuses the complete staged inode and its mode.
-            try withFileManager { try $0.linkItem(at: stagingURL, to: destination) }
+            try publishExclusiveStaging(from: stagingURL, to: destination)
         }
+    }
+
+    /// Claims one candidate name with an atomic exclusive primitive: hard
+    /// link first, then same-directory `renamex_np(..., RENAME_EXCL)`.
+    /// Collisions surface as file-exists; anything else fails closed.
+    func publishExclusiveStaging(from stagingURL: URL, to destination: URL) throws {
+        do {
+            try withFileManager { try $0.linkItem(at: stagingURL, to: destination) }
+            return
+        } catch {
+            if isFileExistsError(error) {
+                throw error
+            }
+            if !isUnsupportedHardLinkError(error) {
+                throw error
+            }
+        }
+        do {
+            try exclusiveRenameItem(at: stagingURL, to: destination)
+        } catch {
+            // EEXIST means "name taken"; publishFile retries. All other
+            // errors fail closed with staging cleanup from the caller.
+            throw error
+        }
+    }
+
+    /// True only for hard-link capability failures that may legitimately try
+    /// the exclusive-rename path: direct or wrapped POSIX ENOTSUP/EOPNOTSUPP,
+    /// plus EPERM at link time (staging was just created readable in the same
+    /// directory, so EPERM indicates volume capability, not staging access).
+    /// Permission, I/O, quota, and other errors propagate without fallback.
+    func isUnsupportedHardLinkError(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        if nsError.domain == NSPOSIXErrorDomain
+            && (nsError.code == Int(ENOTSUP) || nsError.code == Int(EOPNOTSUPP) || nsError.code == Int(EPERM)) {
+            return true
+        }
+        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError,
+           underlying.domain == NSPOSIXErrorDomain
+            && (underlying.code == Int(ENOTSUP) || underlying.code == Int(EOPNOTSUPP) || underlying.code == Int(EPERM)) {
+            return true
+        }
+        return false
+    }
+
+    /// Same-directory exclusive rename. Production calls the native
+    /// `renamex_np(..., RENAME_EXCL)`; tests may inject an override (for
+    /// example to simulate ENOTSUP on volumes without exclusive-rename
+    /// support). Never overwrites: on supporting volumes EEXIST is returned
+    /// when the destination already exists and the staging file is left
+    /// intact for the next candidate.
+    func exclusiveRenameItem(at srcURL: URL, to dstURL: URL) throws {
+        if let override = exclusiveRenameOverride {
+            try override(srcURL, dstURL)
+            return
+        }
+        try Self.nativeExclusiveRename(srcURL, dstURL)
+    }
+
+    /// Native exclusive rename used on both macOS and iOS (available
+    /// macOS 10.12+/iOS 10.0+, within the 26.0 baselines; no `#if` needed).
+    /// `renamex_np` with `RENAME_EXCL` returns EEXIST when the destination
+    /// exists and ENOTSUP where the filesystem does not support exclusive
+    /// rename (see `man renamex_np` and `VOL_CAP_INT_RENAME_EXCL`). Staging
+    /// and destination share a directory, so no cross-volume copy occurs.
+    static func nativeExclusiveRename(_ srcURL: URL, _ dstURL: URL) throws {
+        var syscallResult: Int32 = -1
+        var capturedErrno: Int32 = EINVAL
+        srcURL.path.withCString { srcPtr in
+            dstURL.path.withCString { dstPtr in
+                errno = 0
+                syscallResult = renamex_np(srcPtr, dstPtr, UInt32(RENAME_EXCL))
+                capturedErrno = errno
+            }
+        }
+        if syscallResult == 0 {
+            return
+        }
+        throw NSError(
+            domain: NSPOSIXErrorDomain,
+            code: Int(capturedErrno),
+            userInfo: [NSFilePathErrorKey: dstURL.path]
+        )
     }
 
     /// Tries the original name, then numbered siblings, without a check/write
@@ -369,16 +459,23 @@ struct DocumentPersistenceService: Sendable {
     }
 
     /// An existing destination surfaces as NSFileWriteFileExistsError from
-    /// FileManager copy/move/link calls. CocoaError bridges to NSError
-    /// preserving domain and code, so a single NSError check covers both the
-    /// Swift and Objective-C spellings in one place.
+    /// FileManager copy/move/link calls, and as POSIX EEXIST from the native
+    /// `renamex_np(..., RENAME_EXCL)` path. CocoaError bridges to NSError
+    /// preserving domain and code, so explicit checks cover the Swift,
+    /// Objective-C, and POSIX spellings in one place. Only collisions are
+    /// retried; every other error (including ENOTSUP for unsupported
+    /// exclusive operations) propagates fail-closed.
     func isFileExistsError(_ error: Error) -> Bool {
         if let error = error as? CocoaError, error.code == .fileWriteFileExists {
             return true
         }
         let nsError = error as NSError
-        return nsError.domain == NSCocoaErrorDomain
-            && nsError.code == NSFileWriteFileExistsError
+        if nsError.domain == NSCocoaErrorDomain
+            && nsError.code == NSFileWriteFileExistsError {
+            return true
+        }
+        return nsError.domain == NSPOSIXErrorDomain
+            && nsError.code == Int(EEXIST)
     }
 
     /// Names a new tab from its local creation time and in-memory tabs only. Deliberately
