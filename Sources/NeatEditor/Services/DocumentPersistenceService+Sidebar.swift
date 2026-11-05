@@ -237,7 +237,9 @@ extension DocumentPersistenceService {
     }
 
     /// Live text is staged completely before exclusive publication. Unopened
-    /// files use FileManager copying so their full content isn't read into memory.
+    /// files have no buffer to stage, so their bytes are copied under a
+    /// coordinated read of the source: a cooperating writer's claim delays
+    /// the copy instead of publishing half-old/half-new bytes.
     func duplicateSidebarFile(at fileURL: URL, content: String? = nil) throws -> URL {
         let sourceURL = normalizedFileURL(for: fileURL)
         let pathExtension = sourceURL.pathExtension
@@ -252,11 +254,13 @@ extension DocumentPersistenceService {
                 in: sourceURL.deletingLastPathComponent()
             )
         }
-        return try publishFile(
+        return try publishStagedFile(
             named: copyName,
             in: sourceURL.deletingLastPathComponent()
-        ) { destination in
-            try withFileManager { try $0.copyItem(at: sourceURL, to: destination) }
+        ) { stagingURL in
+            try coordinated(at: sourceURL, writing: false) { coordinatedSource in
+                try withFileManager { try $0.copyItem(at: coordinatedSource, to: stagingURL) }
+            }
         }
     }
 }

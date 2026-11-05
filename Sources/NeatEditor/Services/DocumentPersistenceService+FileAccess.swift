@@ -229,7 +229,7 @@ extension DocumentPersistenceService {
         try withFileManager { try $0.setAttributes([.posixPermissions: 0o600], ofItemAtPath: destination.path) }
     }
 
-    private func coordinated<T>(
+    func coordinated<T>(
         at url: URL, writing: Bool, options: NSFileCoordinator.WritingOptions = [],
         coordinator: NSFileCoordinator = NSFileCoordinator(), operation: (URL) throws -> T
     ) throws -> T {

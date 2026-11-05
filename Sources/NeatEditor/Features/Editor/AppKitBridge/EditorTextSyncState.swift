@@ -28,6 +28,10 @@ struct EditorTextSyncState {
     private var hasTextViewEdits = false
     private var externalRevision: UInt64 = 0
 
+    /// Revision whose text was actually applied to the text view. Internal so
+    /// regression tests can assert deferred updates stay unaccepted.
+    var appliedExternalRevision: UInt64 { externalRevision }
+
     enum Update {
         /// Assign this string to the text view (tab switch or external change).
         case pushToTextView(String)

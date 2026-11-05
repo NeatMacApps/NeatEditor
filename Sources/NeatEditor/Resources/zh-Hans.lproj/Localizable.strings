@@ -20,6 +20,7 @@
 "Disable Regular Expression Search" = "停用正则表达式搜索";
 "Enable Regular Expression Search" = "启用正则表达式搜索";
 "Close Search" = "关闭搜索";
+"search.status.regexTimedOut" = "正则搜索超时";
 
 "Settings" = "设置";
 "settings.theme" = "主题";

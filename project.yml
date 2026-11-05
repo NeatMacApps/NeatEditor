@@ -30,7 +30,9 @@ settings:
 packages:
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
-    from: "2.9.2"
+    # Pinned to the resolved 2.9.5: a `from:` range would let a lockfile
+    # re-resolution silently change the framework the release links.
+    exactVersion: "2.9.5"
 
 targets:
   NeatEditor:

@@ -302,23 +302,40 @@ struct DocumentPersistenceService: Sendable {
     /// name taken in the meantime yields the next numbered sibling, leaving
     /// both contents intact. Pre-existing files are never modified.
     func exclusivePublish(data: Data, named fileName: String, in directory: URL? = nil) throws -> URL {
+        try publishStagedFile(named: fileName, in: directory) { stagingURL in
+            // .withoutOverwriting guards the staging name itself; it is never
+            // combined with .atomic — NSData.h forbids that pair.
+            try data.write(to: stagingURL, options: .withoutOverwriting)
+            try withFileManager {
+                try $0.setAttributes([.posixPermissions: 0o600], ofItemAtPath: stagingURL.path)
+            }
+        }
+    }
+
+    /// Publishes bytes produced at a private staging sibling by the same
+    /// no-overwrite hard-link contract as a first save. Only a complete
+    /// staging file is ever linked, so a partial destination name cannot
+    /// become visible; `write` must fill the staging URL entirely and leaves
+    /// its final attributes in place for publication.
+    func publishStagedFile(
+        named fileName: String,
+        in directory: URL? = nil,
+        write: (URL) throws -> Void
+    ) throws -> URL {
         let directory = directory ?? defaultDirectory
         try withFileManager {
             try $0.createDirectory(at: directory, withIntermediateDirectories: true,
                                    attributes: [.posixPermissions: 0o700])
         }
 
-        // .withoutOverwriting guards the staging name itself; it is never
-        // combined with .atomic — NSData.h forbids that pair.
         let stagingURL = directory.appendingPathComponent(
             ".neateditor-staging-\(UUID().uuidString)"
         )
         defer { try? withFileManager { try $0.removeItem(at: stagingURL) } }
-        try data.write(to: stagingURL, options: .withoutOverwriting)
-        try withFileManager { try $0.setAttributes([.posixPermissions: 0o600], ofItemAtPath: stagingURL.path) }
+        try write(stagingURL)
 
         return try publishFile(named: fileName, in: directory) { destination in
-            // Every candidate reuses the complete staged inode and its 600 mode.
+            // Every candidate reuses the complete staged inode and its mode.
             try withFileManager { try $0.linkItem(at: stagingURL, to: destination) }
         }
     }

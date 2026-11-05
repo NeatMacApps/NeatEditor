@@ -1,5 +1,52 @@
 import AppKit
 
+/// Result of one off-main regular-expression evaluation. `timedOut` means the
+/// deadline won the race; the evaluator is abandoned, never interrupted.
+enum EditorSearchOutcome: Equatable {
+    case matches([NSRange])
+    case timedOut
+}
+
+/// Runs one regular-expression evaluation away from the main actor. Injectable
+/// so tests can substitute instant, slow or externally controlled evaluators.
+typealias EditorSearchEvaluator = @Sendable (_ pattern: String, _ text: String) async -> [NSRange]
+
+private func evaluateRegularExpressionOffMain(
+    _ pattern: String,
+    _ text: String
+) async -> [NSRange] {
+    do {
+        let regex = try Regex(pattern).ignoresCase()
+        return text.matches(of: regex).compactMap { NSRange($0.range, in: text) }
+    } catch {
+        return []
+    }
+}
+
+/// Resumes once, when either the evaluation or the deadline arrives first.
+/// The regex engine does not poll cancellation, so the losing side is left to
+/// finish in the background instead of being awaited on the main actor.
+private actor EditorSearchGate {
+    private var outcome: EditorSearchOutcome?
+    private var waiter: CheckedContinuation<EditorSearchOutcome, Never>?
+
+    func wait() async -> EditorSearchOutcome {
+        if let outcome {
+            return outcome
+        }
+        return await withCheckedContinuation { continuation in
+            waiter = continuation
+        }
+    }
+
+    func resolve(_ outcome: EditorSearchOutcome) {
+        guard self.outcome == nil else { return }
+        self.outcome = outcome
+        waiter?.resume(returning: outcome)
+        waiter = nil
+    }
+}
+
 final class EditorTextContainerView: NSView {
     let textView: ZoomableTextView
 
@@ -37,6 +84,15 @@ final class EditorTextContainerView: NSView {
         }
     }
 
+    /// Published when the current regular-expression evaluation times out
+    /// (`true`) or completes (`false`); the search bar shows a short status on
+    /// timeout instead of freezing.
+    var onSearchTimeoutChange: (Bool) -> Void = { _ in }
+
+    /// Off-main evaluator used for regular-expression searches. Tests inject
+    /// instant, slow or externally controlled evaluators here.
+    var searchEvaluator: EditorSearchEvaluator = evaluateRegularExpressionOffMain
+
     private let scrollView: EditorScrollView
     private let lineNumberView: LineNumberGutterView
     private let separatorView = NSView()
@@ -56,6 +112,21 @@ final class EditorTextContainerView: NSView {
     // every keystroke (and the coordinator posts it again for the same edit);
     // rewriting an unchanged width constraint would dirty layout each time.
     private var appliedGutterWidth: CGFloat?
+
+    /// Deadline for one off-main regex evaluation. 250 ms keeps keystroke
+    /// feedback responsive while still covering ordinary patterns on large
+    /// documents.
+    private static let regularExpressionSearchDeadline: Duration = .milliseconds(250)
+
+    /// Highlights beyond this count are dropped so the attribute pass stays
+    /// bounded; navigation still visits the first entries.
+    private static let maximumAppliedMatchCount = 2000
+
+    /// Single-flight regex search: a new request cancels the previous task and
+    /// advances the generation, so an abandoned evaluation cannot apply stale
+    /// ranges even though the engine keeps running.
+    private var searchTask: Task<Void, Never>?
+    private var searchRequestGeneration = 0
 
     override var isFlipped: Bool {
         true
@@ -156,32 +227,110 @@ final class EditorTextContainerView: NSView {
         let fullText = textView.string
         guard !fullText.isEmpty else {
             clearSearchHighlights()
+            scheduleTimeoutStatusReset()
             if navigate { NSSound.beep() }
             return
         }
 
-        let matchRanges = if usesRegularExpression {
-            regularExpressionSearchRanges(for: trimmedQuery, in: fullText)
-        } else {
-            literalSearchRanges(for: trimmedQuery, in: fullText)
+        guard usesRegularExpression else {
+            // Literal search is a cheap native scan; keep it synchronous.
+            cancelPendingSearch()
+            finishSearch(
+                with: literalSearchRanges(for: trimmedQuery, in: fullText),
+                navigate: navigate
+            )
+            return
         }
 
+        beginRegularExpressionSearch(pattern: trimmedQuery, text: fullText, navigate: navigate)
+    }
+
+    /// Evaluate a user-entered pattern away from the main actor and apply the
+    /// result only if it is still the newest request. Regex matching has no
+    /// interruptible API: a pattern like `(a+)+$` can run for minutes, so the
+    /// main actor waits for a bounded deadline instead of the engine.
+    private func beginRegularExpressionSearch(pattern: String, text: String, navigate: Bool) {
+        cancelPendingSearch()
+        let generation = searchRequestGeneration
+        let gate = EditorSearchGate()
+        let evaluator = searchEvaluator
+        let deadline = Self.regularExpressionSearchDeadline
+
+        searchTask = Task { [weak self] in
+            let evaluation = Task.detached(priority: .userInitiated) {
+                let ranges = await evaluator(pattern, text)
+                await gate.resolve(.matches(ranges))
+            }
+            let timeout = Task.detached {
+                try? await Task.sleep(for: deadline)
+                guard !Task.isCancelled else { return }
+                await gate.resolve(.timedOut)
+            }
+
+            let outcome = await gate.wait()
+            timeout.cancel()
+            evaluation.cancel()
+
+            guard !Task.isCancelled,
+                  let self,
+                  self.searchRequestGeneration == generation else {
+                return
+            }
+            self.applySearchOutcome(outcome, navigate: navigate)
+        }
+    }
+
+    private func cancelPendingSearch() {
+        searchTask?.cancel()
+        searchTask = nil
+        // Identity, not cancellation, discards results: a running evaluation
+        // resolves its own gate but the generation guard rejects it.
+        searchRequestGeneration &+= 1
+    }
+
+    /// Clears a reported timeout once no evaluation can match anything. The
+    /// status lives in observable workspace state, so it is reset off the
+    /// current view update rather than during one.
+    private func scheduleTimeoutStatusReset() {
+        Task { @MainActor [weak self] in
+            self?.onSearchTimeoutChange(false)
+        }
+    }
+
+    private func applySearchOutcome(_ outcome: EditorSearchOutcome, navigate: Bool) {
+        switch outcome {
+        case .timedOut:
+            // A pathological pattern is not a missing match: clear stale
+            // highlights, skip the beep, and let the search bar report it.
+            clearSearchHighlights()
+            onSearchTimeoutChange(true)
+        case .matches(let matchRanges):
+            onSearchTimeoutChange(false)
+            finishSearch(with: matchRanges, navigate: navigate)
+        }
+    }
+
+    private func finishSearch(with matchRanges: [NSRange], navigate: Bool) {
         guard !matchRanges.isEmpty else {
             clearSearchHighlights()
             if navigate { NSSound.beep() }
             return
         }
 
-        applySearchHighlights(for: matchRanges)
+        let appliedRanges = Array(matchRanges.prefix(Self.maximumAppliedMatchCount))
+        applySearchHighlights(for: appliedRanges)
 
         guard navigate else { return }
 
+        let textLength = (textView.string as NSString).length
         let selectedRange = textView.selectedRange()
         let selectionEnd = selectedRange.location == NSNotFound
             ? 0
-            : min(NSMaxRange(selectedRange), fullText.utf16.count)
-
-        let matchRange = nextMatchRange(from: matchRanges, selectionEnd: selectionEnd)
+            : min(NSMaxRange(selectedRange), textLength)
+        let matchRange = NSIntersectionRange(
+            nextMatchRange(from: appliedRanges, selectionEnd: selectionEnd),
+            NSRange(location: 0, length: textLength)
+        )
 
         textView.window?.makeFirstResponder(textView)
         textView.setSelectedRange(matchRange)
@@ -222,18 +371,6 @@ final class EditorTextContainerView: NSView {
         }
 
         return matchRanges
-    }
-
-    private func regularExpressionSearchRanges(
-        for pattern: String,
-        in fullText: String
-    ) -> [NSRange] {
-        do {
-            let regex = try Regex(pattern).ignoresCase()
-            return fullText.matches(of: regex).compactMap { NSRange($0.range, in: fullText) }
-        } catch {
-            return []
-        }
     }
 
     private func nextMatchRange(from matchRanges: [NSRange], selectionEnd: Int) -> NSRange {
@@ -279,6 +416,9 @@ final class EditorTextContainerView: NSView {
     }
 
     func clearSearchHighlights() {
+        // Dismissing the bar, switching tabs or an empty result supersedes any
+        // in-flight regex evaluation; its late ranges must not repaint.
+        cancelPendingSearch()
         guard let textStorage = textView.textStorage else {
             return
         }

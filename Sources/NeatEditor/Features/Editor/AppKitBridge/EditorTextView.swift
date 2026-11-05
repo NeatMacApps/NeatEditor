@@ -22,6 +22,7 @@ struct EditorTextView: NSViewRepresentable {
     var onCharacterCountChange: (UUID, String) -> Void = { _, _ in }
     var onRegisterCompositionCheck: (@escaping @MainActor (UUID) -> Bool) -> Void = { _ in }
     var onRegisterExternalChangeHandler: (@escaping @MainActor (UUID, String, UInt64) -> Void) -> Void = { _ in }
+    var onSearchTimeoutChange: (_ isTimedOut: Bool) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -44,6 +45,7 @@ struct EditorTextView: NSViewRepresentable {
         textView.tabBehavior = tabBehavior
         containerView.textSoftness = textSoftness
         containerView.theme = theme
+        containerView.onSearchTimeoutChange = onSearchTimeoutChange
         containerView.applyEditorTextAttributes()
         textView.onCompositionEnd = {
             [weak containerView, weak coordinator = context.coordinator, weak textView] in
@@ -93,6 +95,7 @@ struct EditorTextView: NSViewRepresentable {
         containerView.textView.onOpenFiles = onOpenFiles
         containerView.textView.tabBehavior = tabBehavior
         containerView.textSoftness = textSoftness
+        containerView.onSearchTimeoutChange = onSearchTimeoutChange
         containerView.textView.isEditable = isEditable
         containerView.textView.isSelectable = isEditable
 
@@ -222,7 +225,8 @@ struct EditorTextView: NSViewRepresentable {
         /// through a delayed binding snapshot. AppKit's editing notifications
         /// and text storage retain native undo instead of simulating user input.
         func applyExternalText(_ text: String, revision: UInt64, to textView: NSTextView) {
-            guard let container = textView.enclosingScrollView?.superview as? EditorTextContainerView,
+            guard textView.isEditable,
+                  let container = textView.enclosingScrollView?.superview as? EditorTextContainerView,
                   !textView.hasMarkedText(), textView.string != text else { return }
             let old = Array(textView.string.utf16)
             let new = Array(text.utf16)
@@ -241,12 +245,21 @@ struct EditorTextView: NSViewRepresentable {
             }
             let origin = textView.enclosingScrollView?.contentView.bounds.origin
             textView.breakUndoCoalescing()
-            isSyncingFromSwiftUI = true
             let replacementRange = NSRange(location: 0, length: old.count)
-            if textView.shouldChangeText(in: replacementRange, replacementString: text) {
-                textView.textStorage?.replaceCharacters(in: replacementRange, with: text)
-                textView.didChangeText()
+            // Refusing the replacement must not record the revision: the tab
+            // would look reconciled while the buffer still shows the old text,
+            // and the next commit/save would write that stale buffer over the
+            // merged disk content. Leaving the revision unaccepted keeps the
+            // update pending; `EditorTextSyncState.update` pushes it once the
+            // editor is editable again (a newer external revision outranks the
+            // accepted one). `isEditable == false` also makes `shouldChangeText`
+            // return false, so both are checked explicitly.
+            guard textView.shouldChangeText(in: replacementRange, replacementString: text) else {
+                return
             }
+            isSyncingFromSwiftUI = true
+            textView.textStorage?.replaceCharacters(in: replacementRange, with: text)
+            textView.didChangeText()
             isSyncingFromSwiftUI = false
             textView.breakUndoCoalescing()
             textView.undoManager?.setActionName(String(localized: "External Changes"))

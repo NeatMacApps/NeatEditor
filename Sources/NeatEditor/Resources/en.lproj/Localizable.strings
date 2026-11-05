@@ -20,6 +20,7 @@
 "Disable Regular Expression Search" = "Disable Regular Expression Search";
 "Enable Regular Expression Search" = "Enable Regular Expression Search";
 "Close Search" = "Close Search";
+"search.status.regexTimedOut" = "Search timed out";
 
 "Settings" = "Settings";
 "settings.theme" = "Theme";

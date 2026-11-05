@@ -2,10 +2,26 @@ import Foundation
 
 struct WorkspaceSearchState: Equatable {
     var isPresented = false
-    var query = ""
+    var query = "" {
+        didSet {
+            // A new pattern supersedes the previous result, including a
+            // reported regex timeout.
+            if query != oldValue {
+                markRegexSearchTimedOut(false)
+            }
+        }
+    }
     var isRegexEnabled = false
     var requestID = 0
     var focusRequestID = 0
+    /// Set when the current regular-expression evaluation exceeded the
+    /// editor's deadline; the search bar shows a short status for it.
+    private(set) var isRegexSearchTimedOut = false
+
+    mutating func markRegexSearchTimedOut(_ isTimedOut: Bool) {
+        guard isRegexSearchTimedOut != isTimedOut else { return }
+        isRegexSearchTimedOut = isTimedOut
+    }
 
     var trimmedQuery: String {
         query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -22,10 +38,12 @@ struct WorkspaceSearchState: Equatable {
 
     mutating func dismiss() {
         isPresented = false
+        markRegexSearchTimedOut(false)
     }
 
     mutating func toggleRegex() {
         isRegexEnabled.toggle()
+        markRegexSearchTimedOut(false)
         guard normalizeQueryIfNeeded() else {
             return
         }

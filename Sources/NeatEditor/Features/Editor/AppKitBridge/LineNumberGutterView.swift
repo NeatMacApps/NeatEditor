@@ -52,7 +52,7 @@ final class LineNumberGutterView: NSView {
 
     private weak var scrollView: NSScrollView?
     private weak var textView: NSTextView?
-    private var lineStartIndices = [0]
+    private(set) var lineStartIndices = [0]
     private var cachedLineCount = 1
     // Incremental line-index bookkeeping. The gutter observes character edits
     // through the storage delegate and only rescans from the edited line,
@@ -346,6 +346,9 @@ final class LineNumberGutterView: NSView {
         guard lineStartIndices.first == 0 else {
             return false
         }
+        guard !Self.editChangesCRLFGrouping(in: string, editedRange: editedRange) else {
+            return false
+        }
 
         var low = 0
         var high = lineStartIndices.count
@@ -424,7 +427,45 @@ final class LineNumberGutterView: NSView {
         return low
     }
 
-    private func rebuildLineMetrics() {
+    /// Whether CR and LF formed one line break before this edit but form a
+    /// different number of breaks after it. A CRLF pair is one break; the same
+    /// bytes as a lone CR and a lone LF are two. The incremental path only
+    /// rebases a suffix that keeps its line starts, so it cannot model a pair
+    /// that is created, split or merged at the edit boundary (e.g. `a\rb` plus
+    /// a Return at offset 2). Such edits fall back to the bounded full rebuild
+    /// (measured at ~3-4 ms/MB); ordinary LF edits keep the fast path.
+    ///
+    /// Only adjacency can change pairing, so checking the two characters on
+    /// each side of the new text plus pairs wholly inside it is sufficient.
+    static func editChangesCRLFGrouping(in string: NSString, editedRange: NSRange) -> Bool {
+        let editEnd = NSMaxRange(editedRange)
+        guard editedRange.location >= 0, editEnd <= string.length else {
+            return true
+        }
+        if isCRLF(in: string, at: editedRange.location) || isCRLF(in: string, at: editEnd) {
+            return true
+        }
+
+        var offset = editedRange.location
+        while offset + 1 < editEnd {
+            if isCRLF(in: string, at: offset + 1) {
+                return true
+            }
+            offset += 1
+        }
+        return false
+    }
+
+    private static func isCRLF(in string: NSString, at offset: Int) -> Bool {
+        guard offset > 0, offset < string.length else { return false }
+        return string.character(at: offset - 1) == 0x000D
+            && string.character(at: offset) == 0x000A
+    }
+
+    /// Full rescan of the document's logical line starts. The incremental
+    /// delegate path falls back here; internal so regression tests can compare
+    /// an incremental result against a rebuild.
+    func rebuildLineMetrics() {
         guard let textView else {
             lineStartIndices = [0]
             cachedLineCount = 1

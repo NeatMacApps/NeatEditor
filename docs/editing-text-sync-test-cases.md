@@ -383,6 +383,9 @@ line-number gutter. Diagnostics, install hashes and screenshots are under
 | TC-10 | Hold Cmd + scroll mouse / two-finger scroll on trackpad | **Scrolls normally; font size unchanged** (feature removed) | Pass (launch check) |
 | TC-11 | Save empty / whitespace-only tab | No file created, existing file untouched | Pass (unit: blank-content case) |
 | TC-12 | Rename onto an existing file name | Error alert, no overwrite | Pass (unit: collision case) |
+| TC-15 | Enable `.*`, enter a nested-quantifier pattern such as `(a+)+$`, keep typing in the document | The app stays responsive; highlights clear and a one-line “Search timed out” status appears; no beep on timeout; a valid pattern afterwards restores highlights and clears the status | 2026-11-05: unit tests for deadline, stale-request discard, literal bypass and the 2000-match cap; installed check pending |
+| TC-16 | Open a CR-only document, put the caret at the start of line 2, press Return, then check the gutter | Line 2 becomes an empty numbered line and the following text keeps consecutive numbering (incremental index equals a full rebuild) | 2026-11-05: unit regression on the reproduced index; installed check pending |
+| TC-17 | Edit tab A, switch to a not-yet-loaded tab B, let an external writer update A's file during the load, then switch back to A before B finishes loading and save | A shows the externally merged text; the old buffer is never recorded as the accepted revision, so saving does not overwrite the merge | 2026-11-05: unit regression on the deferred revision; installed check pending |
 
 ## What automation cannot cover here
 

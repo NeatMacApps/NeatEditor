@@ -18,6 +18,40 @@ struct DocumentConcurrencyTests {
         return try service.openDocument(at: url)
     }
 
+    private func hasSignal(_ semaphore: DispatchSemaphore) -> Bool {
+        semaphore.wait(timeout: .now()) == .success
+    }
+
+    private func waitForSignal(
+        _ semaphore: DispatchSemaphore, timeout: Duration = .seconds(5)
+    ) async -> Bool {
+        let deadline = ContinuousClock.now.advanced(by: timeout)
+        while ContinuousClock.now < deadline {
+            if hasSignal(semaphore) { return true }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        return false
+    }
+
+    private struct TimeoutError: Error {}
+
+    /// Bounds a result that depends on file coordination so a claim that is
+    /// never released fails the case instead of hanging the suite.
+    private func boundedValue<T: Sendable>(
+        of task: Task<T, Error>, timeout: Duration = .seconds(20)
+    ) async throws -> T {
+        try await withThrowingTaskGroup(of: T.self) { group in
+            group.addTask { try await task.value }
+            group.addTask {
+                try await Task.sleep(for: timeout)
+                throw TimeoutError()
+            }
+            defer { group.cancelAll() }
+            guard let value = try await group.next() else { throw TimeoutError() }
+            return value
+        }
+    }
+
     @Test("stable observation ignores sibling writes but catches replacement re-arm races and direct writes")
     func stableObservationTracksOnlyItsFile() async throws {
         let (service, root) = try fixture()
@@ -326,6 +360,59 @@ struct DocumentConcurrencyTests {
         let saved = try service.save(tab: tab)
         #expect(saved.fileURL?.lastPathComponent == "shared (Conflict) 2.txt")
         #expect(try String(contentsOf: existing, encoding: .utf8) == "older conflict")
+    }
+
+    @Test("duplicating an unopened file copies under a coordinated read instead of torn bytes")
+    func duplicateWaitsForCoordinatedWriter() async throws {
+        let (service, root) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("shared.txt")
+        let destination = root.appendingPathComponent("shared copy.txt")
+        let before = Data(repeating: UInt8(ascii: "a"), count: 8 * 1024 * 1024)
+        let final = Data(repeating: UInt8(ascii: "b"), count: 8 * 1024 * 1024)
+        try before.write(to: source)
+
+        let claimHeld = DispatchSemaphore(value: 0)
+        let releaseClaim = DispatchSemaphore(value: 0)
+        let writer = Task.detached { () -> Error? in
+            var coordinationError: NSError?
+            var writeError: Error?
+            NSFileCoordinator().coordinate(writingItemAt: source, options: [],
+                                           error: &coordinationError) { coordinatedURL in
+                claimHeld.signal()
+                releaseClaim.wait()
+                do { try final.write(to: coordinatedURL) } catch { writeError = error }
+            }
+            return coordinationError ?? writeError
+        }
+        guard await waitForSignal(claimHeld) else {
+            releaseClaim.signal()
+            Issue.record("the coordinated writer never acquired its claim")
+            return
+        }
+        // Safety net for early exits; the duplicate below needs the explicit
+        // release so the copy can proceed.
+        defer { releaseClaim.signal() }
+
+        let isFinished = Mutex(false)
+        let duplicate = Task.detached { () -> URL in
+            defer { isFinished.withLock { $0 = true } }
+            return try service.duplicateSidebarFile(at: source)
+        }
+        // A copy that ignores the claim returns the old bytes at once, while
+        // the writer still owns the source.
+        try await Task.sleep(for: .milliseconds(400))
+        let finishedEarly = isFinished.withLock { $0 }
+        #expect(!finishedEarly, "the duplicate must wait for the coordinated claim")
+        #expect(!FileManager.default.fileExists(atPath: destination.path),
+                "a partial destination must never be published")
+
+        releaseClaim.signal()
+        let copyURL = try await boundedValue(of: duplicate)
+        #expect(copyURL.lastPathComponent == "shared copy.txt")
+        #expect(try Data(contentsOf: copyURL) == final)
+        #expect(try Data(contentsOf: source) == final)
+        if let writerError = await writer.value { throw writerError }
     }
 
     @Test("save copy recovers a missing source without clobbering a chosen destination")

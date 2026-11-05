@@ -205,13 +205,18 @@ for other long local jobs.
    compiler and export diagnostics. Xcode signs the nested Sparkle
    components during export; do not manually re-sign the exported app.
    Assert bundle marketing/build numbers, EdDSA key match, and each
-   executable's signature, hardened runtime, timestamp and absence of
-   `get-task-allow`, following [Sparkle's archive/export guidance](https://sparkle-project.org/documentation/).
-4. Notarize app zip → staple → re-zip the **stapled** app for Sparkle →
-   `generate_appcast` (EdDSA-signed, embedded bilingual notes, XML +
+   executable's signature — Developer ID authority pinned to team
+   `SHZQ3MWP3B`, so a same-named certificate from another team fails —
+   hardened runtime, timestamp and absence of `get-task-allow`, following
+   [Sparkle's archive/export guidance](https://sparkle-project.org/documentation/).
+4. Notarize app zip → staple the **app** → re-zip the **stapled** app for
+   Sparkle → `generate_appcast` (EdDSA-signed, embedded bilingual notes, XML +
    signature asserts).
-5. Build DMG → notarize → staple → `spctl -a -t install` +
-   `stapler validate` + `SHA256SUMS.txt` over DMG + ZIP.
+5. Build DMG → notarize → staple the DMG → Gatekeeper install check on the
+   **app** (`spctl -a -vvv -t install "$APP_PATH"`), not on the DMG →
+   `xcrun stapler validate` on the **DMG**; that is the publisher's only
+   `stapler validate`, so the app's ticket is covered by the `spctl` check and
+   never separately re-validated → `SHA256SUMS.txt` over DMG + ZIP.
 6. Full route only: tag the built commit, push branch + tag (tag push
    retried once), create the Release as a **draft** with bilingual
    CHANGELOG-based notes (an existing page must be a draft; a published

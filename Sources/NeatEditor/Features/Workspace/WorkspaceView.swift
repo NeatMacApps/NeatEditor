@@ -174,7 +174,10 @@ struct WorkspaceView: View {
                             editorCharacterCount.update(tabID: tabID, text: text)
                         },
                         onRegisterCompositionCheck: { workspaceStore.editorHasMarkedText = $0 },
-                        onRegisterExternalChangeHandler: { workspaceStore.applyExternalEditorChanges = $0 }
+                        onRegisterExternalChangeHandler: { workspaceStore.applyExternalEditorChanges = $0 },
+                        onSearchTimeoutChange: { isTimedOut in
+                            workspaceStore.searchState.markRegexSearchTimedOut(isTimedOut)
+                        }
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -206,6 +209,14 @@ struct WorkspaceView: View {
                 .onSubmit {
                     workspaceStore.submitSearch()
                 }
+
+            if workspaceStore.searchState.isRegexSearchTimedOut {
+                Text("search.status.regexTimedOut")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
 
             Button {
                 workspaceStore.toggleRegexSearch()

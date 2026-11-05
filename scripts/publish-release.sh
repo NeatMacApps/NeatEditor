@@ -24,6 +24,9 @@ readonly UPDATE_DOWNLOAD_PREFIX="https://github.com/${REPOSITORY}/releases/downl
 readonly SPARKLE_ACCOUNT="caozc.top"
 readonly TEAM_ID="SHZQ3MWP3B"
 readonly SIGN_IDENTITY="Developer ID Application"
+# 守卫必须钉住团队：同机另一团队的 Developer ID Application 证书同样满足裸主体名。
+# 记录形态：Authority=Developer ID Application: <name> (SHZQ3MWP3B)。
+readonly SIGN_AUTHORITY_PATTERN="^Authority=${SIGN_IDENTITY}: .*\(${TEAM_ID}\)$"
 readonly NOTARY_KEY="${NOTARY_KEY:-${HOME}/Documents/P8 密钥/发布公证密钥/AuthKey_D7YQ9HD7D6_Notarize.p8}"
 readonly NOTARY_KEY_ID="${NOTARY_KEY_ID:-D7YQ9HD7D6}"
 readonly NOTARY_ISSUER="${NOTARY_ISSUER:-c98fe4b8-d1bf-4b4a-b998-9eb8f3be9fe4}"
@@ -80,8 +83,8 @@ assert_signed_for_distribution() {
   local target="$1" label="$2" sign_info entitlements
   sign_info="$(codesign -dv --verbose=2 "${target}" 2>&1)"
   entitlements="$(codesign -d --entitlements - "${target}" 2>/dev/null || true)"
-  grep -q "Authority=${SIGN_IDENTITY}" <<<"${sign_info}" \
-    || die "${label}不是 Developer ID 签名"
+  grep -q -E "${SIGN_AUTHORITY_PATTERN}" <<<"${sign_info}" \
+    || die "${label}不是本团队（${TEAM_ID}）的 Developer ID 签名"
   grep -q 'flags=.*runtime' <<<"${sign_info}" \
     || die "${label}未启用加固运行时"
   grep -q '^Timestamp=' <<<"${sign_info}" \
@@ -242,8 +245,10 @@ changelog_notes="$(awk -v ver="${version}" '/^## / { active = ($2 == ver); next 
 [[ -n "${changelog_notes:-}" ]] || die "CHANGELOG.md 缺少 ${version} 条目，先补变更记录再发布"
 
 if [[ "${local_only}" == false && "${dry_run}" == false ]]; then
-  gh repo view "${REPOSITORY}" --json isPrivate,defaultBranchRef --jq '.isPrivate == false and .defaultBranchRef.name == "main"' \
-    | grep -q true || die "GitHub 公开仓或默认分支不符合发布基线"
+  repo_baseline="$(gh repo view "${REPOSITORY}" --json isPrivate,defaultBranchRef \
+    --jq '.isPrivate == false and .defaultBranchRef.name == "main"')" \
+    || die "GitHub 公开仓或默认分支不符合发布基线"
+  [[ "${repo_baseline}" == "true" ]] || die "GitHub 公开仓或默认分支不符合发布基线"
 fi
 
 if [[ "${dry_run}" == true ]]; then
@@ -311,10 +316,11 @@ bundle_build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "${APP_PATH}
   || die "产物展示版本 ${bundle_version:-未知} 与配置 ${version} 不一致"
 [[ "${bundle_build}" == "${build_number}" ]] \
   || die "产物构建号 ${bundle_build:-未知} 与配置 ${build_number} 不一致"
-lipo -info "${APP_PATH}/Contents/MacOS/${APP_NAME}" | grep -q -e 'arm64' \
+# 先收输出再判断：pipefail 下 lipo | grep -q 命中后的 SIGPIPE 会假报非 universal。
+lipo_info="$(lipo -info "${APP_PATH}/Contents/MacOS/${APP_NAME}")" \
   || die "产物不是 universal 二进制"
-lipo -info "${APP_PATH}/Contents/MacOS/${APP_NAME}" | grep -q -e 'x86_64' \
-  || die "产物不是 universal 二进制"
+grep -q -e 'arm64' <<<"${lipo_info}" || die "产物不是 universal 二进制"
+grep -q -e 'x86_64' <<<"${lipo_info}" || die "产物不是 universal 二进制"
 readonly sparkle_bin_dir="${DERIVED_DATA}/SourcePackages/artifacts/sparkle/Sparkle/bin"
 [[ -x "${sparkle_bin_dir}/generate_appcast" ]] || die "找不到 Sparkle 的 generate_appcast 工具"
 
@@ -439,8 +445,9 @@ EOF
   verify_release_download_bytes "${work_dir}/verify-draft"
   # 下载字节一致后才公开；之前任何失败都已退出，失败页保持草稿，失败路径永不公开。
   gh release edit "v${version}" --repo "${REPOSITORY}" --draft=false || die "草稿转公开失败"
-  gh release view "v${version}" --repo "${REPOSITORY}" --json isDraft --jq '.isDraft' | grep -q false \
+  release_is_draft="$(gh release view "v${version}" --repo "${REPOSITORY}" --json isDraft --jq '.isDraft')" \
     || die "发行页仍是草稿"
+  [[ "${release_is_draft}" == "false" ]] || die "发行页仍是草稿"
 fi
 ditto "${appcast_dir}/appcast.xml" "${APPCAST_PATH}"
 git add "${APPCAST_PATH}"

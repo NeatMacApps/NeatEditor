@@ -257,6 +257,67 @@ struct EditorNewlineTests {
         #expect(editor.textLayoutManager != nil)
     }
 
+    @Test("gutter line starts survive terminator edits that involve CR", arguments: [
+        // (initial text, pre-edit range, replacement, expected starts)
+        ("a\rb", NSRange(location: 2, length: 0), "\n", [0, 3]),
+        ("a\r\nb", NSRange(location: 1, length: 1), "", [0, 2]),
+        ("a\r\nb", NSRange(location: 2, length: 1), "", [0, 2]),
+        ("one\r\ntwo\nthree", NSRange(location: 3, length: 4), "X", [0, 6]),
+        ("one\ntwo", NSRange(location: 3, length: 0), "\n", [0, 4, 5]),
+    ])
+    func gutterKeepsLineStartsAcrossTerminatorEdits(
+        _ testCase: (initial: String, editRange: NSRange, replacement: String, expected: [Int])
+    ) throws {
+        let (container, gutter, _) = try makeLaidOutEditor()
+        let editor = container.textView
+        editor.string = testCase.initial
+        container.synchronizeLineNumbersToCurrentText()
+        let storage = try #require(editor.textStorage)
+
+        storage.replaceCharacters(in: testCase.editRange, with: testCase.replacement)
+        // The storage delegate updates the index synchronously; reading it
+        // before any rebuild is what proves the incremental path itself
+        // produced the right starts.
+        let incrementalStarts = gutter.lineStartIndices
+        gutter.rebuildLineMetrics()
+
+        #expect(incrementalStarts == gutter.lineStartIndices)
+        #expect(gutter.lineStartIndices == testCase.expected)
+    }
+
+    @Test("only CRLF-ambiguous edits fall back to a full rebuild")
+    func crlfAmbiguityDetection() throws {
+        let cases: [(newText: String, editedRange: NSRange, isAmbiguous: Bool)] = [
+            // CR + inserted LF become one break (reproduced desync).
+            ("a\r\nb", NSRange(location: 2, length: 1), true),
+            // A CR inserted in front of an LF becomes one break.
+            ("a\r\nb", NSRange(location: 1, length: 1), true),
+            // A whole CRLF inserted: the contained pair is handled by rebuild.
+            ("a\r\nb", NSRange(location: 1, length: 2), true),
+            // Deleting the gap merges two breaks into one pair.
+            ("a\r\nb", NSRange(location: 2, length: 0), true),
+            // Ordinary LF insertion keeps the incremental path.
+            ("one\n\ntwo", NSRange(location: 4, length: 1), false),
+            // A CR deleted from a CRLF leaves a lone LF: no new pairing.
+            ("a\nb", NSRange(location: 1, length: 0), false),
+            // An LF deleted from a CRLF leaves a lone CR: no new pairing.
+            ("a\rb", NSRange(location: 2, length: 0), false),
+            // Splitting a pair does not create a new adjacent CRLF.
+            ("a\rx\nb", NSRange(location: 2, length: 1), false),
+        ]
+
+        for testCase in cases {
+            let isAmbiguous = LineNumberGutterView.editChangesCRLFGrouping(
+                in: testCase.newText as NSString,
+                editedRange: testCase.editedRange
+            )
+            #expect(
+                isAmbiguous == testCase.isAmbiguous,
+                "text=\(testCase.newText.debugDescription) range=\(testCase.editedRange)"
+            )
+        }
+    }
+
     @Test("gutter numbers each native line terminator once", arguments: [
         "\n", "\r", "\r\n", "\u{0085}", "\u{2028}", "\u{2029}",
     ])
