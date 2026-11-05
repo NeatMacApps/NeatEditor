@@ -5,40 +5,46 @@
 </p>
 
 [![Platform](https://img.shields.io/badge/platform-macOS%2026%2B-1f6feb)](https://developer.apple.com/macos/)
-[![Swift](https://img.shields.io/badge/Swift-6-orange)](https://www.swift.org/)
-[![UI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20AppKit-0a7ea4)](https://developer.apple.com/xcode/swiftui/)
-[![Project](https://img.shields.io/badge/Project-XcodeGen-6f42c1)](https://github.com/yonaskolb/XcodeGen)
 [![License](https://img.shields.io/badge/License-MIT-green)](./LICENSE)
 
-> SwiftUI と AppKit で構築された、起動が速くミニマルな macOS 向けプレーンテキストエディタです。集中しやすい執筆体験、macOS らしい操作感、効率的なマルチタブ編集を提供します。
+> macOS ネイティブのプレーンテキストエディタ。
 
 **言語:** [English](./README.md) | [简体中文](./README.zh-CN.md) | [日本語](./README.ja.md) | [한국어](./README.ko.md) | [Español](./README.es.md) | [Français](./README.fr.md) | [Deutsch](./README.de.md)
 
 ## スクリーンショット
 
 <p align="center">
-  <img src="./docs/images/neateditor-main-window.png" alt="NeatEditor のメインワークスペース" width="1201" />
+  <img src="./docs/images/neateditor-main-window.png" alt="NeatEditor のメインワークスペース" width="1120" />
 </p>
 
-## NeatEditor を作った理由
+## インストール
 
-NeatEditor は、インターフェースのノイズを減らし、意識を文章そのものに戻すことを目標にしています。
+**macOS 26.0+ · Apple silicon / Intel 対応。** macOS 専用です。Linux / Windows 版はありません。
 
-- 高速起動: アプリ起動時の不要なブロッキング処理を避けます。
-- 余白を優先した UI: 周辺の装飾よりエディタ面を主役にします。
-- macOS らしい挙動: タイトルバー、メニュー、ショートカット、ウインドウ操作を自然に保ちます。
-- プレーンテキスト重視: メモ、下書き、一時的な整理、軽い編集に向いています。
+```bash
+brew install --cask x0c/tap/neateditor
+```
+
+または[署名・公証済みの最新 DMG](https://github.com/NeatMacApps/NeatEditor/releases/latest)を開き、`NeatEditor.app` を `Applications` にドラッグしてください。
+
+起動後は `Command + O` でファイルを開くか、`Command + N` で新しい文書を作成できます。
+
+## NeatEditor の用途
+
+メモ、下書き、テキストファイルのちょっとした編集に。
 
 ## 主な特徴
 
-- 起動時から使えるドキュメントを備えたマルチタブ編集。
-- タブの選択、クローズ、インラインリネームを低遅延で実現。
-- Finder、ドラッグ＆ドロップ、ファイル URL の貼り付けでローカルテキストファイルを開けます。
-- 行番号、ネイティブ検索、Undo、IME 変換中の入力処理、`Command +/-` ズームを搭載。
-- 2 秒 debounce の自動保存に加え、タブ切り替え時やアプリ非アクティブ時にも保存。
-- 常に手前に表示するピン留めと、タイトルバーのダブルクリックによるズームに対応。
-- 保存済みドキュメントのリネーム時は、拡張子を保ったままディスク上のファイル名も同期。
-- 空白のみの内容では既存ファイルを上書きしない設計です。
+- **タブ：** 切り替え、クローズ、その場での名前変更、直前に閉じたタブの再表示。
+- **ローカルファイル：** Finder、ドラッグ＆ドロップ、ファイル URL の貼り付けで開けます。保存済み文書の名前変更はディスク上の名前にも反映します。
+- **ネイティブ編集：** 行番号、検索、Undo、IME 変換入力、`Command +/-` による文字ズーム。
+- **自動保存：** 入力停止から 2 秒後、タブ切り替え時、アプリ非アクティブ時に順番に保存。
+- **外部の変更：** 別のエディタ、スクリプト、コーディングエージェントによる変更を扱えます。未編集のバッファは再読み込みし、独立した変更は慎重にマージ、検出した競合は両方の版を保持します。
+- **空白の保護：** 空または空白のみの内容は既存ファイルを上書きしません。編集欄を空にしてもディスク上のファイルは空になりません。
+- **文書フォルダ：** 初期値は `~/Documents`。設定 → エディタ → 文書フォルダで変更できます。新規文書は選択したフォルダに保存します。
+- **見やすい位置に：** ウインドウの最前面固定と、使い慣れたネイティブのメニュー・タイトルバー操作。
+
+同時編集の保護は外部プログラムからの書き込みを防ぐものではありません。重要なファイルは別途バックアップしてください。
 
 ## 主なショートカット
 
@@ -56,26 +62,10 @@ NeatEditor は、インターフェースのノイズを減らし、意識を文
 | `Command + ,` | 設定を開きます。 |
 | `Shift + Return` | 現在の行末に移動して改行を挿入します。 |
 
-`Command + Z`、`Command + X`、`Command + C`、`Command + V` などの macOS 標準テキストショートカットも、ネイティブなテキストシステム経由でそのまま利用できます。
+<details>
+<summary>ソースからビルド（Xcode）</summary>
 
-## 現在の状態
-
-NeatEditor は、軽量な macOS 向けプレーンテキストエディタとしてすでに利用でき、`1.0.0` として公開されています。
-
-- 対応プラットフォーム: macOS 26.0+
-- 技術スタック: Swift 6、SwiftUI、AppKit bridge、Observation、XcodeGen
-- 現在の検証方法: `xcodebuild ... test`（単体テスト: テキスト同期、永続化、自動保存スケジューリング、ワークスペースの失敗経路、ネイティブ IME 確定処理、フォント設定）、ビルド確認と手動テスト
-- 現在の対象範囲: プレーンテキスト中心、リッチテキストやプラグイン、クロスプラットフォーム対応は未実装
-
-## クイックスタート
-
-### 必要条件
-
-- macOS 26.0+
-- Xcode 26.0+
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.44+
-
-### クローンして開く
+macOS 26.0+、Xcode 26.0+、[XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.44+ が必要です。
 
 ```bash
 git clone https://github.com/NeatMacApps/NeatEditor.git
@@ -83,8 +73,6 @@ cd NeatEditor
 xcodegen generate
 open NeatEditor.xcodeproj
 ```
-
-### ターミナルでビルド
 
 ```bash
 xcodebuild -project "NeatEditor.xcodeproj" \
@@ -95,46 +83,27 @@ xcodebuild -project "NeatEditor.xcodeproj" \
   build
 ```
 
-## 開発メモ
+テストと開発については [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
-- `project.yml` がプロジェクト構成の唯一のソースです。
-- ソースファイルを追加または削除したら `xcodegen generate` を実行してください。
-- `NeatEditorTests` はテキスト同期、永続化、自動保存スケジューリング、ワークスペースの失敗経路、ネイティブ IME 確定処理、フォント設定をカバーしています。`xcodebuild ... test` で実行できます（英語 README 参照）。
-- 挙動変更の確認は、プレビューだけでなくビルド済みアプリで行うことを推奨します。
+</details>
 
-## リリース
+## ドキュメント
 
-このリポジトリは CI ではなく署名済みローカルリリースで公開しています。
+- [開発とテスト](CONTRIBUTING.md)
+- [リリース履歴](CHANGELOG.md)
 
-- メンテナは `scripts/publish-release.sh` で DMG + Sparkle ZIP をローカルビルドします（Developer ID 署名、公証済み。アップロードと読み戻し確認後にドラフトから公開）。
-- 署名済み公開リリースには署名済み DMG（初回インストール用）、署名済み Sparkle ZIP（アプリ内更新用）、`SHA256SUMS.txt` が含まれ、バイリンガルの説明は当該版の `CHANGELOG.md` 項目から取ります。
-- tag 起点の GitHub Actions は検証ビルド専用で、未署名パッケージはログイン必須のワークフロー成果物としてのみ保持します（公開リポジトリではアクセス権のあるログインユーザーは誰でも取得可能で、認証は秘匿化ではありません）。リリースとしてインストールしないでください。
-
-導入手順: Releases で Developer ID 署名 + 公証の記載がある版を選び、署名済みファイルのみ使います（v1.0.3 等の旧 `*-macOS-universal.*` は未署名 CI プレースホルダです）。`Applications` にドラッグ後、`open -a NeatEditor` で起動します。対応は macOS 26.0+ のみです。
-
-詳細は [RELEASING.md](./RELEASING.md) を参照してください。
-
-## リポジトリ文書
-
-- [README.md](./README.md): 英語版 README
-- [README.zh-CN.md](./README.zh-CN.md): 簡体字中国語版 README
-- [README.ko.md](./README.ko.md): 韓国語版 README
-- [README.es.md](./README.es.md): スペイン語版 README
-- [README.fr.md](./README.fr.md): フランス語版 README
-- [README.de.md](./README.de.md): ドイツ語版 README
-- [CONTRIBUTING.md](./CONTRIBUTING.md): 開発環境とコントリビュート手順
-- [CHANGELOG.md](./CHANGELOG.md): リリース履歴
-- [RELEASING.md](./RELEASING.md): GitHub Release の流れ
-- [TabStripGestures.md](./docs/TabStripGestures.md): タブ操作設計メモ
-
-## 今後の改善候補
-
-- push と pull request を対象にした一般的な CI ワークフローを追加する（現在は tag 検証ワークフローのみ）。
-
-## コントリビュート
-
-Issue、提案、Pull Request を歓迎します。まずは [CONTRIBUTING.md](./CONTRIBUTING.md) をご覧ください。
+Issue、提案、Pull Request を歓迎します。
 
 ## ライセンス
 
-NeatEditor は [MIT License](./LICENSE) の下で公開されています。
+NeatEditor は [MIT License](LICENSE) の下で公開されています。
+
+## 関連ツール
+
+| ツール | 説明 |
+|---|---|
+| [NeatPaste](https://github.com/NeatMacApps/NeatPaste) | メニューバーの macOS クリップボード履歴。 |
+| [NeatWebApp](https://github.com/NeatMacApps/NeatWebApp) | Web サイトを独立した macOS アプリにし、ノッチランチャーから起動。 |
+| [HandySwitch](https://github.com/x0c/HandySwitch) | メニューバーからダークモード切り替えとスリープ防止。 |
+| [MacResourceMonitor](https://github.com/x0c/MacResourceMonitor) | メニューバーから CPU を多く使うプロセスを確認。 |
+| [Corral](https://github.com/corral-dev/corral) | ターミナルでコーディングエージェントのセッションを管理し、Mac や iPhone から継続。 |

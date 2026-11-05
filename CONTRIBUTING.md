@@ -40,9 +40,29 @@ xcodebuild -project "NeatEditor.xcodeproj" \
 
 ## Tests
 
-The repository does not currently have a test target, so `xcodebuild ... test` will not pass yet.
+`NeatEditorTests` covers editor text synchronization, document persistence,
+autosave scheduling, workspace failure paths, native composition commits and
+font preferences.
 
-If you add tests, please also update `project.yml` so the scheme's test action is configured correctly.
+```bash
+xcodebuild -project "NeatEditor.xcodeproj" \
+  -scheme "NeatEditor" \
+  -configuration Debug \
+  -destination 'platform=macOS' \
+  test
+```
+
+Manual editing and persistence scenarios are documented in
+[editing-text-sync-test-cases.md](docs/editing-text-sync-test-cases.md).
+Keep the scheme's test action configured in `project.yml` when adding tests.
+
+## Distribution
+
+Public installs use the signed, notarized DMG or
+`brew install --cask x0c/tap/neateditor`. The application includes Sparkle for
+in-app updates. CI artifacts are validation outputs, not public installers.
+Release procedures, historical artifact limitations and Homebrew maintenance
+belong in [RELEASING.md](RELEASING.md).
 
 ## Contribution Guidelines
 

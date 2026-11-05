@@ -87,6 +87,70 @@ R7 — Build identity. The archive builds universal (`ARCHS="arm64 x86_64"`,
 `CFBundleShortVersionString` / `CFBundleVersion` equal the configured
 `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION`.
 
+## Public installation and README contract
+
+The supported runtime remains **macOS 26.0+**, by the owner's baseline
+decision recorded in [code-review.md](docs/code-review.md#macos-26-baseline-2026-10-25).
+An old directory listing or a successful compile on a newer OS is not authority
+to lower that requirement.
+
+Public copy must read naturally in each language, not as a literal translation.
+Use direct sentences about what readers can install or do; omit slogans, inflated
+claims, agent-style status reports and explanations that do not help that choice.
+Screenshots must show the current installed app with disposable sample documents,
+not private workspace contents or an old interface.
+
+All seven READMEs put installation immediately after the screenshot:
+`brew install --cask x0c/tap/neateditor` first, then the signed DMG at
+[the latest release](https://github.com/NeatMacApps/NeatEditor/releases/latest).
+Keep Apple silicon/Intel support and the minimum OS visible. Source builds belong
+in a folded section, with tests and release internals in contributor/release
+docs. The inspected references were
+[CotEditor](https://github.com/coteditor/CotEditor/blob/main/README.md)
+(concise purpose and runtime requirement) and
+[MiaoYan](https://github.com/tw93/MiaoYan/blob/main/README.md)
+(short install commands and latest-DMG alternative). Only presentation structure
+is reused; no artwork, implementation or capability claims are copied.
+
+State external-writer behavior as detection, conservative reconciliation and
+retained conflict copies, not guaranteed exclusion of arbitrary writers or
+unconditional protection from data loss. Keep the blank-content exception
+visible: clearing an editor does not empty its existing disk file. Historical
+unsigned-asset cautions remain in R4, not in the primary install instructions.
+Do not delete historical assets merely to simplify the README.
+
+### Homebrew Cask maintenance
+
+The Cask lives in the shared
+[`x0c/homebrew-tap`](https://github.com/x0c/homebrew-tap/blob/main/Casks/neateditor.rb),
+with `depends_on macos: :tahoe`, `auto_updates true` and the signed, immutable,
+versioned DMG URL. Sparkle remains the app's built-in updater; Homebrew records
+installation separately. No `zap` stanza deletes documents or configuration.
+
+After each public release, update that Cask's version and SHA-256 **after**
+anonymous full-DMG download, checksum-manifest comparison and signature/ticket
+verification. Read the latest Cask before writing; reject a downgrade or changed
+bytes for the same version. Keep unrelated tap edits intact. Validate with:
+
+```bash
+brew style --cask x0c/tap/neateditor
+brew audit --cask --online x0c/tap/neateditor
+brew info --cask x0c/tap/neateditor
+```
+
+A first install uses the README command. An existing official DMG installation
+may be registered with `brew install --cask --adopt x0c/tap/neateditor` after
+checking bundle version and signing identity; do not suggest `--force` as a
+generic collision fix. See the
+[Homebrew Cask Cookbook](https://docs.brew.sh/Cask-Cookbook) and
+[install options](https://docs.brew.sh/Manpage#install-options-formulacask-).
+
+Cask synchronization is currently a **manual release-completion step**:
+`scripts/publish-release.sh` does not update the tap. A successful publisher run
+alone therefore does not establish Homebrew delivery. Future publisher automation
+must preserve the checks above; no publisher automation is added by this
+storefront-only change.
+
 ## Reusable dual-channel tooling
 
 The owner requested reusable direct-download and Mac App Store distribution

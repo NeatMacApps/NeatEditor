@@ -5,42 +5,46 @@
 </p>
 
 [![Platform](https://img.shields.io/badge/platform-macOS%2026%2B-1f6feb)](https://developer.apple.com/macos/)
-[![Swift](https://img.shields.io/badge/Swift-6-orange)](https://www.swift.org/)
-[![UI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20AppKit-0a7ea4)](https://developer.apple.com/xcode/swiftui/)
-[![Project](https://img.shields.io/badge/Project-XcodeGen-6f42c1)](https://github.com/yonaskolb/XcodeGen)
 [![License](https://img.shields.io/badge/License-MIT-green)](./LICENSE)
 
-> 一个极简、快速启动的 macOS 纯文本编辑器，基于 SwiftUI 与 AppKit 构建，专注无干扰写作、原生桌面交互和高效多标签编辑。
+> 原生 macOS 纯文本编辑器，打开就能写。
 
 **语言版本：** [English](./README.md) | [简体中文](./README.zh-CN.md) | [日本語](./README.ja.md) | [한국어](./README.ko.md) | [Español](./README.es.md) | [Français](./README.fr.md) | [Deutsch](./README.de.md)
 
 ## 截图
 
 <p align="center">
-  <img src="./docs/images/neateditor-main-window.png" alt="NeatEditor 主工作区截图" width="1201" />
+  <img src="./docs/images/neateditor-main-window.png" alt="NeatEditor 主工作区截图" width="1120" />
 </p>
+
+## 安装
+
+**macOS 26.0+ · 支持 Apple silicon 和 Intel。** 仅支持 macOS，不提供 Linux 或 Windows 版本。
+
+```bash
+brew install --cask x0c/tap/neateditor
+```
+
+也可以[下载最新版已签名、公证的 DMG](https://github.com/NeatMacApps/NeatEditor/releases/latest)，打开后将 `NeatEditor.app` 拖入 `Applications`。
+
+启动后按 `Command + O` 打开文件，或按 `Command + N` 新建文档。
 
 ## 为什么是 NeatEditor
 
-NeatEditor 的目标很直接：减少界面噪音，把注意力还给文字本身。
-
-- 快速启动：尽量避免在应用启动路径上做阻塞操作。
-- 空间优先：让编辑区域成为主角，而不是被界面装饰分散注意力。
-- 原生体验：保留 macOS 用户熟悉的标题栏、菜单、快捷键和窗口行为。
-- 纯文本专注：适合做笔记、草稿、临时整理和轻量编辑。
+适合记笔记、写草稿，也可以临时改几行文本。
 
 ## 主要特性
 
-- 多标签纯文本编辑，启动即创建可用文档。
-- 标签切换、关闭、重命名都围绕低延迟交互设计。
-- 支持通过 Finder、拖拽和粘贴文件 URL 打开本地文本文件。
-- 内置行号 gutter、原生查找、撤销、输入法组合态处理，以及 `Command +/-` 缩放。
-- 自动保存带 2 秒 debounce，并会在切换标签和应用失焦时保存。
-- 支持窗口置顶以及标题栏空白区域双击缩放窗口。
-- 已落盘文档重命名时会同步处理磁盘文件名，并允许编辑扩展名。
-- 空白内容不会覆盖已有文件，这是当前产品的明确设计选择。
-- 外部文件变更会更新未修改的正文；独立改动保守合并，冲突时保留双方版本。保存按序执行，避免旧的自动保存覆盖新内容。参见[保护机制与验证边界](docs/code-review.md#external-writer-implementation-and-validation-2026-10-30)。
-- 应用创建的文档默认保存在你的 `~/Documents` 文件夹，可在「设置 → 编辑器 → 文档文件夹」中切换目录；新文档保存到当前文件夹，旧版本留下的文档会在首次启动时复制过来。
+- **多标签：** 快速切换、关闭、原位重命名，也能重开最近关闭的标签。
+- **本地文件：** 通过 Finder、拖拽或粘贴文件 URL 打开；重命名已保存文档时同步修改磁盘文件名。
+- **原生编辑：** 行号、查找、撤销、输入法组字，以及 `Command +/-` 文字缩放。
+- **自动保存：** 停止输入 2 秒后、切换标签时、应用失焦时保存，写入按序执行。
+- **外部修改：** 处理其他编辑器、脚本或编程助手对文件的修改。未修改的正文自动重载，独立改动保守合并，检测到冲突时保留双方版本。
+- **空白保护：** 空内容或只有空白字符的内容不会覆盖已有文件。因此，清空编辑区不会清空磁盘上的原文件。
+- **文档文件夹：** 默认使用 `~/Documents`，可在「设置 → 编辑器 → 文档文件夹」中切换；新文档保存到选定目录。
+- **保持可见：** 支持窗口置顶，保留熟悉的原生菜单和标题栏操作。
+
+其他程序仍可能改写文件，重要内容请自行备份。
 
 ## 主要快捷键
 
@@ -58,44 +62,10 @@ NeatEditor 的目标很直接：减少界面噪音，把注意力还给文字本
 | `Command + ,` | 打开设置。 |
 | `Shift + Return` | 在当前行末尾另起一行。 |
 
-像 `Command + Z`、`Command + X`、`Command + C`、`Command + V` 这样的 macOS 原生文本快捷键，也会通过系统文本组件正常工作。
+<details>
+<summary>从源码构建（Xcode）</summary>
 
-## 当前状态
-
-NeatEditor 现在已经可以作为一个轻量 macOS 纯文本编辑器使用。
-
-- 平台目标：macOS 26.0+
-- 技术栈：Swift 6、SwiftUI、AppKit bridge、Observation、XcodeGen
-- 当前验证方式：`xcodebuild ... test`（单元测试覆盖编辑器文本同步、文档持久化、自动保存调度、工作区失败路径、原生输入法组合提交、字号偏好）、构建校验和手动测试
-- 当前分发方式：通过 `scripts/publish-release.sh` 在本机打出 Developer ID 签名 + 公证 DMG（见 [RELEASING.md](./RELEASING.md)）
-- 当前范围：专注纯文本，不包含富文本、插件系统或跨平台支持
-
-## 快速开始
-
-### 安装（macOS）
-
-1. 打开 [GitHub Releases](https://github.com/NeatMacApps/NeatEditor/releases)，选择发行说明中写明 Developer ID 签名 + 公证的版本。只有签名产物才是安装路径：旧的 `*-macOS-universal.*` 文件（例如 v1.0.3 上的）是未签名 CI 占位文件，不要安装。如提供 `SHA256SUMS.txt` 可自行校验。
-2. 打开 DMG，把 `NeatEditor.app` 拖入 `Applications`。
-3. 首次启动：
-
-```bash
-open -a NeatEditor
-```
-
-应用启动即创建可用文档；按 `Command + N` 新建文档。
-
-### 支持的平台
-
-- 支持：macOS 26.0+（Apple silicon 与 Intel，universal 构建）。
-- 不支持：Linux 与 Windows。应用依赖 AppKit 与 macOS 专属签名/公证，在这些平台上无法构建也无法运行，不提供安装包。
-
-### 环境要求（从源码构建）
-
-- macOS 26.0+
-- Xcode 26.0+
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.44+
-
-### 克隆并打开
+需要 macOS 26.0+、Xcode 26.0+ 和 [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.44+。
 
 ```bash
 git clone https://github.com/NeatMacApps/NeatEditor.git
@@ -103,8 +73,6 @@ cd NeatEditor
 xcodegen generate
 open NeatEditor.xcodeproj
 ```
-
-### 终端构建
 
 ```bash
 xcodebuild -project "NeatEditor.xcodeproj" \
@@ -115,62 +83,27 @@ xcodebuild -project "NeatEditor.xcodeproj" \
   build
 ```
 
-## 开发说明
+测试和开发说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-- `project.yml` 是工程结构的真实来源。
-- 新增或删除源文件后，请重新执行 `xcodegen generate`。
-- `NeatEditorTests` 覆盖编辑器文本同步、文档持久化、自动保存调度、工作区失败路径、原生输入法组合提交与字号偏好，手动编辑场景见 [docs/editing-text-sync-test-cases.md](./docs/editing-text-sync-test-cases.md)，运行方式：
+</details>
 
-```bash
-xcodebuild -project "NeatEditor.xcodeproj" \
-  -scheme "NeatEditor" \
-  -configuration Debug \
-  -destination 'platform=macOS' \
-  test
-```
-- 如果你修改了运行流程或交互逻辑，优先用构建产物进行实际验证。
+## 文档
 
-## 发布版本
+- [贡献与测试](CONTRIBUTING.md)
+- [版本记录](CHANGELOG.md)
 
-公开安装包来自本机签名发版流程，而不是 CI：
-
-- 维护者在签名 Mac 上用 `scripts/publish-release.sh` 构建 DMG + Sparkle ZIP（Developer ID 签名、公证、装订；三件上传并回读确认后才从草稿转公开）。
-- 每个签名公开 Release 包含签名 DMG（首次安装）、签名 Sparkle 更新 ZIP（应用内更新）和 `SHA256SUMS.txt`，双语说明取自该版本的 `CHANGELOG.md` 条目。
-- tag 触发的 GitHub Actions 只构建校验打标签源码，未签名包仅作为需登录的 workflow 产物保留（公开仓库中有权限的登录用户可下载，登录是访问控制而非保密）；不要把它们当作正式版本安装。
-
-完整流程、要求与交付交接见 [RELEASING.md](./RELEASING.md)。本 checkout 不宣称除 Release 说明与校验文件之外的任何交付已验证。
-
-## 仓库文档
-
-- [README.md](./README.md)：英文主 README
-- [README.ja.md](./README.ja.md)：日文说明
-- [README.ko.md](./README.ko.md)：韩文说明
-- [README.es.md](./README.es.md)：西班牙文说明
-- [README.fr.md](./README.fr.md)：法文说明
-- [README.de.md](./README.de.md)：德文说明
-- [CONTRIBUTING.md](./CONTRIBUTING.md)：贡献和开发说明
-- [CHANGELOG.md](./CHANGELOG.md)：版本变更记录
-- [RELEASING.md](./RELEASING.md)：GitHub Release 流程
-- [TabStripGestures.md](./docs/TabStripGestures.md)：标签栏交互设计说明
-
-## 已知后续改进方向
-
-- 补运行截图或演示 GIF，提升 GitHub 首页第一印象。
-- 增加常规 CI workflow，覆盖 push 和 pull request（目前只有 tag 校验工作流）。
-
-## 参与贡献
-
-欢迎 issue、建议和 pull request，开始前请先阅读 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+欢迎提交 issue、建议和 pull request。
 
 ## 许可证
 
-NeatEditor 使用 [MIT License](./LICENSE) 开源。
+NeatEditor 使用 [MIT License](LICENSE) 开源。
 
 ## 相关工具
 
 | 工具 | 简介 |
 |---|---|
-| [HandySwitch](https://github.com/x0c/HandySwitch) | 在菜单栏切换 macOS 深色模式、防止睡眠。 |
-| [MacResourceMonitor](https://github.com/x0c/MacResourceMonitor) | 菜单栏 macOS CPU 监视器；找出并结束占用 CPU 的进程。 |
-| [NeatPaste](https://github.com/NeatMacApps/NeatPaste) | macOS 菜单栏剪贴板管理器；在 Mac 上保留复制历史。 |
-| [NeatEditor](https://github.com/NeatMacApps/NeatEditor) | 极简、快速启动的 macOS 纯文本编辑器（本仓库）。 |
+| [NeatPaste](https://github.com/NeatMacApps/NeatPaste) | 菜单栏中的 macOS 剪贴板历史。 |
+| [NeatWebApp](https://github.com/NeatMacApps/NeatWebApp) | 将网站变成独立 macOS 应用，从刘海启动器打开。 |
+| [HandySwitch](https://github.com/x0c/HandySwitch) | 在菜单栏切换深色模式、防止睡眠。 |
+| [MacResourceMonitor](https://github.com/x0c/MacResourceMonitor) | 从菜单栏找出占用 CPU 的进程。 |
+| [Corral](https://github.com/corral-dev/corral) | 在终端管理编程助手会话，并从 Mac 或 iPhone 继续。 |

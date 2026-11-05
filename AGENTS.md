@@ -105,9 +105,16 @@ xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration D
 - `swiftlint` 在当前环境中未安装，不要假设它可用。
 
 ### 运行 App
-先执行上面的构建命令，然后关闭旧进程，用新构建产物替换 `/Applications/NeatEditor.app`，再从 `/Applications` 启动：
+先执行上面的构建命令，然后关闭旧进程，用新构建产物替换 `/Applications/NeatEditor.app`，再从 `/Applications` 启动。若测试或另一个 Agent 可能同时运行同 bundle 的测试宿主，不要按名称 `pkill`：只针对 `/Applications/NeatEditor.app` 的实际可执行文件 PID，通过 `NSRunningApplication.terminate()` 请求正常退出，并等待该 PID 消失。测试宿主同样会被按名杀死，导致另一方验证中断。
 ```bash
-pkill -x "NeatEditor" || true
+installed_pid="$(pgrep -f '^/Applications/NeatEditor\.app/Contents/MacOS/NeatEditor$' || true)"
+if [ -n "$installed_pid" ]; then
+  swift -e "import AppKit; guard let app = NSRunningApplication(processIdentifier: $installed_pid), app.bundleURL?.path == \"/Applications/NeatEditor.app\", app.terminate() else { fatalError(\"Could not request normal termination\") }"
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    pgrep -f '^/Applications/NeatEditor\.app/Contents/MacOS/NeatEditor$' >/dev/null || break
+    sleep 0.5
+  done
+fi
 rm -rf "/Applications/NeatEditor.app"
 ditto "build/DerivedData/Build/Products/Debug/NeatEditor.app" "/Applications/NeatEditor.app"
 for attempt in 1 2 3; do

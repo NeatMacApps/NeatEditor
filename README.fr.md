@@ -5,40 +5,46 @@
 </p>
 
 [![Platform](https://img.shields.io/badge/platform-macOS%2026%2B-1f6feb)](https://developer.apple.com/macos/)
-[![Swift](https://img.shields.io/badge/Swift-6-orange)](https://www.swift.org/)
-[![UI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20AppKit-0a7ea4)](https://developer.apple.com/xcode/swiftui/)
-[![Project](https://img.shields.io/badge/Project-XcodeGen-6f42c1)](https://github.com/yonaskolb/XcodeGen)
 [![License](https://img.shields.io/badge/License-MIT-green)](./LICENSE)
 
-> Un éditeur de texte brut minimaliste et très rapide au lancement pour macOS, conçu avec SwiftUI et AppKit pour une écriture sans distraction, des interactions bureautiques natives et une édition efficace à onglets multiples.
+> Un éditeur de texte brut natif pour macOS.
 
 **Langues :** [English](./README.md) | [简体中文](./README.zh-CN.md) | [日本語](./README.ja.md) | [한국어](./README.ko.md) | [Español](./README.es.md) | [Français](./README.fr.md) | [Deutsch](./README.de.md)
 
 ## Capture d'écran
 
 <p align="center">
-  <img src="./docs/images/neateditor-main-window.png" alt="Capture de l’espace de travail principal de NeatEditor" width="1201" />
+  <img src="./docs/images/neateditor-main-window.png" alt="Capture de l’espace de travail principal de NeatEditor" width="1120" />
 </p>
+
+## Installation
+
+**macOS 26.0+ · Apple silicon et Intel.** Uniquement macOS ; aucune version Linux ou Windows.
+
+```bash
+brew install --cask x0c/tap/neateditor
+```
+
+Ou [téléchargez le dernier DMG signé et notarié](https://github.com/NeatMacApps/NeatEditor/releases/latest), ouvrez-le et glissez `NeatEditor.app` dans `Applications`.
+
+Au lancement, utilisez `Command + O` pour ouvrir un fichier ou `Command + N` pour créer un document.
 
 ## Pourquoi NeatEditor
 
-NeatEditor repose sur un objectif simple : réduire le bruit de l’interface et ramener l’attention sur le texte.
-
-- Lancement rapide : évite les opérations bloquantes inutiles sur le chemin de démarrage.
-- Interface centrée sur l’espace d’écriture : la zone d’édition reste au premier plan.
-- Comportement natif macOS : conserve la barre de titre, les menus, les raccourcis et les interactions de fenêtre attendus.
-- Priorité au texte brut : pratique pour les notes, brouillons, écrits temporaires et petites modifications.
+Pour les notes, les brouillons et les petites modifications de fichiers texte.
 
 ## Points forts
 
-- Édition de texte brut en multi-onglets avec un document prêt à l’emploi dès le lancement.
-- Sélection d’onglets, fermeture et renommage intégré à faible latence.
-- Ouverture de fichiers texte locaux via Finder, glisser-déposer ou collage d’URL de fichier.
-- Numéros de ligne, recherche native, annulation, gestion IME et zoom avec `Command +/-`.
-- Sauvegarde automatique avec debounce de 2 secondes, plus sauvegarde au changement d’onglet et à la désactivation de l’app.
-- Fenêtre épinglée au premier plan et zoom natif via double-clic dans la barre de titre.
-- Renommage sur disque qui conserve les extensions modifiables.
-- Le contenu vide n’écrase jamais un fichier existant par conception.
+- **Onglets :** changez d’onglet, fermez, renommez sur place et rouvrez le dernier onglet fermé.
+- **Fichiers locaux :** ouvrez depuis le Finder, par glisser-déposer ou collage d’URL de fichier ; renommer un document enregistré renomme aussi le fichier sur disque.
+- **Édition native :** numéros de ligne, recherche, annulation, composition IME et zoom du texte avec `Command +/-`.
+- **Sauvegarde automatique :** après 2 secondes sans saisie, au changement d’onglet et lorsque l’app devient inactive. Les écritures sont ordonnées.
+- **Modifications externes :** gérez les modifications d’un autre éditeur, d’un script ou d’un agent de programmation. Les tampons non modifiés sont rechargés, les modifications indépendantes fusionnées prudemment, et les conflits détectés conservent les deux versions.
+- **Protection du contenu vide :** un texte vide ou composé uniquement d’espaces blancs n’écrase pas un fichier existant. Vider l’éditeur ne vide donc pas le fichier sur disque.
+- **Dossier de documents :** `~/Documents` par défaut, modifiable dans Réglages → Éditeur → Dossier de documents. Les nouveaux documents sont enregistrés dans le dossier choisi.
+- **Toujours visible :** épinglez la fenêtre au premier plan et profitez des menus et de la barre de titre natifs.
+
+La protection des modifications simultanées n’empêche pas un autre programme d’écrire dans le fichier. Sauvegardez les fichiers importants.
 
 ## Raccourcis principaux
 
@@ -56,26 +62,10 @@ NeatEditor repose sur un objectif simple : réduire le bruit de l’interface et
 | `Command + ,` | Ouvre les réglages. |
 | `Shift + Return` | Insère une nouvelle ligne à la fin de la ligne actuelle. |
 
-Les raccourcis de texte natifs de macOS, comme `Command + Z`, `Command + X`, `Command + C` et `Command + V`, restent aussi disponibles via le système de texte natif.
+<details>
+<summary>Compiler depuis les sources (Xcode)</summary>
 
-## État actuel
-
-NeatEditor est déjà prêt comme éditeur léger de texte brut pour macOS et est publié en `1.0.0`.
-
-- Plateforme cible : macOS 26.0+
-- Stack : Swift 6, SwiftUI, AppKit bridge, Observation, XcodeGen
-- Validation actuelle : `xcodebuild ... test` (tests unitaires : sync de texte, persistance, planification d'autosave, chemins d'échec du workspace, commits de composition natifs, préférences de taille de police), vérification de build et tests manuels
-- Portée actuelle : flux de texte brut, sans texte enrichi, plugins ni prise en charge multiplateforme
-
-## Démarrage rapide
-
-### Prérequis
-
-- macOS 26.0+
-- Xcode 26.0+
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.44+
-
-### Cloner et ouvrir
+Nécessite macOS 26.0+, Xcode 26.0+ et [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.44+.
 
 ```bash
 git clone https://github.com/NeatMacApps/NeatEditor.git
@@ -83,8 +73,6 @@ cd NeatEditor
 xcodegen generate
 open NeatEditor.xcodeproj
 ```
-
-### Compiler depuis le terminal
 
 ```bash
 xcodebuild -project "NeatEditor.xcodeproj" \
@@ -95,46 +83,27 @@ xcodebuild -project "NeatEditor.xcodeproj" \
   build
 ```
 
-## Notes de développement
+Consultez [CONTRIBUTING.md](CONTRIBUTING.md) pour les tests et le développement.
 
-- `project.yml` est la source de vérité de la structure du projet.
-- Exécutez `xcodegen generate` après avoir ajouté ou supprimé des fichiers source.
-- `NeatEditorTests` couvre la sync de texte, la persistance, la planification d'autosave, les chemins d'échec du workspace, les commits de composition natifs et les préférences de taille de police ; lancez-les avec `xcodebuild ... test` (voir le README anglais).
-- Pour les changements de comportement, validez de préférence avec l’application compilée plutôt qu’avec les previews seules.
+</details>
 
-## Releases
+## Documentation
 
-Ce dépôt publie via des releases locales signées, pas via CI.
+- [Contributions et tests](CONTRIBUTING.md)
+- [Historique des versions](CHANGELOG.md)
 
-- Le mainteneur construit le DMG + ZIP Sparkle en local avec `scripts/publish-release.sh` (signé Developer ID, notarié ; publié depuis le brouillon seulement après envoi et relecture).
-- Chaque release publique signée contient le DMG signé (première installation), le ZIP Sparkle signé (mises à jour in-app) et `SHA256SUMS.txt`, avec les notes bilingues du `CHANGELOG.md` de la version.
-- Le workflow GitHub Actions piloté par tags ne compile que pour valider et conserve les paquets non signés comme artefacts de workflow nécessitant une connexion (toute personne connectée y ayant accès peut les télécharger) ; ne les installez pas comme release.
-
-Installation : sur Releases, choisissez une version dont les notes mentionnent signature Developer ID + notarisation — n'installez que des fichiers signés (les anciens `*-macOS-universal.*`, p. ex. sur v1.0.3, sont des placeholders non signés). Glissez vers `Applications`, puis `open -a NeatEditor`. Seul macOS 26.0+ est pris en charge.
-
-Voir [RELEASING.md](./RELEASING.md) pour les détails.
-
-## Documentation du dépôt
-
-- [README.md](./README.md) : présentation en anglais
-- [README.zh-CN.md](./README.zh-CN.md) : présentation en chinois simplifié
-- [README.ja.md](./README.ja.md) : présentation en japonais
-- [README.ko.md](./README.ko.md) : présentation en coréen
-- [README.es.md](./README.es.md) : présentation en espagnol
-- [README.de.md](./README.de.md) : présentation en allemand
-- [CONTRIBUTING.md](./CONTRIBUTING.md) : environnement de développement et contribution
-- [CHANGELOG.md](./CHANGELOG.md) : historique des versions
-- [RELEASING.md](./RELEASING.md) : workflow GitHub Release
-- [TabStripGestures.md](./docs/TabStripGestures.md) : notes de conception des gestes d’onglets
-
-## Lacunes connues
-
-- Ajouter un workflow CI général pour les pushes et pull requests (aujourd’hui seul le workflow de validation de tags existe).
-
-## Contribuer
-
-Les issues, suggestions et pull requests sont bienvenues. Lisez d’abord [CONTRIBUTING.md](./CONTRIBUTING.md).
+Les issues, suggestions et pull requests sont les bienvenues.
 
 ## Licence
 
-NeatEditor est distribué sous [MIT License](./LICENSE).
+NeatEditor est distribué sous [MIT License](LICENSE).
+
+## Outils associés
+
+| Outil | Description |
+|---|---|
+| [NeatPaste](https://github.com/NeatMacApps/NeatPaste) | Historique du presse-papiers macOS dans la barre de menus. |
+| [NeatWebApp](https://github.com/NeatMacApps/NeatWebApp) | Transformez des sites en apps macOS avec un lanceur dans l’encoche. |
+| [HandySwitch](https://github.com/x0c/HandySwitch) | Changez de mode sombre et empêchez la veille depuis la barre de menus. |
+| [MacResourceMonitor](https://github.com/x0c/MacResourceMonitor) | Repérez les processus gourmands en CPU depuis la barre de menus. |
+| [Corral](https://github.com/corral-dev/corral) | Gérez les sessions d’agents de programmation dans le terminal et poursuivez sur Mac ou iPhone. |
