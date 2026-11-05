@@ -81,8 +81,46 @@ establishes the rejected primitive; `accepted-*.log` and
 `native.log` is a failed diagnostic fixture, not product evidence.
 
 The local artifact remains version 1.0.28 (28); `CHANGELOG.md` contains bilingual
-Unreleased notes. No tag, notarization or public release was performed. Installed
-acceptance and the signed local handoff receipt are recorded at delivery below.
+Unreleased notes. No tag, notarization or public release was performed.
+
+### Local delivery (2026-11-06)
+
+Application source `f7fee8de0c5f5573c6d58f9e188590877a013d20` is committed and
+pushed. Every recorded compilation-input hash matches that commit. The signed,
+universal Release was packaged as
+`build/local-delivery/NeatEditor-review-fixes-f7fee8d.zip`:
+
+- ZIP SHA256: `69ea6b04435808278defe9d73cf94163aa83ec3a9a206d8d9c524e6c7c04759b`.
+- Executable SHA256: `c2692d1682b3c1e56898c147094bc2a598f1596e571a9f0950e908419510a812`.
+- Local Developer ID package only: signed by the existing team, not notarized and
+  not a public release/update artifact. The public version/feed is unchanged.
+
+Independent re-extraction passed strict nested signature verification and a full
+file/symlink catalog comparison with the accepted Release bundle.
+
+Normal termination completed without force quit or discard. The prior bundle
+was removed and the complete Release copied to `/Applications/NeatEditor.app`,
+then launched from that path. Strict nested signature verification passed; the
+installed executable equals the package's source executable. The new installed
+process is PID 89673. Fresh inspected window pixels show restored document
+content, line numbers, character count and the new artifact's main workspace.
+The targeted Command-F menu path opened the inline search bar, verified in a
+second fresh capture. No user text was edited during these checks.
+
+The session was locked. `AXWindows` returned a success/count whose element was
+actually the application itself, so field/pointer, timeout/recovery and match-2001
+interaction were **not** accepted on the installed app. Those behaviors retain
+current-module unit tests and full-workspace component/byte receipts, not physical
+keyboard acceptance. The validated [capture-readiness recipe](~/.config/agentsync/skills/macos-window-screenshot/references/display-readiness.md#input-ownership-is-separate-from-capture)
+now records that measured AX shape and its inspection guard. Installed captures
+contain private workspace content and must not be published.
+
+The task-connected virtual display was removed from the native online list, the
+task-started BetterDisplay host quit, and task-owned probe processes/preferences
+were cleaned. Private receipt: `local-delivery-receipt.json` in the repair evidence
+root above. Reusable findings were promoted to the shared Swift and shared-file
+recipes (maintained non-Git workspace standards); no shared implementation was
+extracted.
 
 The cancellation semantics are documented by Apple:
 [`Task.cancel()`](https://developer.apple.com/documentation/swift/task/cancel()).
@@ -96,8 +134,8 @@ Historical baseline verification of `e298115` on Xcode 27.2
 (27B5028f), macOS 27.2 (26B123):
 
 - Fresh arm64 Debug `xcodebuild test`: 174 tests, 241 executions, zero failures,
-  skips or structured runtime warnings. These green tests do not cover the open
-  regressions above.
+  skips or structured runtime warnings. These baseline green tests did not cover
+  the reviewed regressions above.
 - Universal Debug analysis and universal Release build/analysis passed; the
   Release binary contains both arm64 and x86_64. No Swift compiler/analyzer
   diagnostic was found. Complete logs retain the AppIntents metadata notice
