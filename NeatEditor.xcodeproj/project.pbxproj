@@ -15,6 +15,7 @@
 		14D49B498E070CDFDA4C5B97 /* DocumentFileAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68745B99688EB22546A8798F /* DocumentFileAccess.swift */; };
 		1647932DE3AFF5096BA1A56C /* AutoSaveSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E545B076D7BD325F2B4EF46 /* AutoSaveSchedulerTests.swift */; };
 		16EC1F059C67919FE7417ECA /* WorkspaceCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C1E4F1C5E0852265B8A3A4 /* WorkspaceCommands.swift */; };
+		188C50D53BAD542FBC636C89 /* EditorThemeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39F05C2872C0FB22FC3DEAE9 /* EditorThemeTests.swift */; };
 		1C0E2A1A871E5DD7BF4F3DA6 /* DocumentPersistenceServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D088F960E365954BD66BC6A8 /* DocumentPersistenceServiceTests.swift */; };
 		21B6368381D44AB472B6E272 /* ZoomableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CA0DD15623CA315741B803E /* ZoomableTextView.swift */; };
 		247B4DD44E7B8560AA53E2D1 /* WorkspacePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1674FE73DFD3A99700320E6 /* WorkspacePreferences.swift */; };
@@ -43,6 +44,7 @@
 		4C28ACC82CF6ADE661F5C511 /* WorkspaceSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8918469298602DC5C5D7047 /* WorkspaceSearchState.swift */; };
 		4C6DD29CD0452D9311044BE8 /* EditorTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FC9CB3A37D479100CB1B9D6 /* EditorTextView.swift */; };
 		4FCF5DB5C7FC0F1E1FC740D4 /* WorkspaceStore+StateRestoration.swift in Sources */ = {isa = PBXBuildFile; fileRef = E32406E8C86E9797FA92149D /* WorkspaceStore+StateRestoration.swift */; };
+		631477781C9CCF8DFA063DAE /* EditorTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1229AF71F03BBD6F3F34F9F /* EditorTheme.swift */; };
 		6C4A4EF55D4E956B1CB30509 /* DocumentPersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A960C8B24796C5DB2C6589 /* DocumentPersistenceService.swift */; };
 		6EE8A2AE67E17A04AF894495 /* EditorCharacterCount.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21D82FF259624A148B41268D /* EditorCharacterCount.swift */; };
 		7538ECC920EF461816EFFBF7 /* HoverFocusTopmostCheckTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B6594887CEEA1D1B0EF81A6 /* HoverFocusTopmostCheckTests.swift */; };
@@ -97,6 +99,7 @@
 		31A11A800FD9DF1C475FA33D /* DocumentPersistenceService+FileAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DocumentPersistenceService+FileAccess.swift"; sourceTree = "<group>"; };
 		31C04ABF5739CF2D974AA14F /* WorkspaceStore+Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Sidebar.swift"; sourceTree = "<group>"; };
 		32C74314E17C1CDECDF2EDB4 /* ExternalFileOpenCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalFileOpenCoordinator.swift; sourceTree = "<group>"; };
+		39F05C2872C0FB22FC3DEAE9 /* EditorThemeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorThemeTests.swift; sourceTree = "<group>"; };
 		3C21CDB2A4B0C2A6A6DFAF57 /* WorkspaceToolbarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceToolbarTests.swift; sourceTree = "<group>"; };
 		3DB9D86BBC9C10E24C2579C1 /* TitleBarTrafficLightAlignmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleBarTrafficLightAlignmentView.swift; sourceTree = "<group>"; };
 		3DC995CE28879B63ADA21A6B /* DocumentConcurrencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentConcurrencyTests.swift; sourceTree = "<group>"; };
@@ -133,6 +136,7 @@
 		A7A960C8B24796C5DB2C6589 /* DocumentPersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPersistenceService.swift; sourceTree = "<group>"; };
 		A8918469298602DC5C5D7047 /* WorkspaceSearchState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSearchState.swift; sourceTree = "<group>"; };
 		A8E8818FBAFDC00F396FB2C0 /* WorkspaceStore+Tabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Tabs.swift"; sourceTree = "<group>"; };
+		B1229AF71F03BBD6F3F34F9F /* EditorTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTheme.swift; sourceTree = "<group>"; };
 		BF4FFD7351F34190C76B4C7D /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
 		C50807406F37393832E921EC /* WorkspaceSidebarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSidebarTests.swift; sourceTree = "<group>"; };
 		C59982890BA0049E8CC31E4F /* NeatEditor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeatEditor.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -252,6 +256,7 @@
 				07068A45202138CF3BE28417 /* EditorCharacterCountTests.swift */,
 				E664E345AED01D4C6E486EB5 /* EditorNewlineTests.swift */,
 				5A3812B102B3FA8E24D10FEE /* EditorTextSyncStateTests.swift */,
+				39F05C2872C0FB22FC3DEAE9 /* EditorThemeTests.swift */,
 				6B6594887CEEA1D1B0EF81A6 /* HoverFocusTopmostCheckTests.swift */,
 				A41C9532D37805DEF85522A1 /* WorkspaceConcurrencyTests.swift */,
 				F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */,
@@ -289,6 +294,7 @@
 			isa = PBXGroup;
 			children = (
 				56530C158F57A8758BF0D6FF /* AppLanguage.swift */,
+				B1229AF71F03BBD6F3F34F9F /* EditorTheme.swift */,
 				57BC26D5C7240FEF483712F5 /* TabBehavior.swift */,
 			);
 			path = Models;
@@ -475,6 +481,7 @@
 				A00BDF0E3AB5234919B10C82 /* EditorCharacterCountTests.swift in Sources */,
 				3651C643249CE91F2F7AC409 /* EditorNewlineTests.swift in Sources */,
 				49CA09DC3AAEE99AB71E569E /* EditorTextSyncStateTests.swift in Sources */,
+				188C50D53BAD542FBC636C89 /* EditorThemeTests.swift in Sources */,
 				7538ECC920EF461816EFFBF7 /* HoverFocusTopmostCheckTests.swift in Sources */,
 				30EE4D1B05E748C44FAA9A9A /* WorkspaceConcurrencyTests.swift in Sources */,
 				97DF5482D6F249403D615719 /* WorkspacePreferencesTests.swift in Sources */,
@@ -510,6 +517,7 @@
 				40E4B08329E49913ADF40EFC /* EditorTextContainerView.swift in Sources */,
 				4A4FBB40A7F299F9AA9C2597 /* EditorTextSyncState.swift in Sources */,
 				4C6DD29CD0452D9311044BE8 /* EditorTextView.swift in Sources */,
+				631477781C9CCF8DFA063DAE /* EditorTheme.swift in Sources */,
 				B94CDB60C07A6AB1960668D4 /* ExternalFileOpenCoordinator.swift in Sources */,
 				030A8ED4826D9B5EE2EC12FA /* HoverFocusTopmostCheck.swift in Sources */,
 				F06062D1F0E725C1BEB44E45 /* LaunchProfiler.swift in Sources */,

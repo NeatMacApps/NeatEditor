@@ -22,6 +22,9 @@
 "Close Search" = "关闭搜索";
 
 "Settings" = "设置";
+"settings.theme" = "主题";
+"theme.warm" = "暖黄色";
+"theme.whiteBlack" = "白色 / 黑色";
 "Editor" = "编辑器";
 "Tab Behavior" = "制表符行为";
 "Language" = "语言";

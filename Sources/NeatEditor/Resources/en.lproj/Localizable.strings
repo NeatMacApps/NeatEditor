@@ -22,6 +22,9 @@
 "Close Search" = "Close Search";
 
 "Settings" = "Settings";
+"settings.theme" = "Theme";
+"theme.warm" = "Warm";
+"theme.whiteBlack" = "White / Black";
 "Editor" = "Editor";
 "Tab Behavior" = "Tab Behavior";
 "Language" = "Language";

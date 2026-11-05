@@ -52,7 +52,7 @@ struct WorkspaceSidebarView: View {
         // Owner choice: the sidebar shares the top band's color; only the
         // editor column is the light surface.
         .scrollContentBackground(.hidden)
-        .background(EditorChrome.tabBarBackground)
+        .background(EditorChrome.tabBarBackground(for: workspaceStore.preferences.editorTheme))
         .focusEffectDisabled()
         .overlay {
             if workspaceStore.sidebarFiles.isEmpty {

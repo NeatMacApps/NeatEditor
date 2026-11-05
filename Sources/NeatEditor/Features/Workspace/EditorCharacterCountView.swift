@@ -3,6 +3,7 @@ import SwiftUI
 /// Non-interactive count floating over the document editor.
 struct EditorCharacterCountView: View {
     let characters: Int
+    var theme: EditorTheme = .defaultValue
 
     var body: some View {
         Text(String(format: String(localized: "status.characters"), characters.formatted()))
@@ -13,7 +14,7 @@ struct EditorCharacterCountView: View {
             .fixedSize()
             .padding(.horizontal, EditorCharacterCountLayout.horizontalPadding)
             .padding(.vertical, EditorCharacterCountLayout.verticalPadding)
-            .background(EditorChrome.editorSurface, in: Capsule())
+            .background(EditorChrome.editorSurface(for: theme), in: Capsule())
             .padding(.trailing, EditorCharacterCountLayout.trailingInset)
             .padding(.bottom, EditorCharacterCountLayout.bottomInset)
             .allowsHitTesting(false)

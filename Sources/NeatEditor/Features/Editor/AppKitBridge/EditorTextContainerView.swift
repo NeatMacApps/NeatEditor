@@ -3,6 +3,14 @@ import AppKit
 final class EditorTextContainerView: NSView {
     let textView: ZoomableTextView
 
+    var theme: EditorTheme = .defaultValue {
+        didSet {
+            guard theme != oldValue else { return }
+            updateTextViewColors()
+            lineNumberView.theme = theme
+        }
+    }
+
     private static let editorLineHeightMultiple: CGFloat = 1.08
     private static let searchHighlightColor = NSColor.controlAccentColor.withAlphaComponent(0.22)
     private var currentEditorFontSize: CGFloat = NSFont.systemFontSize
@@ -476,7 +484,7 @@ final class EditorTextContainerView: NSView {
             for: effectiveAppearance,
             textSoftness: textSoftness
         )
-        let backgroundColor = EditorChrome.resolvedColor(EditorChrome.editorSurfaceColor, for: effectiveAppearance)
+        let backgroundColor = EditorChrome.resolvedColor(EditorChrome.editorSurfaceColor(for: theme), for: effectiveAppearance)
         let insertionPointColor = NSColor.labelColor
 
         // Reassigning textColor walks the entire NSTextStorage to re-attribute

@@ -39,7 +39,7 @@ struct NeatEditorApp: App {
                         sidebarVisible: workspaceStore.preferences.isSidebarVisible,
                         settingsSelected: settingsSelected
                     ),
-                    minHeight: settingsSelected ? max(440, EditorTabStripView.minimumWindowEdge) : EditorTabStripView.minimumWindowEdge
+                    minHeight: settingsSelected ? max(480, EditorTabStripView.minimumWindowEdge) : EditorTabStripView.minimumWindowEdge
                 )
                 .environment(workspaceStore)
                 .task {

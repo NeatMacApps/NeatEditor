@@ -6,6 +6,25 @@ enum EditorChrome {
     static let tabBarBackground = Color(nsColor: tabBarBackgroundColor)
     static let editorSurfaceColor = adaptiveColor(name: "EditorSurface", light: 0xFAF8F5, dark: 0x211F1D)
     static let editorSurface = Color(editorSurfaceColor)
+    private static let neutralTabBarColor = adaptiveColor(name: "NeutralTabBand", light: 0xEEEEEE, dark: 0x1C1C1E)
+    private static let neutralEditorColor = adaptiveColor(name: "NeutralEditorSurface", light: 0xFFFFFF, dark: 0x000000)
+
+    static func tabBarBackgroundColor(for theme: EditorTheme) -> NSColor {
+        theme == .warm ? tabBarBackgroundColor : neutralTabBarColor
+    }
+
+    static func editorSurfaceColor(for theme: EditorTheme) -> NSColor {
+        theme == .warm ? editorSurfaceColor : neutralEditorColor
+    }
+
+    static func tabBarBackground(for theme: EditorTheme) -> Color {
+        Color(nsColor: tabBarBackgroundColor(for: theme))
+    }
+
+    static func editorSurface(for theme: EditorTheme) -> Color {
+        Color(nsColor: editorSurfaceColor(for: theme))
+    }
+
     static let borderColor = NSColor.separatorColor
     static let border = Color(borderColor)
     static let tabOutlineColor = NSColor(name: "com.x0c.NeatEditor.TabOutline") { appearance in

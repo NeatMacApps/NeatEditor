@@ -43,6 +43,13 @@ final class LineNumberGutterView: NSView {
         static let minimumFontSize: CGFloat = 10
     }
 
+    var theme: EditorTheme = .defaultValue {
+        didSet {
+            guard theme != oldValue else { return }
+            updateColors()
+        }
+    }
+
     private weak var scrollView: NSScrollView?
     private weak var textView: NSTextView?
     private var lineStartIndices = [0]
@@ -218,7 +225,7 @@ final class LineNumberGutterView: NSView {
 
     func updateColors() {
         layer?.backgroundColor = EditorChrome.resolvedColor(
-            EditorChrome.editorSurfaceColor, for: effectiveAppearance
+            EditorChrome.editorSurfaceColor(for: theme), for: effectiveAppearance
         ).cgColor
         needsDisplay = true
     }

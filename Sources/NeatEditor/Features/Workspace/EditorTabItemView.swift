@@ -70,7 +70,7 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
         context.clip(to: CGRect(x: 0, y: 0, width: bounds.width, height: EditorTabLayout.tabHeight))
         if isSelected {
             context.addPath(ConnectedTabGeometry.fill(in: tabBounds))
-            context.setFillColor(EditorChrome.editorSurfaceColor.cgColor)
+            context.setFillColor(EditorChrome.editorSurfaceColor(for: strip?.theme ?? .defaultValue).cgColor)
             context.fillPath()
             context.addPath(ConnectedTabGeometry.outline(in: tabBounds))
             context.setStrokeColor(EditorChrome.tabOutlineColor.cgColor)

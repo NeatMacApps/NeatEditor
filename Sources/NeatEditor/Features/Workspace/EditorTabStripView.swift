@@ -9,6 +9,14 @@ final class EditorTabStripView: NSView {
     private(set) var selectedTabID: UUID?
     private(set) var tabViews: [UUID: EditorTabItemView] = [:]
     var actions = EditorTabActions()
+    var theme: EditorTheme = .defaultValue {
+        didSet {
+            guard theme != oldValue else { return }
+            needsDisplay = true
+            tabViews.values.forEach { $0.needsDisplay = true }
+            geometryDidChange()
+        }
+    }
     /// Titlebar regions owned by native accessories (sidebar button, pin).
     var contentInsets = NSEdgeInsets() {
         didSet { needsLayout = true }
@@ -160,7 +168,7 @@ final class EditorTabStripView: NSView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        EditorChrome.tabBarBackgroundColor.setFill()
+        EditorChrome.tabBarBackgroundColor(for: theme).setFill()
         bounds.fill()
     }
 
@@ -191,7 +199,7 @@ final class EditorTabStripView: NSView {
         let offset = scrollView.contentView.bounds.minX
         let width = scrollView.contentView.bounds.width
         let originX = scrollView.frame.minX
-        let background = EditorChrome.resolvedColor(EditorChrome.tabBarBackgroundColor, for: effectiveAppearance)
+        let background = EditorChrome.resolvedColor(EditorChrome.tabBarBackgroundColor(for: theme), for: effectiveAppearance)
         let color = background.cgColor
         CATransaction.begin()
         CATransaction.setDisableActions(true)

@@ -14,6 +14,7 @@ struct WorkspaceSplitView: NSViewControllerRepresentable {
     let isWindowPinned: Bool
     let onSidebarVisibilityChange: (Bool) -> Void
     let onTogglePin: () -> Void
+    var theme: EditorTheme = .defaultValue
 
     static let sidebarMinimumWidth: CGFloat = 200
     static let editorMinimumWidth: CGFloat = 240
@@ -48,6 +49,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     private let heightToolbar = NSToolbar(identifier: "WorkspaceCompactRow")
     private let sidebarAccessory = NSTitlebarAccessoryViewController()
     private let tabAccessory = NSTitlebarAccessoryViewController()
+    private let topBandBackground = TabBandBackgroundView()
     private let sidebarButton = WorkspaceSplitViewController.titlebarButton(symbol: "sidebar.left")
     private var pinButton: NSButton { detailController.pinButton }
     private weak var attachedWindow: NSWindow?
@@ -62,6 +64,8 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         detailController.strip.update(tabs: configuration.tabs, selectedTabID: configuration.selectedTabID,
                                       actions: configuration.tabActions)
         detailController.accessoryViews = [sidebarButton]
+        detailController.strip.theme = configuration.theme
+        topBandBackground.theme = configuration.theme
     }
 
     @available(*, unavailable)
@@ -130,6 +134,11 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     }
 
     func update(configuration: WorkspaceSplitView) {
+        if self.configuration.theme != configuration.theme {
+            detailController.strip.theme = configuration.theme
+            topBandBackground.theme = configuration.theme
+            attachedWindow?.backgroundColor = EditorChrome.tabBarBackgroundColor(for: configuration.theme)
+        }
         self.configuration = configuration
         sidebarController.rootView = configuration.sidebar
         detailController.rootView = configuration.detail
@@ -170,7 +179,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         window.titlebarAppearsTransparent = false
         // The band color also shows around the floating sidebar panel; the
         // editor column paints its own light surface.
-        window.backgroundColor = EditorChrome.tabBarBackgroundColor
+        window.backgroundColor = EditorChrome.tabBarBackgroundColor(for: configuration.theme)
         // The connected tab outline owns this boundary; a native full-width
         // separator would draw a second line through the selected tab's join.
         window.titlebarSeparatorStyle = .none
@@ -226,7 +235,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     /// section backgrounds (white in the key window); the rule continues left
     /// across the sidebar. Neither takes hits, so native titlebar gestures stay.
     private func installTopBand() {
-        let background = TabBandBackgroundView()
+        let background = topBandBackground
         let rule = detailController.topRule
         let bandBottom = detailController.view.safeAreaLayoutGuide.topAnchor
         for (view, zPosition) in [(background as NSView, 1.0), (rule, 2.0)] {
@@ -388,12 +397,18 @@ private final class WorkspaceEditorViewController: NSViewController {
 }
 
 private final class TabBandBackgroundView: NSView {
+    var theme: EditorTheme = .defaultValue {
+        didSet {
+            if theme != oldValue { needsDisplay = true }
+        }
+    }
+
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 
     override func draw(_ dirtyRect: NSRect) {
         // Bounds, not dirtyRect: views no longer clip by default, and the dirty
         // rect can extend past this 40 pt band over the editor.
-        EditorChrome.tabBarBackgroundColor.setFill()
+        EditorChrome.tabBarBackgroundColor(for: theme).setFill()
         bounds.fill()
     }
 }

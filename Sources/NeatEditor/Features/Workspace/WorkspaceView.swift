@@ -37,7 +37,8 @@ struct WorkspaceView: View {
                     workspaceStore.preferences.isSidebarVisible = visible
                 }
             },
-            onTogglePin: { isWindowPinned.toggle() }
+            onTogglePin: { isWindowPinned.toggle() },
+            theme: workspaceStore.preferences.editorTheme
         )
         .ignoresSafeArea(.container, edges: .top)
         .background {
@@ -108,7 +109,7 @@ struct WorkspaceView: View {
 
 
             if isCloseTabShortcutHintVisible {
-                CloseTabShortcutHint {
+                CloseTabShortcutHint(theme: workspaceStore.preferences.editorTheme) {
                     dismissCloseTabShortcutHint()
                 }
                 .transition(.move(edge: .top).combined(with: .opacity))
@@ -121,7 +122,7 @@ struct WorkspaceView: View {
                 Text("No Document Selected")
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(EditorChrome.editorSurface)
+                    .background(EditorChrome.editorSurface(for: workspaceStore.preferences.editorTheme))
             }
 
             if workspaceStore.searchState.isPresented {
@@ -167,6 +168,7 @@ struct WorkspaceView: View {
                             workspaceStore.commitEditorChanges = handler
                         },
                         externalRevision: tab.externalRevision,
+                        theme: workspaceStore.preferences.editorTheme,
                         onCharacterCountChange: { tabID, text in
                             guard workspaceStore.selectedTabID == tabID else { return }
                             editorCharacterCount.update(tabID: tabID, text: text)
@@ -178,16 +180,16 @@ struct WorkspaceView: View {
 
                     if tab.isContentLoaded,
                        let characters = editorCharacterCount.count(for: tab.id) {
-                        EditorCharacterCountView(characters: characters)
+                        EditorCharacterCountView(characters: characters, theme: workspaceStore.preferences.editorTheme)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()
-                .background(EditorChrome.editorSurface)
+                .background(EditorChrome.editorSurface(for: workspaceStore.preferences.editorTheme))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(EditorChrome.editorSurface)
+        .background(EditorChrome.editorSurface(for: workspaceStore.preferences.editorTheme))
     }
 
     private var searchBar: some View {
@@ -243,7 +245,7 @@ struct WorkspaceView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 6)
-        .background(EditorChrome.tabBarBackground)
+        .background(EditorChrome.tabBarBackground(for: workspaceStore.preferences.editorTheme))
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(EditorChrome.border)
@@ -302,6 +304,7 @@ struct WorkspaceView: View {
 }
 
 private struct CloseTabShortcutHint: View {
+    let theme: EditorTheme
     let onDismiss: () -> Void
 
     var body: some View {
@@ -325,7 +328,7 @@ private struct CloseTabShortcutHint: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .background(EditorChrome.tabBarBackground)
+        .background(EditorChrome.tabBarBackground(for: theme))
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(EditorChrome.border)

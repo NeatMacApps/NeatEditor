@@ -131,6 +131,7 @@ struct WorkspacePreferences: Codable, Equatable {
         case nextEditorFontAccessSequence
         case tabBehavior
         case appLanguage
+        case editorTheme
         case editorTextSoftness
         case isSidebarVisible
     }
@@ -139,6 +140,7 @@ struct WorkspacePreferences: Codable, Equatable {
     var rememberedEditorFontSizes: [String: RememberedEditorFontSize] = [:]
     var tabBehavior: TabBehavior = .spaces2
     var appLanguage: AppLanguage = .system
+    var editorTheme: EditorTheme = .defaultValue
     var editorTextSoftness = EditorTextSoftnessConfiguration()
     var isSidebarVisible = true
     private var nextEditorFontAccessSequence: UInt64 = 0
@@ -148,6 +150,7 @@ struct WorkspacePreferences: Codable, Equatable {
         rememberedEditorFontSizes: [String: RememberedEditorFontSize] = [:],
         tabBehavior: TabBehavior = .spaces2,
         appLanguage: AppLanguage = .system,
+        editorTheme: EditorTheme = .defaultValue,
         editorTextSoftness: EditorTextSoftnessConfiguration = EditorTextSoftnessConfiguration(),
         isSidebarVisible: Bool = true
     ) {
@@ -155,6 +158,7 @@ struct WorkspacePreferences: Codable, Equatable {
         self.rememberedEditorFontSizes = rememberedEditorFontSizes
         self.tabBehavior = tabBehavior
         self.appLanguage = appLanguage
+        self.editorTheme = editorTheme
         self.editorTextSoftness = editorTextSoftness.sanitized()
         self.isSidebarVisible = isSidebarVisible
         normalizeRememberedEditorFontSizes()
@@ -183,6 +187,8 @@ struct WorkspacePreferences: Codable, Equatable {
             AppLanguage.self,
             forKey: .appLanguage
         ) ?? defaults.appLanguage
+        let themeValue = try container.decodeIfPresent(String.self, forKey: .editorTheme)
+        editorTheme = themeValue.flatMap(EditorTheme.init(rawValue:)) ?? .defaultValue
         editorTextSoftness = try container.decodeIfPresent(
             EditorTextSoftnessConfiguration.self,
             forKey: .editorTextSoftness
@@ -201,6 +207,7 @@ struct WorkspacePreferences: Codable, Equatable {
         try container.encode(nextEditorFontAccessSequence, forKey: .nextEditorFontAccessSequence)
         try container.encode(tabBehavior, forKey: .tabBehavior)
         try container.encode(appLanguage, forKey: .appLanguage)
+        try container.encode(editorTheme, forKey: .editorTheme)
         try container.encode(editorTextSoftness.sanitized(), forKey: .editorTextSoftness)
         try container.encode(isSidebarVisible, forKey: .isSidebarVisible)
     }

@@ -18,6 +18,7 @@ struct EditorTextView: NSViewRepresentable {
     let onOpenFiles: ([URL]) -> Void
     let onRegisterCommitHandler: (@escaping @MainActor (UUID) -> Void) -> Void
     var externalRevision: UInt64 = 0
+    var theme: EditorTheme = .defaultValue
     var onCharacterCountChange: (UUID, String) -> Void = { _, _ in }
     var onRegisterCompositionCheck: (@escaping @MainActor (UUID) -> Bool) -> Void = { _ in }
     var onRegisterExternalChangeHandler: (@escaping @MainActor (UUID, String, UInt64) -> Void) -> Void = { _ in }
@@ -42,6 +43,7 @@ struct EditorTextView: NSViewRepresentable {
         textView.onOpenFiles = onOpenFiles
         textView.tabBehavior = tabBehavior
         containerView.textSoftness = textSoftness
+        containerView.theme = theme
         containerView.applyEditorTextAttributes()
         textView.onCompositionEnd = {
             [weak containerView, weak coordinator = context.coordinator, weak textView] in
@@ -63,6 +65,7 @@ struct EditorTextView: NSViewRepresentable {
         let coordinator = context.coordinator
         let textView = containerView.textView
         var needsCharacterCountReport = coordinator.parent.tabID != tabID || textView.isEditable != isEditable
+        containerView.theme = theme
 
         // A lazy placeholder has no authoritative text yet. Keep the outgoing
         // committed buffer and its binding owner until the destination is ready.

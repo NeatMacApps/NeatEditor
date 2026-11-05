@@ -27,6 +27,13 @@ struct SettingsView: View {
                                 .accessibilityIdentifier("settings.documentsFolder.choose")
                         }
                     }
+                    Picker("settings.theme", selection: $workspace.preferences.editorTheme) {
+                        ForEach(EditorTheme.allCases, id: \.self) { theme in
+                            Text(LocalizedStringKey(theme.localizedNameKey)).tag(theme)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("settings.theme")
                     Picker("Tab Behavior", selection: $workspace.preferences.tabBehavior) {
                         ForEach(TabBehavior.allCases, id: \.self) { behavior in
                             Text(LocalizedStringKey(behavior.rawValue)).tag(behavior)
