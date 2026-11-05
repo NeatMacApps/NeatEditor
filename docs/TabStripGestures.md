@@ -630,6 +630,34 @@ build or hit-testing results alone.
   both themes, overflow and minimum width; entering the button must not hide
   it or select/drag the tab, and closing must preserve existing save failures.
 
+### Hover-close verification and installation limit (2026-11-05)
+
+Source `0b5df2b`: 176 native arm64 tests pass in 23 suites, including close-button
+hit routing, no accidental selection, stable peer/title geometry, rename
+suppression and both themes in light/dark appearances. Debug analysis and a
+universal arm64/x86_64 Release build/analysis pass on Xcode 27.2 beta 2. The only
+retained build notice is the already assessed AppIntents metadata extraction
+notice in [code-review.md](code-review.md#verification); no compiler/analyzer or
+structured test-runtime warning remains. Intel runtime is not established.
+
+A fresh four-variant native component window compiled from these committed
+production tab sources was captured and inspected: × remains legible over the
+fade on short, long and CJK titles without changing the stepped geometry.
+Programmatically delivering enter events establishes rendering, not real pointer
+hover in the installed editor. The temporary component process was stopped.
+
+The installed 1.0.28 process refused a normal quit because an open document's
+source disappeared and Save Failed was presented. Preserve that unsaved buffer:
+no force quit, Don't Save, overwrite install or user-data change was performed.
+The installed executable therefore remains the prior build, and the actual
+installed hover path is still unverified. The new same-Developer-ID universal
+Release is handed off as
+`build/local-delivery/NeatEditor-hover-close-0b5df2b.zip` (SHA256
+`038ffdebfcdd813feb44130fbad94b9a281057210496e58f0c8538840612eeac`).
+Full logs, fingerprints and private captures (the save-failure capture contains
+user content and must not be published) remain in
+`~/.config/neateditor/verification/2026-11-05-editor-gestures/`.
+
 ## Interaction contract
 
 - Single click selects immediately; no multi-click recognition delay.
