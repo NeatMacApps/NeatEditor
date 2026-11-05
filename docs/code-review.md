@@ -5,6 +5,56 @@ AppKit text synchronization, preferences, accessibility, and local/public
 release tooling. Behavior requirements are recorded before implementation in
 [editing-text-sync-test-cases.md](editing-text-sync-test-cases.md).
 
+## Release-readiness review (2026-11-05)
+
+Scope: `v1.0.28..e298115`, including theme preferences/native repaint,
+regex search, CRLF gutter indexing, deferred external revisions, coordinated
+sidebar duplication and publisher guards. This is a review, not authorization
+or evidence of a new public release. The following findings remain **open**:
+
+| Priority | Finding and trigger | Required correction |
+|---|---|---|
+| P1 | Regex timeouts abandon computation, not its resource lifetime. Every query or document edit can launch another detached evaluator; cancellation/generation checks only reject its eventual result. Four deadline-expired injected evaluations remained active simultaneously after clearing search. The production evaluator with `(a+)+$` against 32 `a` characters plus `!` reported four timeouts but consumed 3.38 CPU seconds in 1.45 seconds of process lifetime. Repeated typing can accumulate CPU work and text snapshots even after search closes. | Bound active evaluation and pending work; a UI deadline must not be described as interruption or single-flight execution. Preserve stale-result rejection while preventing abandoned computations from accumulating. |
+| P2 | `EditorTextContainerView.finishSearch` uses the 2,000-entry highlight prefix for navigation too, including literal searches. With 3,000 `a ` matches and match 2,000 selected, Find Next selected offset 0 instead of the next match at offset 4,000. Later matches are silently unreachable. | Limit painting independently of navigation; retain access to all matches. |
+| P2 | Closed-file duplication now calls `publishStagedFile`, which unconditionally publishes with `FileManager.linkItem`. Previously this branch used `copyItem` directly. A Documents Folder on exFAT/FAT32 therefore gains an unsupported hard-link dependency and duplication fails. Original bytes are not overwritten. | Retain coordinated source reads and no-overwrite safety without requiring hard-link support for a previously supported copy operation. Add unsupported-filesystem coverage. |
+| P3 | `DocumentConcurrencyTests.boundedValue` races `task.value` inside a throwing task group. On deadline expiry the group still waits for its child awaiting the detached task; cancellation does not release that wait. The exact helper with a 50 ms deadline returned only when one-second work finished (1.045 seconds), so a coordination deadlock can still hang the suite. | Use a deadline mechanism whose caller can finish independently of non-cooperative work; test that deadline path explicitly. |
+
+The cancellation semantics are documented by Apple:
+[`Task.cancel()`](https://developer.apple.com/documentation/swift/task/cancel()).
+The [filesystem capabilities table](https://learn.microsoft.com/en-us/windows/win32/fileio/filesystem-functionality-comparison)
+identifies exFAT/FAT32 as lacking hard links. The copy regression is source/API
+analysis, **not** a mounted-exFAT reproduction: both task-owned image-creation
+routes were rejected, with the hdiutil retry reporting `Operation not permitted`.
+No test volume was attached and no existing disk was modified.
+
+Verification of the reviewed `e298115` source snapshot on Xcode 27.2
+(27B5028f), macOS 27.2 (26B123):
+
+- Fresh arm64 Debug `xcodebuild test`: 174 tests, 241 executions, zero failures,
+  skips or structured runtime warnings. These green tests do not cover the open
+  regressions above.
+- Universal Debug analysis and universal Release build/analysis passed; the
+  Release binary contains both arm64 and x86_64. No Swift compiler/analyzer
+  diagnostic was found. Complete logs retain the AppIntents metadata notice
+  individually assessed under [Sidebar review](#sidebar-review-2026-10-24).
+- All release-worktree fixtures passed, including appcast-only commits preserving
+  unrelated staged work. Read-only GitHub inspection still serves v1.0.28 with
+  the expected DMG, ZIP and checksum manifest. The project remains 1.0.28 (28);
+  no version bump, new changelog entry, tag or public upload was performed.
+
+Evidence: `~/.config/neateditor/development/release-review-20261105-pi/`
+(full diagnostics, xcresult bundles, receipts and non-presenting probes linked
+against the fresh Debug module). This run did not replace or interact with the
+installed app. Existing Theme Picker interaction, regex-status display, exact
+CRLF merge and deferred external-update installed-acceptance gaps in
+[the editing contract](editing-text-sync-test-cases.md) remain open. Native Intel,
+macOS 26 and iOS runtime behavior were not accepted; the independently changing
+iOS UI was outside this review's scope. Uncommitted application edits from an
+independent tab-hover/shared-palette task appeared after these checks; the results
+above do not validate that later candidate. Fix the open product findings
+and repeat the affected native and installed paths on the final combined source
+before releasing.
+
 ## External-writer safety research (2026-10-30)
 
 Historical research scope: documentation/source inspection only. The owner
