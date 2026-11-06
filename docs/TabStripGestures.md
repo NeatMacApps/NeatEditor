@@ -693,6 +693,32 @@ build or hit-testing results alone.
   both themes, overflow and minimum width; entering the button must not hide
   it or select/drag the tab, and closing must preserve existing save failures.
 
+### Hover-close re-verification (2026-11-06)
+
+Current source `87bf3a9`: 200 arm64 tests pass, including the native button hit
+route, no accidental selection, rename suppression and all four palette states.
+Debug static analysis and universal arm64/x86_64 Release build/analysis pass.
+The first Debug build hit an unavailable Apple timestamp service; the unchanged
+signed retry passed. The only retained build notice is the already assessed
+AppIntents metadata extraction notice; no Swift/compiler/analyzer warning was
+introduced.
+
+A freshly compiled component window reuses the current production tab sources.
+Its inspected capture shows the trailing × and filename fade on short, long and
+CJK peers in both themes/light-dark appearances. Enter events were delivered
+programmatically, so this is component rendering and hit-routing evidence, not
+real pointer acceptance in the installed workspace.
+
+The installed 1.0.29 (29), signed with the same Developer ID, is displaying
+Save Failed for an open document whose source disappeared. Do not choose Don't
+Save, force-quit or overwrite it to make a hover test pass: preserve that buffer.
+The session became locked before native pointer verification; the installed
+hover path remains unaccepted. No product source change or public release was
+needed for the already implemented close/fade. The current universal Release
+artifact remains available in `build/ParityDerivedData/Build/Products/Release/`.
+Full logs and the fresh component capture are under
+`~/.config/neateditor/verification/2026-11-06-mobile-parity/8308b07e/`.
+
 ### Hover-close verification and installation limit (2026-11-05)
 
 Source `0b5df2b`: 176 native arm64 tests pass in 23 suites, including close-button
