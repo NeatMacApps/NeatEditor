@@ -571,8 +571,8 @@ build or hit-testing results alone.
 - SwiftUI applies the custom background but also sets
   `titlebarAppearsTransparent = true`. Reassert `false` on native split-view
   layout and `NSWindow.didUpdateNotification` after the preference applies.
-  The preference can arrive after layout without invalidating the split view. A scene probe with active-application
-  drawing reproduced the old white cap, then showed the same rendered color
+  The preference can arrive after layout without invalidating the split view.
+  A scene probe with active-application drawing reproduced the old white cap, then showed the same rendered color
   behind the traffic lights and inactive tabs with the custom style and opaque
   titlebar together. Native toolbar blank hits remain outside content. Do not
   modify private chrome views, manually position traffic lights, hide the
@@ -588,8 +588,17 @@ build or hit-testing results alone.
   including rendered peer-color equality, opaque compact chrome and native
   blank-region hits. Its application-active state is simulated; actual installed
   key-window pointer/double-click acceptance remains open under screen lock.
-  Full logs and private/component images are retained under
-  `~/.config/neateditor/verification/2026-11-06-top-band/`.
+  A universal Release from source `0b34f29` was installed at
+  `/Applications/NeatEditor.app` with the existing Developer ID team. Installed
+  and product executable SHA256 match
+  `626c8f742f0548331e855a1152e4a0df48e60702385242cf8eef3a1825b0fa2c`;
+  strict nested signature verification passes. Fresh installed-window captures
+  show a continuous top band with the sidebar expanded and collapsed. The real
+  sidebar menu command toggled both ways and its initial state was restored.
+  These are live inactive-window pixels, not key-window pointer acceptance.
+  This remains a local unnotarized 1.0.29 source build; no public release or
+  appcast change was made. Full logs and private/component images are retained
+  under `~/.config/neateditor/verification/2026-11-06-top-band/`.
 - Reproduce the scene fixture after the Debug build, from the repository root:
 
   ```bash
