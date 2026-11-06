@@ -3,6 +3,42 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.29</title>
+            <pubDate>Fri, 06 Nov 2026 10:24:07 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>29</sparkle:version>
+            <sparkle:shortVersionString>1.0.29</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.29
+
+
+### Added
+
+- Warm and White / Black editor themes, with a close button revealed when hovering over a document tab.
+
+### Changed
+
+- Regular-expression search uses the system ICU syntax and can stop long-running or superseded matching.
+
+### Fixed
+
+- Find Next can reach matches beyond the 2,000-highlight painting budget.
+- File duplication retains coordinated reads and can use exclusive rename when hard links are unavailable. Unsupported exclusive operations fail safely without overwriting another file.
+- Renaming a document no longer overwrites a different file created concurrently at the destination.
+- CRLF edits keep line numbers consistent, and deferred external changes are not recorded as applied before reaching the editor.
+
+### 简体中文
+
+- 新增暖色和纯白 / 纯黑编辑器主题，鼠标悬停文档标签时显示关闭按钮。
+- 正则搜索改用系统 ICU 语法，可停止耗时或已过时的匹配计算。
+- “查找下一处”不再受 2,000 处高亮绘制上限限制。
+- 文件复制保留协调读取；硬链接不可用时可使用原子独占重命名。不支持安全发布操作时保留其他文件并报错，不会覆盖。
+- 重命名文档时，不再覆盖刚被其他程序创建的同名文件。
+- 修复 CRLF 编辑后的行号一致性，以及外部内容尚未应用到编辑器时被提前记录为已同步的问题。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.29/NeatEditor-1.0.29.zip" length="5719564" type="application/octet-stream" sparkle:edSignature="7K2lHQIFmg41/+iAonj0YKJ4N9d7yqaZ2CIy2g3a+B4f//fATAHXb3OLSmQA3b74dNkHzaGphmRSq2RVSildAA=="/>
+        </item>
+        <item>
             <title>1.0.28</title>
             <pubDate>Wed, 04 Nov 2026 15:02:45 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
@@ -213,28 +249,6 @@
 - 去掉 1.0.19 在第一个标签前多出的一段色块，第一个标签的弧线现在正好收在侧边栏边缘。
 ]]></description>
             <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.20/NeatEditor-1.0.20.zip" length="3675989" type="application/octet-stream" sparkle:edSignature="A49p+fmQe/oE8GwO6VuDsnHTo6jvZFjFMSH04ptI2au5UP2q93OBPx1qiHEnJ90QCA30f/UIBcAcTk2kjAflAA=="/>
-        </item>
-        <item>
-            <title>1.0.19</title>
-            <pubDate>Tue, 27 Oct 2026 14:59:23 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatEditor</link>
-            <sparkle:version>19</sparkle:version>
-            <sparkle:shortVersionString>1.0.19</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.19
-
-
-### Fixed
-
-- Double-clicking or dragging any empty part of the top row, including above the sidebar, above the tabs and after the last tab, now reaches the native window titlebar: it resizes the window according to your Desktop & Dock setting and moves the window.
-- Keep the selected first tab's outline continuous with the editor's top line. The tab's lower curve was clipped at the edge of the editor column, so the line appeared broken next to the sidebar or the sidebar button.
-
-### 简体中文
-
-- 双击或拖动顶部一行的任意空白处（包括侧边栏上方、标签上方和最后一个标签之后）现在都交给系统标题栏处理：按"桌面与程序坞"设置缩放窗口，并可拖动窗口。
-- 修复选中第一个标签时轮廓线与编辑区顶部线条断开的问题。此前标签底部的弧线在编辑区边缘被裁掉，侧边栏或侧边栏按钮旁会出现断线。
-]]></description>
-            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.19/NeatEditor-1.0.19.zip" length="3675026" type="application/octet-stream" sparkle:edSignature="Gw22qZEdTzgYOJOt7RCDMoDQULe5BLMorVMFd/hvLZcYskSIV8dlqbQtH1iQxONMhbrFfE9tOPOgdXGsLDdzBg=="/>
         </item>
         <item>
             <title>1.0.14</title>
