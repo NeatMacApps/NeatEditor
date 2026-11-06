@@ -6,6 +6,8 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## Unreleased
 
+## 1.0.29 - 2026-11-06
+
 ### Added
 
 - Warm and White / Black editor themes, with a close button revealed when hovering over a document tab.

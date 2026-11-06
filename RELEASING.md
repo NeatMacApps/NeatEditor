@@ -9,6 +9,18 @@ person with access can download them: authentication is access control,
 not confidentiality). It never creates, uploads to, or
 modifies a public GitHub Release.
 
+## 1.0.29 owner-directed publication (2026-11-06)
+
+The owner requested public publication of the integrated fixes. Prepare version
+1.0.29 / build 29 from the accepted application inputs in `f7fee8d`, without
+changing functionality or dependencies. Reuse the complete combined-source gates
+recorded in [code-review.md](docs/code-review.md#integrated-repair-acceptance-2026-11-05),
+then verify the versioned universal archive, published bytes, signed update feed,
+Homebrew Cask and installed final stapled app. Locked-session pointer/field,
+Settings, real exFAT/FAT32, native Intel, macOS 26 and iOS runtime acceptance
+remain explicitly deferred; publication does not turn those limits into passes.
+Private installed-window evidence must not be published.
+
 ## Durable release requirements
 
 R1 — Committed clean source before build. The coordinator commits only its
