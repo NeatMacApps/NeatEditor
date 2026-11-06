@@ -11,15 +11,60 @@ modifies a public GitHub Release.
 
 ## 1.0.29 owner-directed publication (2026-11-06)
 
-The owner requested public publication of the integrated fixes. Prepare version
-1.0.29 / build 29 from the accepted application inputs in `f7fee8d`, without
-changing functionality or dependencies. Reuse the complete combined-source gates
-recorded in [code-review.md](docs/code-review.md#integrated-repair-acceptance-2026-11-05),
-then verify the versioned universal archive, published bytes, signed update feed,
-Homebrew Cask and installed final stapled app. Locked-session pointer/field,
-Settings, real exFAT/FAT32, native Intel, macOS 26 and iOS runtime acceptance
-remain explicitly deferred; publication does not turn those limits into passes.
-Private installed-window evidence must not be published.
+Published [v1.0.29](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.29)
+(build 29) from immutable source `ff6a42ba61a32050809ca87555d651b983367195`;
+appcast commit `1a335ca`. The owner requested publication of the integrated fixes.
+Comparison of all 87 recorded build inputs found only the marketing/build-number
+changes in `project.yml` and the generated project; application inputs and
+pinned dependencies match the accepted `f7fee8d` source. The complete combined
+199-test / 273-execution gates in
+[code-review.md](docs/code-review.md#integrated-repair-acceptance-2026-11-05)
+were reused, not rerun or represented as new versioned test executions.
+
+The maintained detached publisher completed a fresh universal Release archive,
+Developer ID export, nested signing checks, both notarizations, stapling,
+draft download/byte comparison, publication and appcast push. Apple accepted app
+submission `49e40fea-9b97-497a-a82f-4a05ddacb37d` and DMG submission
+`3193b0e4-b57a-4c0f-9f77-066e74ccc7b3`. The sole archive warning was the existing
+AppIntents metadata-extraction notice: this target declares no intents, no
+metadata is required for these changes, and no suppression was added. Its
+retained risk and adoption follow-up remain in the linked review.
+
+Independent anonymous full downloads matched exactly the three local artifacts
+and checksum manifest. GitHub Latest and the normal installed `SUFeedURL`
+advertise 1.0.29 / build 29, with the correct ZIP length and English-first bilingual
+notes matching CHANGELOG and the Release body. The update ZIP's Ed25519 signature
+verified against the app's public key; a one-byte-modified archive was rejected.
+The existing appcast itself is unsigned (`SURequireSignedFeed` is unset); this
+release does not claim feed authentication or change updater policy.
+
+| Published artifact | SHA256 |
+|---|---|
+| `NeatEditor-1.0.29.dmg` | `e5a0d429dc79556aa3e73c1be836c12ca1962d77a1a5f679f1828df1f5644f00` |
+| `NeatEditor-1.0.29.zip` | `d73468d103b7f8af1dbd9dd19727ff0937d5f3777134fe8a43081c58cb13e5b2` |
+
+Homebrew Cask version/hash were published in `x0c/homebrew-tap` commit `a11a693`.
+Style, online audit and info passed; anonymous Cask readback matched. Unrelated
+tap README edits were preserved byte-for-byte and excluded from the commit.
+
+The app from the anonymous downloaded DMG matched the exported app's complete
+file/symlink catalog. It was installed at `/Applications/NeatEditor.app` after
+normal termination, with no force quit or discard, retaining team `SHZQ3MWP3B`.
+Installed version/build read back as 1.0.29 (29), with executable SHA256
+`6f5e52d58a2bd037bea394762416928377f6f7c9b224ef134aaf5890bd412ada`.
+Strict nested signatures and app/DMG tickets passed. `spctl` reported Notarized
+Developer ID with `override=security disabled`; this Mac therefore does not prove
+normal Gatekeeper enforcement. No security setting was changed.
+
+Fresh installed-window pixels showed a newly opened disposable English/Chinese/
+emoji document. A targeted Close Tab command removed it and a second inspected
+frame showed the original selected document restored. The task-mounted DMG was
+ejected; no virtual display was connected. Evidence and complete publisher/Cask
+logs are private at `~/.config/neateditor/development/release-1.0.29/`.
+Installed screenshots contain private sidebar content and must not be published.
+Locked-session pointer/field, Settings, full installed regex timeout/navigation,
+real exFAT/FAT32, native Intel, macOS 26 and iOS runtime acceptance remain deferred;
+publication does not turn those limits into passes.
 
 ## Durable release requirements
 

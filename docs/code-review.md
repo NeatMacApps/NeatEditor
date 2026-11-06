@@ -80,8 +80,11 @@ establishes the rejected primitive; `accepted-*.log` and
 `accepted-probe-receipt.json` establish the current repair. The earlier recursive
 `native.log` is a failed diagnostic fixture, not product evidence.
 
-The local artifact remains version 1.0.28 (28); `CHANGELOG.md` contains bilingual
-Unreleased notes. No tag, notarization or public release was performed.
+At the repair gate, the local artifact remained version 1.0.28 (28), with
+bilingual Unreleased notes and no new public release. The owner subsequently
+requested publication; [1.0.29 release evidence](../RELEASING.md#1029-owner-directed-publication-2026-11-06)
+records the versioned archive, public downloads, Cask, final installation and
+remaining acceptance limits. The original repair gate alone is not release evidence.
 
 ### Local delivery (2026-11-06)
 
