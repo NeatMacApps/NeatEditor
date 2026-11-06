@@ -715,7 +715,10 @@ Save, force-quit or overwrite it to make a hover test pass: preserve that buffer
 The session became locked before native pointer verification; the installed
 hover path remains unaccepted. No product source change or public release was
 needed for the already implemented close/fade. The current universal Release
-artifact remains available in `build/ParityDerivedData/Build/Products/Release/`.
+artifact remains available in `build/ParityDerivedData/Build/Products/Release/`
+and the same-Developer-ID, non-notarized local handoff ZIP
+`build/local-delivery/NeatEditor-873dbe7-local.zip`. The component process exited
+and no task-owned virtual display remains connected (none was needed).
 Full logs and the fresh component capture are under
 `~/.config/neateditor/verification/2026-11-06-mobile-parity/8308b07e/`.
 
