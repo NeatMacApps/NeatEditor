@@ -594,8 +594,11 @@ build or hit-testing results alone.
   `626c8f742f0548331e855a1152e4a0df48e60702385242cf8eef3a1825b0fa2c`;
   strict nested signature verification passes. Fresh installed-window captures
   show a continuous top band with the sidebar expanded and collapsed. The real
-  sidebar menu command toggled both ways and its initial state was restored.
-  These are live inactive-window pixels, not key-window pointer acceptance.
+  sidebar menu command established collapse; repeated locked-session restore
+  commands did not establish expansion. The original expanded preference was
+  restored after normal quit, then a fresh installed launch/capture confirmed
+  expansion. These are live inactive-window pixels, not key-window pointer
+  acceptance.
   This remains a local unnotarized 1.0.29 source build; no public release or
   appcast change was made. Full logs and private/component images are retained
   under `~/.config/neateditor/verification/2026-11-06-top-band/`.
