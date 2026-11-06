@@ -41,6 +41,10 @@ struct WorkspaceView: View {
             theme: workspaceStore.preferences.editorTheme
         )
         .ignoresSafeArea(.container, edges: .top)
+        .toolbarBackground(EditorChrome.tabBarBackground(for: workspaceStore.preferences.editorTheme),
+                           for: .windowToolbar)
+        .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
+        .toolbar(removing: .title)
         .background {
             WindowPinningView(isWindowPinned: isWindowPinned)
         }

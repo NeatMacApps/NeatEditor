@@ -554,9 +554,60 @@ build or hit-testing results alone.
   `NSSplitViewController` in the Xcode 27.2 SDK); achieving it would mean
   replacing the native sidebar glass with a custom panel, which the native-UI
   standard prohibits without an explicit owner exception.
-- Acceptance: key-window owner check of the top-left area and of double-click
-  above the sidebar and behind the traffic lights; the locked session gives
-  only inactive pixels and hit-test routing.
+- Owner correction (2026-11-06): the traffic-light/sidebar-button region must
+  match the uninterrupted inactive-tab band, including when the sidebar is
+  collapsed and the window is key. An inactive-window screenshot that hides
+  the native white cap does not accept this requirement. The selected stepped
+  tab still matches the editor surface; no geometry or gesture change is requested.
+- Inspected reference: `WorkspaceView`, `WorkspaceSplitViewController` and
+  `TabBandBackgroundView`. Retain their compact native toolbar, accessories and
+  theme palette. Use SwiftUI's public
+  [`toolbarBackground(_:for:)`](https://developer.apple.com/documentation/swiftui/view/toolbarbackground(_:for:))
+  on `.windowToolbar`, with `.visible` background visibility and the same
+  `EditorChrome` band token. The API is present in Xcode 27.2 (macOS 13+).
+  A real SwiftUI `Window` scene is required: a standalone `NSHostingController`
+  does not apply this window-toolbar preference. The existing split-view
+  background alone cannot cover opaque active native chrome.
+- SwiftUI applies the custom background but also sets
+  `titlebarAppearsTransparent = true`. Reassert `false` on native split-view
+  layout and `NSWindow.didUpdateNotification` after the preference applies.
+  The preference can arrive after layout without invalidating the split view. A scene probe with active-application
+  drawing reproduced the old white cap, then showed the same rendered color
+  behind the traffic lights and inactive tabs with the custom style and opaque
+  titlebar together. Native toolbar blank hits remain outside content. Do not
+  modify private chrome views, manually position traffic lights, hide the
+  toolbar background or repeat the `.hiddenTitleBar` regression.
+- Acceptance: inspect the top-left and inactive-tab-band pixels in the same
+  key-window capture, light/dark and both themes, sidebar open/closed; retain
+  native blank-titlebar hit routing. Locked-session inactive pixels alone leave
+  key-window visual acceptance open.
+- Verification (2026-11-06): 200 tests / 23 suites pass on arm64. Fresh universal
+  Debug and Release build/analysis pass; only the previously assessed AppIntents
+  metadata notice remains (`docs/code-review.md`). The scene fixture passes all
+  16 combinations of two themes, light/dark, sidebar open/closed and 470/900 pt,
+  including rendered peer-color equality, opaque compact chrome and native
+  blank-region hits. Its application-active state is simulated; actual installed
+  key-window pointer/double-click acceptance remains open under screen lock.
+  Full logs and private/component images are retained under
+  `~/.config/neateditor/verification/2026-11-06-top-band/`.
+- Reproduce the scene fixture after the Debug build, from the repository root:
+
+  ```bash
+  product="$PWD/build/TopBand/Build/Products/Debug"
+  swiftc -parse-as-library -swift-version 6 -I "$product" -F "$product" \
+    Tests/Fixtures/WorkspaceChromeProbe.swift \
+    "$product/NeatEditor.app/Contents/MacOS/NeatEditor.debug.dylib" \
+    -o /tmp/neateditor-workspace-chrome-probe
+  DYLD_FRAMEWORK_PATH="$product" \
+  DYLD_LIBRARY_PATH="$product/NeatEditor.app/Contents/MacOS" \
+    /tmp/neateditor-workspace-chrome-probe --matrix
+  ```
+
+  Optional `NEATEDITOR_CHROME_OUTPUT=/tmp/chrome.png` retains component images;
+  keep output paths out of launch arguments. The fixture uses an isolated
+  temporary documents folder/defaults suite and removes them on success/failure.
+  Scene-owned preference scope, active/inactive evidence and native routing
+  caveats are maintained in the [shared macOS guide](~/.config/agentsync/docs/MACOS_APP_DEVELOPMENT_GUIDE.md#scene-owned-toolbar-backgrounds-verified-2026-11-06).
 
 ## First-tab join clearance (owner report 2026-10-27)
 

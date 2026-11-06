@@ -296,6 +296,28 @@ struct WorkspaceTitlebarTests {
         #expect(abs(strip.convert(strip.bounds, to: nil).minY - window.contentLayoutRect.maxY) < 0.5)
     }
 
+    @Test("native toolbar stays opaque after SwiftUI applies a custom background", arguments: [true, false])
+    func retainsOpaqueTitlebarAfterStyleUpdate(sidebarVisible: Bool) throws {
+        let window = makeWindow(sidebarVisible: sidebarVisible)
+        defer { window.close() }
+        let controller = try #require(window.contentViewController as? WorkspaceSplitViewController)
+        let toolbar = try #require(window.toolbar)
+        let accessories = window.titlebarAccessoryViewControllers
+        for _ in 0..<3 {
+            // SwiftUI updates its native background after the first attachment.
+            window.titlebarAppearsTransparent = true
+            controller.view.needsLayout = true
+            controller.view.layoutSubtreeIfNeeded()
+            #expect(!window.titlebarAppearsTransparent)
+            #expect(window.toolbar === toolbar)
+            #expect(window.titlebarAccessoryViewControllers == accessories)
+            #expect(window.frame.height - window.contentLayoutRect.height == EditorTabLayout.stripHeight)
+            window.titlebarAppearsTransparent = true
+            NotificationCenter.default.post(name: NSWindow.didUpdateNotification, object: window)
+            #expect(!window.titlebarAppearsTransparent)
+        }
+    }
+
     private func findStrip(in window: NSWindow) -> EditorTabStripView? {
         let accessories = window.styleMask.contains(.titled)
             ? window.titlebarAccessoryViewControllers.map(\.view) : []

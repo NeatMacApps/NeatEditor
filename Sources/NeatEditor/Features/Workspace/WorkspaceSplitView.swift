@@ -160,6 +160,8 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
                                                       object: attachedWindow)
             NotificationCenter.default.removeObserver(self, name: NSWindow.didExitFullScreenNotification,
                                                       object: attachedWindow)
+            NotificationCenter.default.removeObserver(self, name: NSWindow.didUpdateNotification,
+                                                      object: attachedWindow)
         }
         detailController.moveTabBand(to: nil)
         tabAccessory.removeFromParent()
@@ -171,12 +173,15 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     }
 
     private func attachToWindow() {
-        guard let window = view.window, attachedWindow !== window else { return }
+        guard let window = view.window else { return }
+        // SwiftUI's toolbar background preference can reset this after attachment.
+        // Keep its color, but leave blank hits with the native opaque toolbar.
+        if window.titlebarAppearsTransparent {
+            window.titlebarAppearsTransparent = false
+        }
+        guard attachedWindow !== window else { return }
         attachedWindow = window
         window.titleVisibility = .hidden
-        // Native chrome must receive blank clicks: an opaque titlebar's toolbar view
-        // owns double-click and drag. A transparent one hands them to content.
-        window.titlebarAppearsTransparent = false
         // The band color also shows around the floating sidebar panel; the
         // editor column paints its own light surface.
         window.backgroundColor = EditorChrome.tabBarBackgroundColor(for: configuration.theme)
@@ -202,7 +207,16 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
             self, selector: #selector(didExitFullScreen(_:)),
             name: NSWindow.didExitFullScreenNotification, object: window
         )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(preserveOpaqueTitlebar(_:)),
+            name: NSWindow.didUpdateNotification, object: window
+        )
         detailController.view.needsLayout = true
+    }
+
+    @objc private func preserveOpaqueTitlebar(_ notification: Notification) {
+        guard let window = attachedWindow, window.titlebarAppearsTransparent else { return }
+        window.titlebarAppearsTransparent = false
     }
 
     @objc private func didEnterFullScreen(_ notification: Notification) {
