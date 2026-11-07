@@ -6,6 +6,23 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## Unreleased
 
+## 1.0.30 - 2026-11-07
+
+### Changed
+
+- Menus and settings choices show icon and label together: the application commands, sidebar and document context menus, the three settings pickers and the update actions. macOS 27 hides menu symbols by default, so each item asks for its icon explicitly.
+
+### Fixed
+
+- Dragging the window works from the whole top region again, including the sidebar column above the file list and the gutter above the tabs. Buttons, tabs, rename fields and context menus keep their own clicks, and blank double-clicks still follow the system zoom or minimize preference.
+- Documents refresh in the editor after another program saves a change to the same file, instead of showing stale text until the tab is switched.
+
+### 简体中文
+
+- 菜单和设置选项统一使用图标加文字：应用菜单、侧栏与文档右键菜单、三个设置选择项以及更新操作都显示对应图标。macOS 27 默认隐藏菜单图标，因此每一项都显式声明显示。
+- 窗口顶部整片区域都能拖动窗口，包括侧栏文件列表上方和标签上方的空白；按钮、标签、重命名输入框和右键菜单保持各自行为，空白处双击仍按系统偏好缩放或最小化。
+- 其他程序保存对同一文件的修改后，编辑器会刷新内容，不再停留在旧文本直到切换标签。
+
 ## 1.0.29 - 2026-11-06
 
 ### Added
