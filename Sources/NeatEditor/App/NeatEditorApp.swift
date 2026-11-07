@@ -51,6 +51,9 @@ struct NeatEditorApp: App {
         // Opaque native titlebar: its toolbar view owns blank-titlebar double-click
         // and drag. WorkspaceSplitView paints the band over its section backgrounds.
         .windowStyle(.titleBar)
+        // The AppKit bridge limits eligibility to the top row on each press.
+        // SwiftUI's automatic scene policy otherwise blocks that native path.
+        .windowBackgroundDragBehavior(.enabled)
         .defaultSize(width: 800, height: 600)
         .commands {
             NeatEditorUpdateCommands()
