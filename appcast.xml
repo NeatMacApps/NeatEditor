@@ -3,6 +3,30 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.31</title>
+            <pubDate>Sat, 07 Nov 2026 19:12:48 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>31</sparkle:version>
+            <sparkle:shortVersionString>1.0.31</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.31
+
+
+### Fixed
+
+- Dragging the window from the whole top region follows the pointer again: the band uses AppKit's native window drag instead of moving the frame per event, so it no longer stalls, jitters or lags behind the pointer.
+- Blank double-click keeps the system zoom or minimize preference, clicking the top region focuses the window, and both upper corners resize again.
+- Tabs still separate a click from a drag at four points, and the buttons, rename field and context menus keep their own events.
+
+### 简体中文
+
+- 顶部整片区域拖动窗口恢复跟手：改由 AppKit 原生窗口拖动处理，不再逐帧设置窗口位置，因此不再卡顿、抖动或落后于指针。
+- 空白处双击仍按系统偏好缩放或最小化，点击顶部会聚焦窗口，两个上角也能缩放。
+- 标签依然以 4 点为界区分点击与拖动，按钮、重命名输入框和右键菜单保持各自行为。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.31/NeatEditor-1.0.31.zip" length="5746582" type="application/octet-stream" sparkle:edSignature="3KYaooNglyk2C9lsgqeAndvV9WHN7QtKU2qBKO0E3Opz0WqMW6pxQkXSou+PcOOsS5d1vYxUc4sM7Aw02/z7Cw=="/>
+        </item>
+        <item>
             <title>1.0.30</title>
             <pubDate>Sat, 07 Nov 2026 17:51:57 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
@@ -232,28 +256,6 @@
 - 隐藏侧边栏时，红绿灯按钮后面的顶部区域使用标签栏颜色，不再露出编辑区的白色底色。
 ]]></description>
             <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.22/NeatEditor-1.0.22.zip" length="3680883" type="application/octet-stream" sparkle:edSignature="b1vP7xQMD9bHl6z+fUHDsPzrlOT00nyAV4+4B/q1PAaA/di1dczirqrEDYTscsXglA57t6huvgxnk3jbGfOZBg=="/>
-        </item>
-        <item>
-            <title>1.0.21</title>
-            <pubDate>Tue, 27 Oct 2026 16:04:37 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatEditor</link>
-            <sparkle:version>21</sparkle:version>
-            <sparkle:shortVersionString>1.0.21</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.21
-
-
-### Fixed
-
-- Let the sidebar reach the top of the window again behind the window controls. Since 1.0.19 the active window showed a white bar above the sidebar.
-- Keep double-click and drag on empty parts of the top row working with the restored sidebar, including above the sidebar and beside the window controls when the sidebar is hidden.
-
-### 简体中文
-
-- 侧边栏重新铺到窗口顶部，红绿灯按钮后面也是侧边栏。自 1.0.19 起，激活状态的窗口在侧边栏上方会出现一块白色区域。
-- 侧边栏恢复后，双击或拖动顶部一行的空白处仍然有效，包括侧边栏上方，以及隐藏侧边栏时红绿灯按钮旁边的空白处。
-]]></description>
-            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.21/NeatEditor-1.0.21.zip" length="3678976" type="application/octet-stream" sparkle:edSignature="mmPgoRK20cB2OjVs7vA6OU12XAcUvoJBHrQ3n7AWXGAei2tQR0Yk6Ildtxw033MEWSXDh6W5C2GqAATXovV8DA=="/>
         </item>
         <item>
             <title>1.0.14</title>
