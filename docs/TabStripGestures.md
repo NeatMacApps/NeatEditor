@@ -781,6 +781,16 @@ change): top-band drags measured +71/+35 pt over sidebar blank, tab gutter and
 trailing blank; dragging the editor background moved 0/0 pt; blank double-click
 zoomed 988×563 → 2228×1266 and restored; the upper-left corner resized
 988×563 → 952×590 while the upper-right corner kept its press.
+
+Click-to-focus on an inactive window remains unverified by automation: posted
+`CGEvent` clicks did not change application activation on this host, including a
+click on Finder's own titlebar, so the probe cannot distinguish a product defect
+from a synthetic-input limit. Because the band gate no longer consumes presses,
+native first-click activation applies; confirm with a real pointer. The shared
+reusable rules (scene opt-in, opaque-toolbar blocker, `performDrag` failure,
+this verification limit) live in
+[macos-appkit-gotchas.md](~/Codes/_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md#whole-content-background-dragging-in-a-swiftui-window-scene).
+Publication and Cask evidence: [RELEASING.md](../RELEASING.md#1031-publication-evidence-2026-11-07).
 Apple's [scene contract](https://developer.apple.com/documentation/swiftui/scene/windowbackgrounddragbehavior(_:))
 and the installed SwiftUI SDK expose this public API. Leave every event in normal delivery;
 the monitor only enables/disables native eligibility before window dispatch.
@@ -794,8 +804,7 @@ do not read `AppleActionOnDoubleClick` or emulate zoom/miniaturize.
 
 Inspected reference: Ghostty's
 [`WindowDragView.mouseDown`](https://github.com/ghostty-org/ghostty/blob/main/macos/Sources/Features/Terminal/Window%20Styles/TitlebarTabsVenturaTerminalWindow.swift)
-uses `performDrag(with:)` for single presses and forwards multiple clicks.
-Do not copy its private hierarchy manipulation, traffic-light layout or
+uses `performDrag(with:)` for single presses and forwards multiple clicks.Do not copy its private hierarchy manipulation, traffic-light layout or
 appearance. Direct `performDrag` was also evaluated but failed on this Mac:
 a separate native control app reproduced zero movement with WindowServer's
 `no client initiated window drag trait gesture to activate for mouse`; native

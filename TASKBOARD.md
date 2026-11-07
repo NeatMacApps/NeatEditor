@@ -4,4 +4,3 @@
 
 | 任务 | 状态 | 影响范围 | 开始 | 最近更新 | 备注 |
 |---|---|---|---|---|---|
-| Repair whole-top native window dragging and regressions | 进行中 | TopBandDragController, WorkspaceSplitView, EditorTabStripView+Interaction, titlebar tests/docs, release files; Xcode/AppKit/Sparkle | 18:23 | 2026-11-07 18:23 | Resume interrupted repair; native Window Server drag, no per-frame window movement |

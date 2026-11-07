@@ -111,6 +111,46 @@ Remaining limits: light appearance, a second display, native Intel execution and
 macOS 26 runtime were not exercised for this release; iOS 1.0.30 parity for the
 menu label style was built but has no device acceptance in this session.
 
+## 1.0.31 publication evidence (2026-11-07)
+
+Published [v1.0.31](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.31)
+(build 31) from immutable source `56d405c`; appcast commit `60a2f94`. The owner
+requested a repair release after the 1.0.30 top-band dragging was rejected for
+jitter and for breaking blank double-click and corner resizing.
+
+207 arm64 tests / 24 suites passed; Debug analysis and the publisher's universal
+Release build passed with no Swift compiler or analyzer warning beyond the
+assessed AppIntents metadata notice. The publisher completed archive, Developer
+ID export, nested signing checks, both notarizations, byte comparison,
+publication and the appcast push. Log:
+`build/release-logs/publish-20261107-191100.log`.
+
+| Published artifact | SHA256 |
+|---|---|
+| `NeatEditor-1.0.31.dmg` | `d5ade0d3ccfd150709233e63271ce65065f70fe3d3a1317fb0beeb526a5c10e1` |
+| `NeatEditor-1.0.31.zip` | `cee4c2a89643fd8158fbf2431f503eff48593c1eaec0ae538fe38ca9262a2f37` |
+
+Anonymous `gh release download` of the DMG matched `SHA256SUMS.txt`; the mounted
+app passed strict signature verification, `spctl` (`source=Notarized Developer
+ID`), and now installs at `/Applications/NeatEditor.app` as 1.0.31 (31) with
+executable SHA256 `db85da84caf547d2082097e5003ddd71e0c8fee7b27fcd3eda2b61481319521c`.
+The live raw appcast serves `<sparkle:version>31</sparkle:version>` with the
+1.0.31 ZIP length. Homebrew Cask 1.0.31 was published in `x0c/homebrew-tap`
+commit `9e106a9`; `brew style`, `brew audit --online` and `brew info` report
+1.0.31 after `brew update`.
+
+First publication attempt at 19:03 aborted on the publish lock left by an
+earlier killed run; removing `build/release/.publish-lock` after confirming no
+publisher process was running let the same commit publish. No partial remote
+write had occurred.
+
+Pointer acceptance on the installed release: top-band drags of +71/+35 pt from
+sidebar blank, tab gutter, trailing blank and a tab body; editor-background drag
+0/0 pt; blank double-click 988×563 → 2228×1266 and back; upper-left corner
+resize 988×563 → 952×590. Click-to-focus on an inactive window could not be
+verified here: posted clicks did not change activation even on Finder's titlebar,
+so this environment cannot prove it either way (see `docs/TabStripGestures.md`).
+
 ## Durable release requirements
 
 R1 — Committed clean source before build. The coordinator commits only its
