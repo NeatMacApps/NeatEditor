@@ -3,6 +3,33 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.30</title>
+            <pubDate>Sat, 07 Nov 2026 17:51:57 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>30</sparkle:version>
+            <sparkle:shortVersionString>1.0.30</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.30
+
+
+### Changed
+
+- Menus and settings choices show icon and label together: the application commands, sidebar and document context menus, the three settings pickers and the update actions. macOS 27 hides menu symbols by default, so each item asks for its icon explicitly.
+
+### Fixed
+
+- Dragging the window works from the whole top region again, including the sidebar column above the file list and the gutter above the tabs. Buttons, tabs, rename fields and context menus keep their own clicks, and blank double-clicks still follow the system zoom or minimize preference.
+- Documents refresh in the editor after another program saves a change to the same file, instead of showing stale text until the tab is switched.
+
+### 简体中文
+
+- 菜单和设置选项统一使用图标加文字：应用菜单、侧栏与文档右键菜单、三个设置选择项以及更新操作都显示对应图标。macOS 27 默认隐藏菜单图标，因此每一项都显式声明显示。
+- 窗口顶部整片区域都能拖动窗口，包括侧栏文件列表上方和标签上方的空白；按钮、标签、重命名输入框和右键菜单保持各自行为，空白处双击仍按系统偏好缩放或最小化。
+- 其他程序保存对同一文件的修改后，编辑器会刷新内容，不再停留在旧文本直到切换标签。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.30/NeatEditor-1.0.30.zip" length="5748109" type="application/octet-stream" sparkle:edSignature="wwN+SsloFawSDLQb0BKCm9kg6PGWp57+Aks+3HOjTuIqTFYYlGdfYyXwk4gbkKE/hcBCgTdUXRTFeNGmHNqkBA=="/>
+        </item>
+        <item>
             <title>1.0.29</title>
             <pubDate>Fri, 06 Nov 2026 10:24:07 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
@@ -227,28 +254,6 @@
 - 侧边栏恢复后，双击或拖动顶部一行的空白处仍然有效，包括侧边栏上方，以及隐藏侧边栏时红绿灯按钮旁边的空白处。
 ]]></description>
             <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.21/NeatEditor-1.0.21.zip" length="3678976" type="application/octet-stream" sparkle:edSignature="mmPgoRK20cB2OjVs7vA6OU12XAcUvoJBHrQ3n7AWXGAei2tQR0Yk6Ildtxw033MEWSXDh6W5C2GqAATXovV8DA=="/>
-        </item>
-        <item>
-            <title>1.0.20</title>
-            <pubDate>Tue, 27 Oct 2026 15:30:57 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatEditor</link>
-            <sparkle:version>20</sparkle:version>
-            <sparkle:shortVersionString>1.0.20</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.20
-
-
-### Fixed
-
-- Rejoin the lower-left and lower-right curves of the selected tab with the line under the tab bar. In 1.0.19 the titlebar clipped the curves just above the line, so every selected tab's corners looked broken.
-- Remove the band-colored strip that 1.0.19 added before the first tab. The first tab's curve now ends exactly at the sidebar edge.
-
-### 简体中文
-
-- 修复选中标签左下角、右下角的弧线与标签栏下方线条断开的问题。1.0.19 中标题栏把弧线最底下一行截掉了，每个选中标签的两个下角看起来都是断的。
-- 去掉 1.0.19 在第一个标签前多出的一段色块，第一个标签的弧线现在正好收在侧边栏边缘。
-]]></description>
-            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.20/NeatEditor-1.0.20.zip" length="3675989" type="application/octet-stream" sparkle:edSignature="A49p+fmQe/oE8GwO6VuDsnHTo6jvZFjFMSH04ptI2au5UP2q93OBPx1qiHEnJ90QCA30f/UIBcAcTk2kjAflAA=="/>
         </item>
         <item>
             <title>1.0.14</title>
