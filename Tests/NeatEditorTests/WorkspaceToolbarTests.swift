@@ -212,12 +212,14 @@ struct WorkspaceTitlebarTests {
         #expect((rule.layer?.zPosition ?? 0) > 0)
     }
 
-    @Test("all blank titlebar regions invoke native window dragging without taking control hits",
+    @Test("blank titlebar hits reach native chrome through the complete content host",
           arguments: [true, false], [true, false])
     func blankTitlebarRouting(sidebarVisible: Bool, hosted: Bool) throws {
         let window = makeWindow(sidebarVisible: sidebarVisible, hosted: hosted)
         defer { window.close() }
         window.contentView?.layoutSubtreeIfNeeded()
+        let content = try #require(window.contentView)
+        let root = try #require(content.superview)
         let strip = try #require(findStrip(in: window))
         let plus = try #require(strip.subviews.compactMap { $0 as? NSButton }.first)
         let stripFrame = strip.convert(strip.bounds, to: nil)
@@ -228,6 +230,12 @@ struct WorkspaceTitlebarTests {
         let sidebarFrame = sidebar.convert(sidebar.bounds, to: nil)
         let tab = try #require(strip.tabViews.values.first)
         let tabFrame = tab.convert(tab.bounds, to: nil)
+        let bandPoints = [
+            NSPoint(x: stripFrame.midX, y: stripFrame.maxY - 2),
+            NSPoint(x: (plusFrame.maxX + pinFrame.minX) / 2, y: plusFrame.midY),
+            // The gutter above a tab is still titlebar, not product content.
+            NSPoint(x: tabFrame.midX, y: stripFrame.maxY - 1)
+        ]
         let sidebarPoint = NSPoint(x: sidebarFrame.midX, y: stripFrame.maxY - 2)
         // Opaque: the native toolbar view owns blank double-click and drag there.
         #expect(!window.titlebarAppearsTransparent)
@@ -240,35 +248,25 @@ struct WorkspaceTitlebarTests {
         let leadingBlank = sidebarVisible
             ? NSPoint(x: sidebarFrame.maxX + 10, y: sidebarFrame.midY)
             : NSPoint(x: (zoomFrame.maxX + sidebarFrame.minX) / 2, y: sidebarFrame.midY)
-        // Blank top-band points must never belong to the editor, the strip or an
-        // action; a window-level monitor turns them into a window drag, and the
-        // native frame keeps the user's double-click action. AppKit may answer a
-        // hit test with its own chrome, so a hit class alone proves nothing.
-        let controller = window.contentViewController as? WorkspaceSplitViewController
-        #expect(controller?.topBandDragForTesting.isInstalled != false)
-        let drag = TopBandDragController()
-        drag.install(in: window)
-        defer { drag.remove() }
-        drag.tabBand = strip.superview
-        let bandPoints = [
-            NSPoint(x: stripFrame.midX, y: stripFrame.maxY - 2),
-            NSPoint(x: (plusFrame.maxX + pinFrame.minX) / 2, y: plusFrame.midY),
-            // The gutter above a tab is still titlebar, not product content.
-            NSPoint(x: tabFrame.midX, y: stripFrame.maxY - 1)
-        ]
-        for point in bandPoints + [sidebarPoint, leadingBlank] {
-            #expect(drag.isInsideTopBand(point, in: window), "\(point) outside the top band")
-            #expect(!drag.isInteractive(at: point, in: window), "\(point) should drag the window")
+        for point in bandPoints {
+            // The accessory container would otherwise eat blank clicks; the
+            // frame view owns native drag and the system double-click action.
+            let hit = try #require(root.hitTest(root.convert(point, from: nil)))
+            #expect(hit === root)
+        }
+        for point in [sidebarPoint, leadingBlank] {
+            // Native titlebar chrome, never content, the band paint or the strip.
+            let hit = try #require(root.hitTest(root.convert(point, from: nil)))
+            #expect(hit !== content && !hit.isDescendant(of: content), "\(point) hit \(type(of: hit))")
+            #expect(hit !== strip.superview && !hit.isDescendant(of: strip))
         }
         for button in [plus, pin, sidebar] {
             let point = button.convert(NSPoint(x: button.bounds.midX, y: button.bounds.midY), to: nil)
-            #expect(drag.isInteractive(at: point, in: window), "\(button.accessibilityLabel() ?? "") keeps its click")
+            #expect(root.hitTest(root.convert(point, from: nil)) === button)
         }
         let titlePoint = tab.convert(NSPoint(x: tab.tabBounds.midX, y: tab.tabBounds.midY), to: nil)
-        #expect(drag.isInteractive(at: titlePoint, in: window), "a tab body keeps click and rename")
-        // Editor content below the band never drags the window.
-        let contentPoint = NSPoint(x: stripFrame.midX, y: stripFrame.minY - 60)
-        #expect(!drag.isInsideTopBand(contentPoint, in: window))
+        let titleHit = try #require(root.hitTest(root.convert(titlePoint, from: nil)))
+        #expect(titleHit === tab || titleHit.isDescendant(of: tab))
     }
 
     @Test("native full-screen notifications rehome the same tab controls without losing the join")
@@ -318,18 +316,6 @@ struct WorkspaceTitlebarTests {
             NotificationCenter.default.post(name: NSWindow.didUpdateNotification, object: window)
             #expect(!window.titlebarAppearsTransparent)
         }
-    }
-
-    private func findSplitController(in window: NSWindow) -> WorkspaceSplitViewController? {
-        func search(_ controller: NSViewController?) -> WorkspaceSplitViewController? {
-            guard let controller else { return nil }
-            if let match = controller as? WorkspaceSplitViewController { return match }
-            for child in controller.children {
-                if let match = search(child) { return match }
-            }
-            return nil
-        }
-        return search(window.contentViewController)
     }
 
     private func findStrip(in window: NSWindow) -> EditorTabStripView? {

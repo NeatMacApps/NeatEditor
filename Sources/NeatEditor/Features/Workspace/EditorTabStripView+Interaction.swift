@@ -18,29 +18,26 @@ extension EditorTabStripView {
     func trackPointer(_ mouseDown: NSEvent, tabID: UUID) {
         guard let window else { return }
         finishRename(commit: true)
-        let startMouse = NSEvent.mouseLocation
-        let startOrigin = window.frame.origin
-        var dragged = false
+        let startMouse = window.convertPoint(toScreen: mouseDown.locationInWindow)
         while let event = window.nextEvent(
             matching: [.leftMouseDragged, .leftMouseUp], until: .distantFuture,
             inMode: .eventTracking, dequeue: true
         ) {
             if event.type == .leftMouseUp {
-                if !dragged, let tab = tabViews[tabID],
+                if let tab = tabViews[tabID],
                    tab.bounds.contains(tab.convert(event.locationInWindow, from: nil)) {
                     handleClick(tabID: tabID, clickCount: mouseDown.clickCount)
                 }
                 return
             }
-            let mouse = NSEvent.mouseLocation
+            let mouse = window.convertPoint(toScreen: event.locationInWindow)
             let delta = CGPoint(x: mouse.x - startMouse.x, y: mouse.y - startMouse.y)
-            if max(abs(delta.x), abs(delta.y)) >= 4 { dragged = true }
-            if dragged {
+            if max(abs(delta.x), abs(delta.y)) >= 4 {
                 renameEligibleID = nil
-                window.setFrameOrigin(WindowDragGeometry.clampedOrigin(
-                    CGPoint(x: startOrigin.x + delta.x, y: startOrigin.y + delta.y),
-                    for: window
-                ))
+                // Inherited NSView handling forwards the original press to
+                // AppKit's native background drag. No per-frame window updates.
+                self.mouseDown(with: mouseDown)
+                return
             }
         }
     }

@@ -752,6 +752,57 @@ user content and must not be published) remain in
 
 ## Icon + Label menus and whole-top dragging (owner corrections, 2026-11-07)
 
+### Native drag repair
+
+Owner acceptance reopened: blank-band dragging jitters and does not follow the
+pointer; earlier final-position checks did not establish motion quality. The
+whole top row must remain draggable without sacrificing native titlebar
+double-click, activation, corner resizing, or tab/button/rename interactions.
+A rollback that removes blank-band dragging is not an acceptable fix.
+
+Use AppKit's native background drag, gated to each top-row mouse-down via
+`NSWindow.isMovableByWindowBackground`. Leave every event in normal delivery;
+the monitor only enables/disables native eligibility before window dispatch.
+Disable it on every press outside the band, on buttons/fields and resize edges,
+and in full screen. Restore the original property on detach. This is not the
+previous rejected, unconditional whole-window background-drag setting.
+Remove all `setFrameOrigin` loops. Retain the 4 pt tab threshold, then forward
+the original press through the strip's inherited `NSView.mouseDown(with:)`.
+AppKit owns subsequent motion. Blank double-click must reach AppKit unchanged;
+do not read `AppleActionOnDoubleClick` or emulate zoom/miniaturize.
+
+Inspected reference: Ghostty's
+[`WindowDragView.mouseDown`](https://github.com/ghostty-org/ghostty/blob/main/macos/Sources/Features/Terminal/Window%20Styles/TitlebarTabsVenturaTerminalWindow.swift)
+uses `performDrag(with:)` for single presses and forwards multiple clicks.
+Do not copy its private hierarchy manipulation, traffic-light layout or
+appearance. Direct `performDrag` was also evaluated but failed on this Mac:
+a separate native control app reproduced zero movement with WindowServer's
+`no client initiated window drag trait gesture to activate for mouse`; native
+background dragging in the same control app moved +71/+35 pt. This establishes
+a local failure, not a claim about every physical input or OS installation.
+Related report: [Warp #16508](https://github.com/warpdotdev/warp/issues/16508).
+The inspected local control (`DragView.mouseDown`, threshold + inherited
+`mouseDown`) demonstrates the selected public-API path. Apple's
+[background-drag property](https://developer.apple.com/documentation/appkit/nswindow/ismovablebywindowbackground)
+and [view propagation contract](https://developer.apple.com/documentation/appkit/nsview/mousedowncanmovewindow)
+were checked against the installed SDK. No manual fallback is introduced.
+
+Component verification: the independent window compiled the actual workspace,
+tab and chrome source with disposable descriptors, not user documents. Native
+drags from sidebar blank, trailing blank, tab gutter and tab body moved the
+window +71/+35 pt for a commanded +72/+36 pt path. The owner physically tested
+this window and reported that it appeared to work normally. Native blank
+zoom/restore was also observed, but its automated double-click supplied a
+synthetic click count; that alone does not verify physical click recognition.
+A later trajectory run overlapped live interaction and had changed start frames
+and control hits; its output is not valid motion-acceptance evidence.
+
+Full arm64 suite: 207 tests / 24 suites; Debug analysis and universal Release
+build passed (`build/native-top-drag/`). No Swift compiler/analyzer warnings;
+the existing AppIntents metadata notice remains assessed in `docs/code-review.md`.
+Installed acceptance is recorded separately after replacement. Historical motion
+claims below are superseded by the owner's reported regressions.
+
 - The native File/Edit/View application commands, sidebar and tab context menus
   and Settings choices use the global Icon + Label rule wherever a familiar
   symbol gives a recognition cue. Native controls, actions, destructive roles,
@@ -768,14 +819,13 @@ user content and must not be published) remain in
   titlebar, those points are answered by AppKit chrome or by the full-height
   sidebar host rather than by the tab accessory, so the previous
   "blank hit reaches the window frame" assumption did not move the window.
-  `TopBandDragController` now owns the decision at window level: inside the top
-  band it consumes non-control presses for a threshold drag, forwards blank
-  double-clicks to the frame view, and passes every `NSControl` / `NSText` /
-  `NSTextView` hit through. Tab bodies therefore keep immediate selection,
-  rename and their own four-point drag; `+`, pin, sidebar button, hover-close
-  and the inline rename field keep their own events.
-- Rejected alternatives: `isMovableByWindowBackground` (drags wide background
-  areas outside the request and did not move the window here), widening the
+  The original `TopBandDragController` consumed presses and tracked window
+  positions manually. That implementation was rejected after jitter and
+  native-interaction regressions; the native drag repair above supersedes it.
+  Tab bodies keep immediate selection, rename and their four-point threshold;
+  `+`, pin, sidebar button, hover-close and the native rename field keep events.
+- Rejected alternatives: unconditional `isMovableByWindowBackground` (enables
+  unrelated backgrounds; distinct from the per-press native gate above), widening the
   leading titlebar accessory to the sidebar column, and a content-side drag
   surface — each either failed the physical pointer test or changed unrelated
   regions. `WorkspaceWindowDragSurface` was removed with them. Native
@@ -797,8 +847,8 @@ user content and must not be published) remain in
   2228 × 1266 and the tab gutter double-click restored 1069 × 665. Inspected
   installed captures show icons in the expanded File menu, in the sidebar row
   context menu, in every Settings row, and in the open Theme options menu,
-  including the highlighted row. AppKit still means the blank band belongs to
-  its chrome; the monitor, not a hit-test result, is what guarantees the drag.
+  including the highlighted row. These final-position checks did not prove
+  continuous motion quality; the later owner reports reopened drag acceptance.
 
 ### Installed build for this correction (2026-11-07)
 

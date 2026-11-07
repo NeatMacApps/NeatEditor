@@ -40,8 +40,6 @@ struct WorkspaceSplitView: NSViewControllerRepresentable {
     }
 }
 
-/// Blank titlebar space keeps native double-click ownership; the top band's
-/// drag is coordinated at window level by `TopBandDragController`.
 final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelegate {
     private var configuration: WorkspaceSplitView
     private let sidebarController: NSHostingController<AnyView>
@@ -55,8 +53,6 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     private let sidebarButton = WorkspaceSplitViewController.titlebarButton(symbol: "sidebar.left")
     private var pinButton: NSButton { detailController.pinButton }
     private let topBandDrag = TopBandDragController()
-    /// Test seam: the top-band drag decision must be inspectable without
-    /// synthesising window-server pointer events.
     var topBandDragForTesting: TopBandDragController { topBandDrag }
     private weak var attachedWindow: NSWindow?
     private var isApplyingConfiguration = false

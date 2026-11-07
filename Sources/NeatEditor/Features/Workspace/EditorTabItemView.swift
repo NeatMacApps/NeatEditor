@@ -20,6 +20,9 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
 
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { true }
+    // The tab forwards a confirmed drag through NSView's native background
+    // handling. Native close/rename children still block window movement.
+    override var mouseDownCanMoveWindow: Bool { true }
 
     init(descriptor: EditorTabDescriptor) {
         id = descriptor.id
