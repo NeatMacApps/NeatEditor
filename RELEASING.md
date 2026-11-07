@@ -66,6 +66,51 @@ Locked-session pointer/field, Settings, full installed regex timeout/navigation,
 real exFAT/FAT32, native Intel, macOS 26 and iOS runtime acceptance remain deferred;
 publication does not turn those limits into passes.
 
+## 1.0.30 publication evidence (2026-11-07)
+
+Published [v1.0.30](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.30)
+(build 30) from immutable source `37dc1e9`; appcast commit `38ad651`. The owner
+asked to publish everything that was already committed and pushed: the icon +
+label menus and settings choices, the whole-top-band window drag from
+`cdbe034`, and the external-safe-save editor refresh committed by the parallel
+file-observation task as `e1e7db1`.
+
+202 arm64 tests passed on this source (23 suites) before the publisher ran; the
+Debug analysis and the publisher's own universal Release build/archive completed
+with no Swift compiler or analyzer warning beyond the previously assessed
+AppIntents metadata notice. The maintained detached publisher completed archive,
+Developer ID export, nested signing checks, both notarizations, stapling, draft
+byte comparison, publication and the appcast push. Apple accepted app submission
+`c7fbee14-4c57-421a-b811-f7b6dc2906bd` and DMG submission
+`ffefd975-d89b-4aac-aebd-a3ec5b218f0b`. Publisher log:
+`build/release-logs/publish-20261107-175020.log`.
+
+| Published artifact | SHA256 |
+|---|---|
+| `NeatEditor-1.0.30.dmg` | `a6a2dda86ef65962e3c72929562f01a3363b1991d33bd8b95d410115be217501` |
+| `NeatEditor-1.0.30.zip` | `4653ff452498c127d306718e5d833238ac9293e5a9ae6ddebdaad9702e1f2c9e` |
+
+Independent anonymous downloads matched `SHA256SUMS.txt` and the local bytes.
+The live raw appcast serves `<sparkle:version>30</sparkle:version>` with the
+1.0.30 ZIP length, and the Release holds exactly the three signed assets.
+Homebrew Cask 1.0.30 was published in `x0c/homebrew-tap` commit `282bb0c`;
+`brew style`, `brew audit --online` and `brew info` pass and report 1.0.30.
+
+The app installed from the anonymously downloaded DMG reports 1.0.30 (30), passes
+strict nested signature verification and `spctl` (`source=Notarized Developer ID`,
+`override=security disabled`), and its executable SHA256
+`4085b1982f61687c0cc8e0afef00657cc7dc1fcc120a4f77f581246f9a3f01b5` matches the
+exported product. Physical pointer acceptance on this installed build measured
++72 × +36 pt window drags from the sidebar top, the tab gutter, trailing blank
+band and a tab body; a blank double-click on the sidebar top zoomed the window
+and the same gesture restored it. Installed captures show the icon + label File
+menu, the sidebar row context menu, every Settings row and the open Theme
+options menu.
+
+Remaining limits: light appearance, a second display, native Intel execution and
+macOS 26 runtime were not exercised for this release; iOS 1.0.30 parity for the
+menu label style was built but has no device acceptance in this session.
+
 ## Durable release requirements
 
 R1 — Committed clean source before build. The coordinator commits only its
