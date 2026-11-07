@@ -5,6 +5,9 @@ extension DocumentPersistenceService {
         /// Background I/O never changes a live buffer's ancestry. Reconcile
         /// against the latest committed editor text on the main actor instead.
         case reconciliationRequired
+        /// A writer is inside a safe save: the source path is briefly absent and
+        /// its `<name>.sb-*` backup is present. This is not a missing document.
+        case safeSaveInProgress
     }
 
     private struct RecoveryRecord: Codable {
@@ -32,7 +35,10 @@ extension DocumentPersistenceService {
     func loadDocument(tab: EditorTab) throws -> EditorTab {
         try fileAccess.sync {
             guard let url = tab.fileURL else { return tab }
-            return try coordinated(at: normalizedFileURL(for: url), writing: false) { coordinatedURL in
+            // `url` may be a safe-save backup that its writer has already
+            // removed; the sibling original owns the document then.
+            let source = Self.resolvedSourceURL(for: normalizedFileURL(for: url))
+            return try coordinated(at: source, writing: false) { coordinatedURL in
                 var loaded = try readDocumentFile(at: coordinatedURL)
                 loaded = EditorTab(id: tab.id, title: loaded.title, content: loaded.content, fileURL: loaded.fileURL)
                 loaded.diskContent = loaded.content
@@ -55,7 +61,7 @@ extension DocumentPersistenceService {
         // deliberate local clear, however, keeps the existing blank exception.
         if isBlankContent(tab.content), tab.fileURL == nil || tab.content != tab.diskContent { return tab }
         return try fileAccess.state.withLock { state in
-            guard let url = state.bindings[tab.id] ?? tab.fileURL.map(normalizedFileURL(for:)) else {
+            guard var url = state.bindings[tab.id] ?? tab.fileURL.map(normalizedFileURL(for:)) else {
                 if reconcileOnly { return tab }
                 let folder = directory ?? defaultDirectory
                 try withFileManager {
@@ -67,15 +73,32 @@ extension DocumentPersistenceService {
                 }
                 return accept(saved, state: &state, written: true)
             }
+            // A tab left pointing at a safe-save backup its writer removed
+            // adopts the sibling original instead of reporting a missing file.
+            url = recoverSourceIfBackupWasRemoved(url, id: tab.id, state: &state)
             // The FIFO lane orders our I/O; associating its initiating presenter
             // prevents self-notification/reconciliation from blocking later reads.
             let coordinator = NSFileCoordinator(filePresenter: filePresenter)
             return try coordinated(at: url, writing: !reconcileOnly,
                                    coordinator: coordinator) { coordinatedURL in
+                // Native coordination can resolve the request to the writer's
+                // transient safe-save backup (`<name>.sb-*`). Adopting that path
+                // would leave the tab pointing at a file the writer deletes; the
+                // callers retry once the original path is back.
+                if coordinatedURL != url, Self.safeSaveSourceURL(for: coordinatedURL) == url {
+                    throw FileAccessError.safeSaveInProgress
+                }
                 let data: Data
                 do {
                     data = try Data(contentsOf: coordinatedURL, options: .mappedIfSafe)
                 } catch {
+                    // A safe save moves the document aside and recreates it a few
+                    // milliseconds later. Reading that gap is not a failure and
+                    // must not surface a destructive save alert.
+                    if Self.safeSaveBackupURL(for: url) != nil {
+                        if reconcileOnly { return tab }
+                        throw FileAccessError.safeSaveInProgress
+                    }
                     // Never recreate a deleted/moved source at its old path.
                     // A durable local recovery is retained even when closing fails.
                     try recordRecovery(url: url, base: tab.diskContent, local: tab.content, disk: nil)
@@ -126,6 +149,13 @@ extension DocumentPersistenceService {
                 return accept(saved, state: &state, written: saved.fileURL != coordinatedURL || saved.content != disk)
             }
         }
+    }
+
+    /// True while another writer's safe save has the document aside at
+    /// `<name>.sb-*`. Failures in that window are transient, not user errors.
+    func isSafeSaveInProgress(tab: EditorTab) -> Bool {
+        guard let url = tab.fileURL else { return false }
+        return Self.safeSaveBackupURL(for: normalizedFileURL(for: url)) != nil
     }
 
     func renameInOrder(tab: EditorTab, to title: String) throws -> EditorTab {
@@ -194,6 +224,60 @@ extension DocumentPersistenceService {
                 state.written[destination] = state.written.removeValue(forKey: source)
             }
         }
+    }
+
+    /// Safe-save writers (TextEdit/AppKit) move a document to
+    /// `<name>.sb-<hex>-<token>` while writing and delete that backup once the
+    /// original path holds the new bytes. A URL persisted inside that window is
+    /// not a missing document; the sibling original owns the content.
+    static func resolvedSourceURL(for url: URL) -> URL {
+        let manager = FileManager()
+        guard !manager.fileExists(atPath: url.path) else { return url }
+        guard let original = safeSaveSourceURL(for: url),
+              manager.fileExists(atPath: original.path) else { return url }
+        return original
+    }
+
+    /// Backup sibling for a document whose writer is mid safe save. Only the
+    /// observed `<name>.sb-<hex>-<token>` shape qualifies, and it must be a
+    /// direct sibling of the original name.
+    static func safeSaveBackupURL(for url: URL) -> URL? {
+        let manager = FileManager()
+        let folder = url.deletingLastPathComponent()
+        guard let names = try? manager.contentsOfDirectory(atPath: folder.path) else { return nil }
+        let prefix = url.lastPathComponent + ".sb-"
+        for name in names where name.hasPrefix(prefix) {
+            let candidate = folder.appendingPathComponent(name)
+            if safeSaveSourceURL(for: candidate) == url { return candidate }
+        }
+        return nil
+    }
+
+    /// Recognizes only the observed backup shape, so an ordinary file whose
+    /// name merely contains `.sb-` is never repointed at a sibling.
+    static func safeSaveSourceURL(for url: URL) -> URL? {        let name = url.lastPathComponent
+        guard let marker = name.range(of: ".sb-", options: .backwards),
+              marker.lowerBound != name.startIndex else { return nil }
+        let token = name[marker.upperBound...]
+        let parts = token.split(separator: "-", omittingEmptySubsequences: false)
+        guard let head = parts.first, head.count >= 6,
+              head.allSatisfy(\.isHexDigit),
+              parts.allSatisfy({ !$0.isEmpty }) else { return nil }
+        let original = String(name[..<marker.lowerBound])
+        guard !original.isEmpty, !original.hasSuffix(".") else { return nil }
+        return url.deletingLastPathComponent().appendingPathComponent(original)
+    }
+
+    @discardableResult
+    private func recoverSourceIfBackupWasRemoved(
+        _ url: URL, id: UUID, state: inout DocumentFileAccess.State
+    ) -> URL {
+        let recovered = Self.resolvedSourceURL(for: url)
+        guard recovered != url else { return url }
+        state.bindings[id] = recovered
+        state.accepted[recovered] = state.accepted.removeValue(forKey: url)
+        state.written[recovered] = state.written.removeValue(forKey: url)
+        return recovered
     }
 
     private func accept(_ tab: EditorTab, state: inout DocumentFileAccess.State, written: Bool) -> EditorTab {

@@ -116,7 +116,19 @@ extension WorkspaceStore {
         } catch DocumentPersistenceService.FileAccessError.reconciliationRequired {
             pendingExternalChecks.insert(id)
             return false
+        } catch DocumentPersistenceService.FileAccessError.safeSaveInProgress {
+            // The writer recreates the original within milliseconds; retrying
+            // must not present a missing-file alert or discard the buffer.
+            pendingExternalChecks.insert(id)
+            queueAutoSave(for: id)
+            return tab.content == tab.diskContent
         } catch {
+            if persistenceService.isSafeSaveInProgress(tab: tab) {
+                // Coordination can fail while another writer holds the path.
+                pendingExternalChecks.insert(id)
+                queueAutoSave(for: id)
+                return tab.content == tab.diskContent
+            }
             presentDocumentFailure(title: String(localized: "Save Failed"), message: error.localizedDescription, recoveryTabID: id)
             Self.logger.error("Document save failed: \(error.localizedDescription, privacy: .public)")
             return false
@@ -167,7 +179,16 @@ extension WorkspaceStore {
                     } else {
                         self.saveDocument(id: id)
                     }
+                case .failure(DocumentPersistenceService.FileAccessError.safeSaveInProgress):
+                    // A watcher-triggered reconcile inside a safe-save window is
+                    // transient. The observer re-arms the original path, so a
+                    // silent retry is enough; never alert here.
+                    self.pendingExternalChecks.insert(id)
                 case .failure(let error):
+                    if self.persistenceService.isSafeSaveInProgress(tab: snapshot) {
+                        self.pendingExternalChecks.insert(id)
+                        return
+                    }
                     self.presentDocumentFailure(title: String(localized: "Save Failed"), message: error.localizedDescription, recoveryTabID: id)
                 }
                 if self.pendingExternalChecks.remove(id) != nil { self.reconcileDocument(id: id) }

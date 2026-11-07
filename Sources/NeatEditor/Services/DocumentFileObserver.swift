@@ -26,6 +26,10 @@ final class DocumentFileObserver: NSObject, NSFilePresenter, Sendable {
     }
     private let state = Mutex(ObservationState())
 
+    /// Long enough for a safe-save writer to recreate the original path, short
+    /// enough that a genuine external rename is followed without a visible stall.
+    private static let moveSettleInterval = 0.2
+
     init(url: URL, onChange: @escaping @Sendable (Event) -> Void) {
         self.presentedItemURL = url
         self.onChange = onChange
@@ -42,7 +46,13 @@ final class DocumentFileObserver: NSObject, NSFilePresenter, Sendable {
     func presentedItemDidChange() { onChange(.changed) }
     func presentedItemDidGain(_ version: NSFileVersion) { onChange(.changed) }
     func presentedItemDidResolveConflict(_ version: NSFileVersion) { onChange(.changed) }
-    func presentedItemDidMove(to newURL: URL) { onChange(.moved(newURL)) }
+    func presentedItemDidMove(to newURL: URL) {
+        guard let source = presentedItemURL, source != newURL else {
+            onChange(.changed)
+            return
+        }
+        resolvePossibleMove(from: source, to: newURL)
+    }
 
     func accommodatePresentedItemDeletion(completionHandler: @escaping (Error?) -> Void) {
         onChange(.deleted)
@@ -53,6 +63,31 @@ final class DocumentFileObserver: NSObject, NSFilePresenter, Sendable {
     /// Re-arm its vnode source without churning native presenter registration.
     func refreshFileObservation() {
         if let presentedItemURL { watch(presentedItemURL) }
+    }
+
+    /// A safe save moves the old file aside and recreates the original path.
+    /// TextEdit, for example, moves the document to `<name>.sb-<token>` while it
+    /// writes the replacement and removes that backup afterwards (reproduced
+    /// 2026-11-07). Publishing that intermediate move would retarget the tab at
+    /// a path the writer deletes moments later, so a move is only reported once
+    /// the writer has settled and the original path stays absent.
+    private func resolvePossibleMove(from source: URL, to destination: URL) {
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + Self.moveSettleInterval) {
+            [weak self] in
+            guard let self, !self.state.withLock({ $0.isStopped }) else { return }
+            let manager = FileManager()
+            if manager.fileExists(atPath: source.path) {
+                // The original survives: this was a replacement, not a rename.
+                self.onChange(.changed)
+            } else if manager.fileExists(atPath: destination.path) {
+                self.onChange(.moved(destination))
+            } else {
+                // Both paths are gone (coalesced replace-and-move); let
+                // reconciliation report the missing source instead of
+                // publishing a location that does not exist.
+                self.onChange(.changed)
+            }
+        }
     }
 
     func stop() {
@@ -85,7 +120,7 @@ final class DocumentFileObserver: NSObject, NSFilePresenter, Sendable {
                     let bytes = path.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) }
                     let movedURL = URL(fileURLWithPath: String(decoding: bytes, as: UTF8.self))
                     if movedURL != url, FileManager().fileExists(atPath: movedURL.path) {
-                        self.onChange(.moved(movedURL))
+                        self.resolvePossibleMove(from: url, to: movedURL)
                         return
                     }
                 }

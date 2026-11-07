@@ -25,6 +25,18 @@ Default-name acceptance (2026-10-01): all 42 tests passed, including local-time 
 
 ## External-writer safety (owner approved 2026-10-30)
 
+Owner report (2026-11-07): after an open file is edited in another application,
+the Mac editor can continue to show its old text and can report that a sibling
+`<original-name>.sb-*` file no longer exists. A native TextEdit reproduction on
+2026-11-07 emitted `presentedItemDidMove` to that temporary backup while the
+newly saved document remained at the original path. Do not persist the temporary
+backup as the tab's identity or show a destructive Save Failed action for this
+transient safe-save phase; refresh the original path after the writer finishes.
+Preserve intentional external rename tracking, local-edit conflict handling,
+marked-text deferral, explicit external revisions and stable observation of the
+new original inode. Add a competing-writer regression using the same
+move-to-backup/replacement/backup-removal sequence.
+
 - All document reads/writes and rename/trash operations share an ordered I/O lane. Background saves are enqueued before returning; later synchronous lifecycle saves drain that same lane. Late completions cannot publish stale content or file identity.
 - Retain an accepted content baseline, independent of timestamps and file size. Recheck disk bytes inside native coordinated access before replacement. A clean buffer accepts external updates; equal content is not a conflict. Three-way line reconciliation merges independent edits conservatively, preserving original line terminators; ambiguous/overlapping edits never silently overwrite either side.
 - On conflict, preserve the original disk file and save the local version at a fresh conflict sibling using existing no-clobber publication. Persist a private recovery record containing baseline/local/disk content before publishing a merged or conflicting result. Inform the user with the existing native alert and an action to open the other version. Recovery must survive restart without opening a recovery window proactively. Save failures retain the buffer and offer an explicit Save Copy action using `NSSavePanel`; cancellation changes nothing and publication never clobbers an existing destination. The only explicit discard exception is Don't Save in the failed document's alert, defined below. This is the escape path for deleted/missing originals, not an automatic recovery window.

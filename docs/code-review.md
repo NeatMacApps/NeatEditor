@@ -235,6 +235,70 @@ bytes and preserved local text, plus IME/undo/selection on the installed app.
 An iCloud offline two-device test must establish conflict-version retention and
 resolution separately. None of those execution claims is made by this research.
 
+## Safe-save backup observation (2026-11-07)
+
+Owner report: after editing an open file in another application the Mac editor
+kept showing the old text, and a later save failed with
+`The file "<name>.sb-…" couldn't be opened because there is no such file.`
+
+Reproduction and references. A native `DocumentFileObserver` probe plus a real
+TextEdit save of a disposable file on 2026-11-07 recorded the writer's sequence:
+the document is moved to `<name>.sb-<8 hex>-<token>` (`presentedItemDidMove`),
+the original path is recreated with the new bytes, and the backup is removed.
+Apple's document architecture describes this safe save (write to a temporary
+file, then replace the current file) and the `NSFilePresenter` contract requires
+`presentedItemDidMove` to update the presented location. CotEditor was inspected
+as the maintained native comparator: it lets `NSDocument` own
+`presentedItemURL` and, on `presentedItemDidChange`, performs a coordinated read
+of its current `fileURL` and compares bytes instead of following a vnode rename
+itself (commit `27ddb5e`, `CotEditor/Sources/Document/TextDocument.swift`).
+Neither reference publishes a transient backup as the document identity.
+
+Adopted repair before any code change:
+
+- `DocumentFileObserver` resolves a move after a 200 ms settle instead of
+  publishing it immediately. Original present → `.changed` (replacement);
+  original absent and destination present → `.moved` (real rename); both absent →
+  `.changed` so reconciliation reports a missing source. Genuine external renames
+  keep working; the existing `externalRename` regression still passes.
+- Native coordination can also resolve a read of the original to the writer's
+  backup. That attempt now raises `FileAccessError.safeSaveInProgress` instead of
+  adopting the backup path, so a tab never persists an identity the writer deletes.
+- `saveInOrder` treats a missing source with a `<name>.sb-*` sibling as transient:
+  reconcile returns unchanged and explicit saves defer through the autosave lane.
+  No destructive Save Failed alert is presented inside the writer's window.
+- `resolvedSourceURL(for:)` heals a tab already persisted on a removed backup
+  (load and next save adopt the sibling original). Only the observed
+  `<name>.sb-<hex>(-<token>)?` shape qualifies, so ordinary names containing
+  `.sb-` are untouched.
+
+Validation. `WorkspaceConcurrencyTests` adds the TextEdit-style safe save
+(coordinated move aside, rewrite, remove backup) and the stale-backup recovery
+case; they fail without the settle/classification and pass with it. Full Debug
+suite: **202 tests in 23 suites**, zero failures; `analyze` reports no Swift
+diagnostic (only the previously assessed AppIntents metadata notice). The
+installed Debug build `/Applications/NeatEditor.app` has the same executable hash
+as the built product.
+
+Installed-path evidence (same session, no restart): the previously failing
+tab pointing at `Claude-KYC账号.txt.sb-f4236603-fvogs7` reopened on the real
+original, showed its content and raised no alert. A disposable
+`live-check.txt` tab showed `LIVE-BEFORE refresh check`; a TextEdit external save
+produced `LIVE-AFTER external TextEdit save` in the same window and tab with no
+alert, and the tab was closed afterwards. Fresh captures are retained under
+`build/external-refresh/` (`live-1-before.png`, `live-2-after.png`,
+`live-3-closed.png`, `installed-healed.png`).
+
+Limits. Only TextEdit's observed backup naming is used for the recovery path; the
+settle rule itself is name-independent and covers writers with other temporary
+naming. Physical two-device cloud convergence, non-TextEdit writers and native
+Intel/macOS 26 execution remain unverified. During this session a concurrently
+installed build from another in-progress task replaced `/Applications` and
+restarted the app; the user's document tab list was not restored by that
+relaunch and the three files were reopened manually. File contents were never
+modified by the relaunch. That workspace-restore loss is separate from this
+repair and remains unexplained; it is recorded rather than claimed fixed.
+
 ## External-writer implementation and validation (2026-10-30)
 
 Adopted behavior: [editing contract](editing-text-sync-test-cases.md#external-writer-safety-owner-approved-2026-10-30).

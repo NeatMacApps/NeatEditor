@@ -77,6 +77,68 @@ struct WorkspaceConcurrencyTests {
         try await wait { store.tabs.first(where: { $0.id == id })?.content == "coordinated external" }
     }
 
+    @Test("TextEdit-style safe save refreshes the original instead of following its temporary backup")
+    func externalSafeSaveKeepsOriginalLocationAndRefreshes() async throws {
+        let (store, root, suite) = try fixture()
+        defer { cleanup(store, root: root, suite: suite) }
+        let id = try await open(store, root: root, text: "base")
+        let url = try #require(store.tabs.first(where: { $0.id == id })?.fileURL)
+        let backup = url.deletingLastPathComponent().appendingPathComponent(
+            "\(url.lastPathComponent).sb-f4236603-fvogs7"
+        )
+        try await Task.detached {
+            let coordinator = NSFileCoordinator()
+            var coordinationError: NSError?
+            var operationError: Error?
+            coordinator.coordinate(writingItemAt: url, options: .forReplacing, error: &coordinationError) { _ in
+                do {
+                    coordinator.item(at: url, willMoveTo: backup)
+                    try FileManager.default.moveItem(at: url, to: backup)
+                    coordinator.item(at: url, didMoveTo: backup)
+                    try "external safe save".write(to: url, atomically: false, encoding: .utf8)
+                    try FileManager.default.removeItem(at: backup)
+                } catch {
+                    operationError = error
+                }
+            }
+            if let error = coordinationError ?? operationError { throw error }
+        }.value
+
+        try await wait { store.tabs.first(where: { $0.id == id })?.content == "external safe save" }
+        #expect(store.tabs.first(where: { $0.id == id })?.fileURL == url)
+        #expect(store.documentFailureAlert == nil)
+        #expect(try String(contentsOf: url, encoding: .utf8) == "external safe save")
+    }
+
+    @Test("a tab left on a removed safe-save backup recovers to the sibling original")
+    func recoversFromSafeSaveBackupPath() async throws {
+        let (store, root, suite) = try fixture()
+        defer { cleanup(store, root: root, suite: suite) }
+        let id = try await open(store, root: root, text: "base")
+        let url = try #require(store.tabs.first(where: { $0.id == id })?.fileURL)
+        try "external safe save".write(to: url, atomically: true, encoding: .utf8)
+        store.stopObservingDocument(id: id)
+        let backup = url.deletingLastPathComponent().appendingPathComponent(
+            "\(url.lastPathComponent).sb-f4236603-fvogs7"
+        )
+        // Reproduce a tab that followed the writer's transient backup and then
+        // kept that path after the writer removed it.
+        store.persistenceService.noteExternalMove(id: id, from: url, to: backup)
+        if let index = store.tabs.firstIndex(where: { $0.id == id }) {
+            store.tabs[index].fileURL = backup
+            store.tabs[index].title = backup.lastPathComponent
+        }
+
+        #expect(store.saveDocument(id: id))
+        #expect(store.tabs.first(where: { $0.id == id })?.fileURL == url)
+        #expect(store.tabs.first(where: { $0.id == id })?.content == "external safe save")
+        #expect(store.documentFailureAlert == nil)
+
+        let reopened = try store.persistenceService.openDocument(at: backup)
+        #expect(reopened.fileURL == url)
+        #expect(reopened.content == "external safe save")
+    }
+
     @Test("an initially empty file receives external contents")
     func emptyFileReload() async throws {
         let (store, root, suite) = try fixture()
