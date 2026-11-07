@@ -41,8 +41,9 @@ struct WorkspaceView: View {
             theme: workspaceStore.preferences.editorTheme
         )
         .ignoresSafeArea(.container, edges: .top)
-        .toolbarBackground(EditorChrome.tabBarBackground(for: workspaceStore.preferences.editorTheme),
-                           for: .windowToolbar)
+        // The native toolbar stays visible but must not paint an opaque background:
+        // that view otherwise claims blank band presses and blocks native window
+        // dragging. The split view's band view paints the same color underneath.
         .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
         .toolbar(removing: .title)
         .background {

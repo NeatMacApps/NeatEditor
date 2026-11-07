@@ -767,6 +767,20 @@ passed while SwiftUI's default scene policy still rejected installed dragging.
 The independent fixture was then changed to a real SwiftUI `Window` scene;
 with this opt-in, top-row drags moved +71/+35 pt and a content-background drag
 moved 0/0 pt. The per-press gate still limits dragging to the requested band.
+
+The installed app also required removing
+`.toolbarBackground(color, for: .windowToolbar)`: that modifier gives the
+native toolbar an opaque background whose view claims blank band presses and
+rejects the native drag (harness matrix: colour 0/0 pt, colour + visibility
+0/0 pt, visibility alone +71/+35 pt). Keep `Visibility(.visible)` and let the
+split view's band view paint the same colour; the band colour is unchanged in
+the inspected installed window.
+
+Installed acceptance (2026-11-07, universal Release from `d5934fe` + this
+change): top-band drags measured +71/+35 pt over sidebar blank, tab gutter and
+trailing blank; dragging the editor background moved 0/0 pt; blank double-click
+zoomed 988×563 → 2228×1266 and restored; the upper-left corner resized
+988×563 → 952×590 while the upper-right corner kept its press.
 Apple's [scene contract](https://developer.apple.com/documentation/swiftui/scene/windowbackgrounddragbehavior(_:))
 and the installed SwiftUI SDK expose this public API. Leave every event in normal delivery;
 the monitor only enables/disables native eligibility before window dispatch.
