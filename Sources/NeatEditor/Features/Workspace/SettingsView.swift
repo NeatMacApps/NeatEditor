@@ -15,7 +15,7 @@ struct SettingsView: View {
                 .padding(.top, 20)
             Form {
                 Section("Editor") {
-                    LabeledContent("Documents Folder") {
+                    LabeledContent {
                         HStack {
                             Text(verbatim: workspaceStore.documentsFolderName)
                                 .foregroundStyle(.secondary)
@@ -23,26 +23,41 @@ struct SettingsView: View {
                                 .truncationMode(.middle)
                                 .help(workspaceStore.documentsFolder.path)
                                 .accessibilityLabel(Text(verbatim: workspaceStore.documentsFolder.path))
-                            Button("Choose Folder…", action: workspaceStore.chooseDocumentsFolder)
-                                .accessibilityIdentifier("settings.documentsFolder.choose")
+                            Button(action: workspaceStore.chooseDocumentsFolder) {
+                                Label("Choose Folder…", systemImage: "folder")
+                            }
+                            .accessibilityIdentifier("settings.documentsFolder.choose")
                         }
+                    } label: {
+                        Label("Documents Folder", systemImage: "folder")
                     }
-                    Picker("settings.theme", selection: $workspace.preferences.editorTheme) {
+                    Picker(selection: $workspace.preferences.editorTheme) {
                         ForEach(EditorTheme.allCases, id: \.self) { theme in
-                            Text(LocalizedStringKey(theme.localizedNameKey)).tag(theme)
+                            Label(LocalizedStringKey(theme.localizedNameKey),
+                                  systemImage: theme.settingsSymbol)
+                                .tag(theme)
                         }
+                    } label: {
+                        Label("settings.theme", systemImage: "paintpalette")
                     }
-                    .pickerStyle(.segmented)
                     .accessibilityIdentifier("settings.theme")
-                    Picker("Tab Behavior", selection: $workspace.preferences.tabBehavior) {
+                    Picker(selection: $workspace.preferences.tabBehavior) {
                         ForEach(TabBehavior.allCases, id: \.self) { behavior in
-                            Text(LocalizedStringKey(behavior.rawValue)).tag(behavior)
+                            Label(LocalizedStringKey(behavior.rawValue),
+                                  systemImage: behavior.settingsSymbol)
+                                .tag(behavior)
                         }
+                    } label: {
+                        Label("Tab Behavior", systemImage: "increase.indent")
                     }
-                    Picker("Language", selection: $workspace.preferences.appLanguage) {
+                    Picker(selection: $workspace.preferences.appLanguage) {
                         ForEach(AppLanguage.allCases, id: \.self) { language in
-                            Text(LocalizedStringKey(language.localizedNameKey)).tag(language)
+                            Label(LocalizedStringKey(language.localizedNameKey),
+                                  systemImage: language.settingsSymbol)
+                                .tag(language)
                         }
+                    } label: {
+                        Label("Language", systemImage: "globe")
                     }
                     if workspaceStore.isLanguageChangePendingRestart {
                         Text("A restart is required for language changes to take effect.")
@@ -51,15 +66,19 @@ struct SettingsView: View {
                     }
                 }
                 Section("Updates") {
-                    Toggle("Automatically check for updates", isOn: Binding(
+                    Toggle(isOn: Binding(
                         get: { updater.automaticallyChecksForUpdates },
                         set: { updater.setAutomaticChecks($0) }
-                    ))
+                    )) {
+                        Label("Automatically check for updates", systemImage: "arrow.triangle.2.circlepath")
+                    }
                     .disabled(!updater.canCheckForUpdates)
-                    Toggle("Automatically download and install updates", isOn: Binding(
+                    Toggle(isOn: Binding(
                         get: { updater.automaticallyDownloadsUpdates },
                         set: { updater.setAutomaticDownloads($0) }
-                    ))
+                    )) {
+                        Label("Automatically download and install updates", systemImage: "arrow.down.circle")
+                    }
                     .disabled(!updater.canCheckForUpdates || !updater.allowsAutomaticUpdates)
                 }
                 Section { aboutRow }
@@ -87,9 +106,17 @@ struct SettingsView: View {
             }
             .accessibilityElement(children: .combine)
             Spacer(minLength: 12)
-            Button("Check for Updates…") { updater.checkForUpdates() }
-                .disabled(!updater.canCheckForUpdates)
-            Button("settings.quit") { NSApp.terminate(nil) }
+            Button {
+                updater.checkForUpdates()
+            } label: {
+                Label("Check for Updates…", systemImage: "arrow.triangle.2.circlepath")
+            }
+            .disabled(!updater.canCheckForUpdates)
+            Button {
+                NSApp.terminate(nil)
+            } label: {
+                Label("settings.quit", systemImage: "power")
+            }
         }
     }
 }

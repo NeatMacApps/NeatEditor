@@ -68,8 +68,11 @@ private struct NeatEditorUpdateCommands: Commands {
 
     var body: some Commands {
         CommandGroup(after: .appInfo) {
-            Button(String(localized: "Check for Updates…")) {
+            Button {
                 updater.checkForUpdates()
+            } label: {
+                Label("Check for Updates…", systemImage: "arrow.triangle.2.circlepath")
+                    .labelStyle(.titleAndIcon)
             }
             .disabled(!updater.canCheckForUpdates)
         }

@@ -750,6 +750,73 @@ Full logs, fingerprints and private captures (the save-failure capture contains
 user content and must not be published) remain in
 `~/.config/neateditor/verification/2026-11-05-editor-gestures/`.
 
+## Icon + Label menus and whole-top dragging (owner corrections, 2026-11-07)
+
+- The native File/Edit/View application commands, sidebar and tab context menus
+  and Settings choices use the global Icon + Label rule wherever a familiar
+  symbol gives a recognition cue. Native controls, actions, destructive roles,
+  keyboard shortcuts and localization are unchanged; no custom menu rows were
+  added. macOS 27 hides menu symbol images by default, so every SwiftUI menu
+  Label carries `.labelStyle(.titleAndIcon)` and every AppKit item sets
+  `preferredImageVisibility = .visible` behind an availability check. A non-nil
+  symbol alone does not establish rendered visibility. Compact titlebar actions
+  stay icon-only exceptions. The Theme, Tab Behavior and Language pickers now
+  share one menu-picker presentation with per-option symbols; the earlier
+  text-only segmented Theme control was the odd one out in that peer group.
+- Owner regression report: dragging from the sidebar's top region or the blank
+  gutter above tabs did nothing. Cause: with the opaque `.unifiedCompact`
+  titlebar, those points are answered by AppKit chrome or by the full-height
+  sidebar host rather than by the tab accessory, so the previous
+  "blank hit reaches the window frame" assumption did not move the window.
+  `TopBandDragController` now owns the decision at window level: inside the top
+  band it consumes non-control presses for a threshold drag, forwards blank
+  double-clicks to the frame view, and passes every `NSControl` / `NSText` /
+  `NSTextView` hit through. Tab bodies therefore keep immediate selection,
+  rename and their own four-point drag; `+`, pin, sidebar button, hover-close
+  and the inline rename field keep their own events.
+- Rejected alternatives: `isMovableByWindowBackground` (drags wide background
+  areas outside the request and did not move the window here), widening the
+  leading titlebar accessory to the sidebar column, and a content-side drag
+  surface — each either failed the physical pointer test or changed unrelated
+  regions. `WorkspaceWindowDragSurface` was removed with them. Native
+  double-click is never emulated; the frame view receives the event so Desktop
+  & Dock still decides zoom versus minimize.
+- Inspected references: this repository's `WorkspaceSplitView`,
+  `EditorTabStripView`, `EditorTabStripView+Interaction`, `EditorTabItemView`,
+  `WorkspaceCommands`, `WorkspaceSidebarView` and `SettingsView`; the shared
+  macOS 27 menu-image recipe in `macos-appkit-gotchas.md`. Public APIs checked
+  against Apple's documentation and the installed Xcode 27.2 SDK:
+  [NSWindow drag](https://developer.apple.com/documentation/appkit/nswindow/performdrag(with:)),
+  [local event monitors](https://developer.apple.com/documentation/appkit/nsevent/addlocalmonitorforevents(matching:handler:))
+  and the [macOS 27 menu-image behavior](https://developer.apple.com/documentation/macos-release-notes/macos-27-release-notes).
+- Acceptance evidence (2026-11-07, installed 1.0.29 source build
+  `ecee515…`): with the Debug build, physical pointer drags of exactly
+  (+72, +36) pt were measured from the sidebar top, the tab top gutter, the
+  trailing blank band and a tab body; a click on the sidebar button moved
+  nothing. Blank double-clicks on the sidebar top zoomed the window to
+  2228 × 1266 and the tab gutter double-click restored 1069 × 665. Inspected
+  installed captures show icons in the expanded File menu, in the sidebar row
+  context menu, in every Settings row, and in the open Theme options menu,
+  including the highlighted row. AppKit still means the blank band belongs to
+  its chrome; the monitor, not a hit-test result, is what guarantees the drag.
+
+### Installed build for this correction (2026-11-07)
+
+Universal Release `1.0.29 (29)`, Developer ID `Zhichao Cao (SHZQ3MWP3B)`,
+installed at `/Applications/NeatEditor.app`; installed and build-product
+executable SHA256 both
+`ecee5150924cc267b206e54fd4ca8246ca34e0c349c09339b65e3e08908d8ed4`, with
+`codesign --verify --deep --strict` passing. Full arm64 suite: 202 tests in 23
+suites; Debug static analysis and the universal Release build pass with no
+Swift compiler or analyzer warning (only the previously assessed AppIntents
+metadata notice). Logs: `build/icon-label-drag/`.
+
+Remaining limits: light appearance, a second display and macOS 26 runtime were
+not exercised for this correction; the app's automatic-update toggles render
+from Sparkle state after warm-up, so a capture taken during launch can show the
+pre-sync value. macOS 27 hides menu images by default — older runtimes still
+follow their own defaults, which the availability-checked code does not alter.
+
 ## Interaction contract
 
 - Single click selects immediately; no multi-click recognition delay.

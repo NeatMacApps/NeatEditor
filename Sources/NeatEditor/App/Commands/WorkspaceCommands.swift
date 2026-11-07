@@ -1,4 +1,3 @@
-import Foundation
 import AppKit
 import SwiftUI
 
@@ -7,73 +6,106 @@ struct WorkspaceCommands: Commands {
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
-            Button("New") {
+            Button {
                 workspaceStore.createNewDocument()
+            } label: {
+                Label("New", systemImage: "doc")
+                    .labelStyle(.titleAndIcon)
             }
             .keyboardShortcut("n", modifiers: .command)
 
-            Button("New Tab") {
+            Button {
                 workspaceStore.createNewDocument()
+            } label: {
+                Label("New Tab", systemImage: "plus.square")
+                    .labelStyle(.titleAndIcon)
             }
             .keyboardShortcut("t", modifiers: .command)
         }
 
         CommandGroup(after: .newItem) {
-            Button("Open...") {
+            Button {
                 openDocumentsFromUserHome()
+            } label: {
+                Label("Open...", systemImage: "folder")
+                    .labelStyle(.titleAndIcon)
             }
             .keyboardShortcut("o", modifiers: .command)
         }
-        
+
         CommandGroup(replacing: .appSettings) {
-            Button("Settings...") {
+            Button {
                 workspaceStore.openSettings()
+            } label: {
+                Label("Settings...", systemImage: "gearshape")
+                    .labelStyle(.titleAndIcon)
             }
             .keyboardShortcut(",", modifiers: .command)
         }
 
         CommandGroup(replacing: .saveItem) {
-            Button("Save") {
+            Button {
                 workspaceStore.saveCurrentDocument()
+            } label: {
+                Label("Save", systemImage: "square.and.arrow.down")
+                    .labelStyle(.titleAndIcon)
             }
             .keyboardShortcut("s", modifiers: .command)
 
-            Button("Close Tab") {
+            Button {
                 workspaceStore.saveAndCloseCurrentDocument()
+            } label: {
+                Label("Close Tab", systemImage: "xmark")
+                    .labelStyle(.titleAndIcon)
             }
             .keyboardShortcut("w", modifiers: .command)
             .disabled(workspaceStore.selectedTabID == nil)
 
-            Button("Reopen Closed Tab") {
+            Button {
                 workspaceStore.reopenLastClosedDocument()
+            } label: {
+                Label("Reopen Closed Tab", systemImage: "arrow.uturn.backward")
+                    .labelStyle(.titleAndIcon)
             }
             .keyboardShortcut("t", modifiers: [.command, .shift])
             .disabled(!workspaceStore.canReopenClosedTab)
         }
 
         CommandGroup(after: .textEditing) {
-            Button("Find") {
+            Button {
                 workspaceStore.presentSearchBar()
+            } label: {
+                Label("Find", systemImage: "magnifyingglass")
+                    .labelStyle(.titleAndIcon)
             }
             .keyboardShortcut("f", modifiers: .command)
             .disabled(workspaceStore.selectedTabID == nil)
         }
 
         CommandGroup(after: .toolbar) {
-            Button("Zoom In") {
+            Button {
                 workspaceStore.increaseEditorFontSize()
+            } label: {
+                Label("Zoom In", systemImage: "plus.magnifyingglass")
+                    .labelStyle(.titleAndIcon)
             }
             .keyboardShortcut("=", modifiers: .command)
 
-            Button("Zoom Out") {
+            Button {
                 workspaceStore.decreaseEditorFontSize()
+            } label: {
+                Label("Zoom Out", systemImage: "minus.magnifyingglass")
+                    .labelStyle(.titleAndIcon)
             }
             .keyboardShortcut("-", modifiers: .command)
         }
 
         CommandGroup(after: .sidebar) {
-            Button("Toggle Sidebar") {
+            Button {
                 workspaceStore.toggleSidebar()
+            } label: {
+                Label("Toggle Sidebar", systemImage: "sidebar.left")
+                    .labelStyle(.titleAndIcon)
             }
             .keyboardShortcut("s", modifiers: [.command, .option])
         }

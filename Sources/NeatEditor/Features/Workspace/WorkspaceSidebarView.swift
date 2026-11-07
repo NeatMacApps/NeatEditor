@@ -42,6 +42,7 @@ struct WorkspaceSidebarView: View {
                     .id(item.fileURL)
                     .contextMenu {
                         sidebarItemMenu(for: item)
+                            .labelStyle(.titleAndIcon)
                     }
                 }
             } header: {
@@ -72,16 +73,19 @@ struct WorkspaceSidebarView: View {
             }
         }
         .contextMenu {
-            Button(action: workspaceStore.createNewDocument) {
-                Label("New Document", systemImage: "plus")
+            Group {
+                Button(action: workspaceStore.createNewDocument) {
+                    Label("New Document", systemImage: "plus")
+                }
+                Button(action: workspaceStore.revealDocumentsFolderInFinder) {
+                    Label("Show in Finder", systemImage: "folder")
+                }
+                Divider()
+                Button(action: workspaceStore.refreshSidebarFiles) {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
             }
-            Button(action: workspaceStore.revealDocumentsFolderInFinder) {
-                Label("Show in Finder", systemImage: "folder")
-            }
-            Divider()
-            Button(action: workspaceStore.refreshSidebarFiles) {
-                Label("Refresh", systemImage: "arrow.clockwise")
-            }
+            .labelStyle(.titleAndIcon)
         }
         .alert(
             "Rename",

@@ -37,14 +37,10 @@ extension EditorTabStripView {
             if max(abs(delta.x), abs(delta.y)) >= 4 { dragged = true }
             if dragged {
                 renameEligibleID = nil
-                var origin = CGPoint(x: startOrigin.x + delta.x, y: startOrigin.y + delta.y)
-                if let screen = (window.screen ?? NSScreen.main)?.visibleFrame {
-                    origin.x = min(max(origin.x, screen.minX - window.frame.width + 80),
-                                   screen.maxX - 80)
-                    origin.y = min(max(origin.y, screen.minY - window.frame.height + 40),
-                                   screen.maxY - 40)
-                }
-                window.setFrameOrigin(origin)
+                window.setFrameOrigin(WindowDragGeometry.clampedOrigin(
+                    CGPoint(x: startOrigin.x + delta.x, y: startOrigin.y + delta.y),
+                    for: window
+                ))
             }
         }
     }
@@ -116,6 +112,9 @@ extension EditorTabStripView {
         item.target = self
         item.representedObject = id
         item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+        if #available(macOS 27.0, *) {
+            item.preferredImageVisibility = .visible
+        }
         menu.addItem(item)
     }
 

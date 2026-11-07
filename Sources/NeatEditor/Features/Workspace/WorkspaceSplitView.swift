@@ -40,6 +40,8 @@ struct WorkspaceSplitView: NSViewControllerRepresentable {
     }
 }
 
+/// Blank titlebar space keeps native double-click ownership; the top band's
+/// drag is coordinated at window level by `TopBandDragController`.
 final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelegate {
     private var configuration: WorkspaceSplitView
     private let sidebarController: NSHostingController<AnyView>
@@ -52,6 +54,10 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     private let topBandBackground = TabBandBackgroundView()
     private let sidebarButton = WorkspaceSplitViewController.titlebarButton(symbol: "sidebar.left")
     private var pinButton: NSButton { detailController.pinButton }
+    private let topBandDrag = TopBandDragController()
+    /// Test seam: the top-band drag decision must be inspectable without
+    /// synthesising window-server pointer events.
+    var topBandDragForTesting: TopBandDragController { topBandDrag }
     private weak var attachedWindow: NSWindow?
     private var isApplyingConfiguration = false
 
@@ -154,6 +160,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     }
 
     func detachFromWindow() {
+        topBandDrag.remove()
         detailController.strip.finishRename(commit: true)
         if let attachedWindow {
             NotificationCenter.default.removeObserver(self, name: NSWindow.didEnterFullScreenNotification,
@@ -212,6 +219,8 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
             name: NSWindow.didUpdateNotification, object: window
         )
         detailController.view.needsLayout = true
+        topBandDrag.tabBand = detailController.tabBand
+        topBandDrag.install(in: window)
     }
 
     @objc private func preserveOpaqueTitlebar(_ notification: Notification) {
@@ -305,7 +314,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
 private final class WorkspaceEditorViewController: NSViewController {
     private let host: NSHostingController<AnyView>
     let topRule = EditorTabTopRuleView()
-    private let tabBand = WorkspaceTabBandView()
+    fileprivate let tabBand = WorkspaceTabBandView()
     var strip: EditorTabStripView { tabBand.strip }
     var pinButton: NSButton { tabBand.pinButton }
     /// Titlebar accessory views whose frames the tab band must not cover.
