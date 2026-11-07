@@ -37,6 +37,15 @@ marked-text deferral, explicit external revisions and stable observation of the
 new original inode. Add a competing-writer regression using the same
 move-to-backup/replacement/backup-removal sequence.
 
+Acceptance (2026-11-07, Debug build installed at `/Applications/NeatEditor.app`):
+the two new regressions pass, the full suite reports 202 tests in 23 suites with
+no failure, and `analyze` adds no diagnostic. On the installed app a disposable
+tab showing `LIVE-BEFORE refresh check` displayed `LIVE-AFTER external TextEdit
+save` after TextEdit saved that file, in the same tab and window, with no alert;
+the previously failing `.sb-` tab reopened on the real original. Captures:
+`build/external-refresh/live-{1-before,2-after,3-closed}.png` and
+`installed-healed.png`.
+
 - All document reads/writes and rename/trash operations share an ordered I/O lane. Background saves are enqueued before returning; later synchronous lifecycle saves drain that same lane. Late completions cannot publish stale content or file identity.
 - Retain an accepted content baseline, independent of timestamps and file size. Recheck disk bytes inside native coordinated access before replacement. A clean buffer accepts external updates; equal content is not a conflict. Three-way line reconciliation merges independent edits conservatively, preserving original line terminators; ambiguous/overlapping edits never silently overwrite either side.
 - On conflict, preserve the original disk file and save the local version at a fresh conflict sibling using existing no-clobber publication. Persist a private recovery record containing baseline/local/disk content before publishing a merged or conflicting result. Inform the user with the existing native alert and an action to open the other version. Recovery must survive restart without opening a recovery window proactively. Save failures retain the buffer and offer an explicit Save Copy action using `NSSavePanel`; cancellation changes nothing and publication never clobbers an existing destination. The only explicit discard exception is Don't Save in the failed document's alert, defined below. This is the escape path for deleted/missing originals, not an automatic recovery window.
