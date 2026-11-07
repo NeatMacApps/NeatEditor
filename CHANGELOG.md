@@ -6,6 +6,20 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## Unreleased
 
+## 1.0.31 - 2026-11-07
+
+### Fixed
+
+- Dragging the window from the whole top region follows the pointer again: the band uses AppKit's native window drag instead of moving the frame per event, so it no longer stalls, jitters or lags behind the pointer.
+- Blank double-click keeps the system zoom or minimize preference, clicking the top region focuses the window, and both upper corners resize again.
+- Tabs still separate a click from a drag at four points, and the buttons, rename field and context menus keep their own events.
+
+### 简体中文
+
+- 顶部整片区域拖动窗口恢复跟手：改由 AppKit 原生窗口拖动处理，不再逐帧设置窗口位置，因此不再卡顿、抖动或落后于指针。
+- 空白处双击仍按系统偏好缩放或最小化，点击顶部会聚焦窗口，两个上角也能缩放。
+- 标签依然以 4 点为界区分点击与拖动，按钮、重命名输入框和右键菜单保持各自行为。
+
 ## 1.0.30 - 2026-11-07
 
 ### Changed
