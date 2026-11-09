@@ -299,6 +299,68 @@ relaunch and the three files were reopened manually. File contents were never
 modified by the relaunch. That workspace-restore loss is separate from this
 repair and remains unexplained; it is recorded rather than claimed fixed.
 
+## Attribute-only reconciliation loop and memory growth (2026-11-09)
+
+The owner reported slow memory growth. The installed 1.0.31 process had been
+running for about 21 hours. `leaks` found only 112 bytes in seven tiny TextKit
+objects, not a large unreachable-object leak. Heap inspection instead found
+5,466 live `NSFileCoordinatorAccessorBlockCompletion` / `NSInvocation` sets and
+36 MiB of `NSConcreteData` bytes; a later sample had 38,360 such sets and 243 MiB
+of those bytes. Footprint fluctuated with autorelease activity, so the retained
+high-water values were not treated as a standalone leak metric.
+
+A five-second thread sample captured repeated
+`observeDocument → refreshFileObservation → reconcileDocument →
+enqueueDocumentSave` work and repeated contiguous copies of the live editor
+string. The file lane was inside coordinated reads and
+`NSFileVersion.unresolvedConflictVersionsOfItem(at:)`, calling iCloud Drive's
+File Provider override. The actual Documents folder has the CloudDocs provider
+domain xattr.
+
+Isolation probes ran 2,000 coordinated reads and 2,000 coordinated atomic writes
+for each of a fresh coordinator, a coordinator with an initiating presenter and
+a reused coordinator in a temporary non-provider directory. None accumulated
+these objects, disproving a blanket `NSFileCoordinator` leak. A metadata-only
+probe on the actively reconciling iCloud document recorded repeated `.attrib`
+events with an unchanged device/inode. An unopened existing iCloud document
+remained quiet under the same bounded read-only sequence.
+
+Root cause and repair: vnode `.attrib` was treated as possible text changes.
+Attribute activity during the observe/reconcile cycle could therefore queue the
+next reconcile indefinitely. The event mask now excludes `.attrib`; write,
+extend, rename, delete, link and revoke events plus native `NSFilePresenter`
+notifications still cover content and identity changes. No save, merge,
+conflict, editor or cache policy was changed, and no timer was added to hide the
+loop. Apple's [file coordination contract](https://developer.apple.com/documentation/foundation/nsfilecoordinator/coordinate(with:queue:byaccessor:))
+excludes the initiating presenter from coordinator messages; it does not make
+attribute-only vnode notifications evidence of changed text.
+
+Regression coverage changes only POSIX permissions and requires zero callbacks,
+then performs a direct content write and requires notification. The targeted
+suite passed **28 tests**; the working-tree and exported-commit full Debug runs
+each passed **208 tests in 24 suites**. A fresh arm64 analysis found no Swift or
+analyzer warning. The only retained build notices are the already assessed
+AppIntents metadata skip and the explicit destination-selection diagnostic; no
+check was suppressed.
+
+The source fix is commit `ae8fe34`, built from an exported archive so four
+unrelated uncommitted settings/model files were excluded. That exact candidate
+also passed all 208 tests and produced a Developer ID-signed Release with the
+same team identity. Installed and candidate executable SHA256 both equal
+`efabf28e4c0b1d0ce3da70ed4a7e72c09788af873db9720b4542060b40dbf20a`.
+
+Installed acceptance on the previous iCloud workspace: after launch, footprint
+was 54.8 MiB and no coordination-completion cluster was present. Twenty further
+read-only coordination/version queries against the same previously active
+iCloud document left footprint at 54.8 MiB and the heap counts unchanged
+(176 small `NSConcreteData` objects). Five-second samples both before and after
+that workload contained none of the former observe/reconcile loop symbols, and
+the process returned to idle. Full diagnostics and probe outputs are under
+`build/memory-probe/` (ignored). This verifies the repaired trigger on macOS
+27.3 arm64; it is not a two-device cloud-convergence, native Intel or macOS 26
+acceptance run. The tiny pre-existing TextKit root leaks were not attributed to
+this repair.
+
 ## External-writer implementation and validation (2026-10-30)
 
 Adopted behavior: [editing contract](editing-text-sync-test-cases.md#external-writer-safety-owner-approved-2026-10-30).
