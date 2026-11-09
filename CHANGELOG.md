@@ -6,6 +6,18 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## Unreleased
 
+## 1.0.32 - 2026-11-09
+
+### Fixed
+
+- Stopped an iCloud Drive file-observation loop that repeatedly reconciled attribute-only events, causing growing memory use and background CPU during long editing sessions.
+- Document observation still reloads direct writes, atomic replacements and coordinated external saves; metadata-only changes no longer trigger unnecessary rereads.
+
+### 简体中文
+
+- 修复 iCloud Drive 文件观察循环：纯属性事件不再反复触发协调读取，避免长时间编辑时内存持续增长和后台空转。
+- 直接写入、原子替换及其他程序协调保存仍会正常刷新，只有元数据变化不再造成无意义重读。
+
 ## 1.0.31 - 2026-11-07
 
 ### Fixed
