@@ -106,9 +106,11 @@ final class DocumentFileObserver: NSObject, NSFilePresenter, Sendable {
     private func watch(_ url: URL) {
         let descriptor = open(url.path, O_EVTONLY | O_CLOEXEC)
         guard descriptor >= 0 else { return }
+        // Attribute-only iCloud events can be caused by coordination itself.
+        // They do not imply a text change and must not feed another reconcile.
         let source = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: descriptor,
-            eventMask: [.write, .delete, .rename, .attrib, .extend, .link, .revoke],
+            eventMask: [.write, .delete, .rename, .extend, .link, .revoke],
             queue: .global(qos: .utility)
         )
         source.setEventHandler { [weak self, weak source] in

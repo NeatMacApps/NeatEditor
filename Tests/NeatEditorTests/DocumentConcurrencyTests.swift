@@ -213,6 +213,31 @@ struct DocumentConcurrencyTests: Sendable {
         #expect(try String(contentsOf: url, encoding: .utf8) == "dddd")
     }
 
+    @Test("attribute-only changes do not trigger reconciliation but content writes still do")
+    func attributeOnlyChangesDoNotTriggerReconciliation() async throws {
+        let (service, root) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let tab = try opened(service, root: root, content: "aaaa")
+        let url = try #require(tab.fileURL)
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: url.path)
+        let changes = Mutex(0)
+        let observer = DocumentFileObserver(url: url) { _ in changes.withLock { $0 += 1 } }
+        defer { observer.stop() }
+        try await Task.sleep(for: .milliseconds(100))
+        changes.withLock { $0 = 0 }
+
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+        try await Task.sleep(for: .milliseconds(250))
+        #expect(changes.withLock { $0 } == 0)
+
+        try "bbbb".write(to: url, atomically: false, encoding: .utf8)
+        for _ in 0..<100 where changes.withLock({ $0 }) == 0 {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(changes.withLock { $0 } > 0)
+        #expect(try String(contentsOf: url, encoding: .utf8) == "bbbb")
+    }
+
     @Test("an initiating presenter stays registered and detects subsequent external writes")
     func saveKeepsItsPresenterActive() async throws {
         let (service, root) = try fixture()
