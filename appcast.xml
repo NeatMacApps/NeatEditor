@@ -3,6 +3,28 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.32</title>
+            <pubDate>Mon, 09 Nov 2026 11:22:22 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>32</sparkle:version>
+            <sparkle:shortVersionString>1.0.32</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.32
+
+
+### Fixed
+
+- Stopped an iCloud Drive file-observation loop that repeatedly reconciled attribute-only events, causing growing memory use and background CPU during long editing sessions.
+- Document observation still reloads direct writes, atomic replacements and coordinated external saves; metadata-only changes no longer trigger unnecessary rereads.
+
+### 简体中文
+
+- 修复 iCloud Drive 文件观察循环：纯属性事件不再反复触发协调读取，避免长时间编辑时内存持续增长和后台空转。
+- 直接写入、原子替换及其他程序协调保存仍会正常刷新，只有元数据变化不再造成无意义重读。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.32/NeatEditor-1.0.32.zip" length="5746437" type="application/octet-stream" sparkle:edSignature="cV0u+qVbR7EuGClbOpX+394G6MYJNiRqjL38zqujqZSxfSDtFT/YuaggV5ZAghY3uJ16BOHpzi38kuuB51aEAg=="/>
+        </item>
+        <item>
             <title>1.0.31</title>
             <pubDate>Sat, 07 Nov 2026 19:12:48 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
@@ -234,28 +256,6 @@
 - 标签栏线条以下统一使用编辑区的浅色，包括侧边栏周围的边距。
 ]]></description>
             <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.23/NeatEditor-1.0.23.zip" length="3678150" type="application/octet-stream" sparkle:edSignature="esyOIOOFZ0YDai3xSl4bgUYjt8XiDuWsTtrqpaeGWDOCS5sWrrLKaJaXLCVTDPWbg/8cyRL94A55nVfU9UzPAQ=="/>
-        </item>
-        <item>
-            <title>1.0.22</title>
-            <pubDate>Tue, 27 Oct 2026 16:48:38 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatEditor</link>
-            <sparkle:version>22</sparkle:version>
-            <sparkle:shortVersionString>1.0.22</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.22
-
-
-### Fixed
-
-- Continue the line under the tab bar across the whole window, including over the sidebar, so the selected tab rises from one unbroken line.
-- Fill the top row behind the window controls with the tab bar color when the sidebar is hidden, instead of the editor's background.
-
-### 简体中文
-
-- 标签栏下方的线条贯穿整个窗口，包括侧边栏上方，选中的标签从一条连续的线上凸起。
-- 隐藏侧边栏时，红绿灯按钮后面的顶部区域使用标签栏颜色，不再露出编辑区的白色底色。
-]]></description>
-            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.22/NeatEditor-1.0.22.zip" length="3680883" type="application/octet-stream" sparkle:edSignature="b1vP7xQMD9bHl6z+fUHDsPzrlOT00nyAV4+4B/q1PAaA/di1dczirqrEDYTscsXglA57t6huvgxnk3jbGfOZBg=="/>
         </item>
         <item>
             <title>1.0.14</title>

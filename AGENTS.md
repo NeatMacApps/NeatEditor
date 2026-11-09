@@ -1,4 +1,6 @@
 <!-- managed:inherited-agents:start -->
+<!-- source: ~/Codes/NeatEditor/app-macos/AGENTS.md -->
+<!-- managed:inherited-agents:start -->
 <!-- source: ~/Codes/NeatEditor/AGENTS.md -->
 # NeatEditor
 
@@ -42,6 +44,222 @@
 | 偏好设置与本地化 | app-macos/Sources/NeatEditor/Models/ · app-macos/Sources/NeatEditor/Features/Workspace/SettingsView.swift |
 | 发布与更新分发 | app-macos/RELEASING.md · app-macos/scripts/publish-release.sh |
 | iOS 客户端 | app-ios/Sources/NeatEditorMobile/ · app-ios/project.yml |
+
+<!-- managed:inherited-agents:end -->
+
+# AGENTS.md
+本文件是 NeatEditor 仓库内 agent 的工作手册。
+在本仓库中工作时，优先遵守这里的约定，再结合通用编码常识执行。
+
+## 工作区规范引用
+
+在阅读本文件的同时，也要先参考 Swift 工作区级规范：
+
+- [Swift 工作区规范](../../_standards/swift.md)
+
+如果项目内规则与外层工作区规则有冲突，以当前仓库内的 `AGENTS.md` 为准；外层文档作为通用基线。
+
+## 适用范围
+- 平台：macOS 26.0+
+- 语言：Swift 6
+- UI：SwiftUI
+- 工程管理：XcodeGen（`project.yml`）
+- Xcode：26.0+ (Swift 6.2 toolchain; Swift 6 language mode)
+
+## 仓库结构
+- `project.yml`：XcodeGen 配置，是工程结构的真实来源。
+- `NeatEditor.xcodeproj`：生成产物；除非 `project.yml` 无法表达，否则不要手改。
+- `Sources/NeatEditor/App`：应用入口与 Scene/commands 配置。
+- `Sources/NeatEditor/App/Commands`：菜单命令与快捷键入口。
+- `Sources/NeatEditor/Features/Workspace`：工作区状态、标签栏与主界面。
+- `Sources/NeatEditor/Features/Editor/AppKitBridge`：编辑器桥接、行号 gutter、查找与缩放。
+- `Sources/NeatEditor/Services`：自动保存与文档持久化服务。
+- `Sources/NeatEditor/SharedUI`：共享 UI 样式与标题栏辅助视图。
+- 当前仓库已有 `Tests/` 目录与 `NeatEditorTests` target。
+
+## 动手前
+- 先读相关文件，不要凭猜测做大改。
+- 仅修改与任务直接相关的文件，避免顺手重构无关代码。
+- 如果改动影响 `project.yml`，必须重新生成工程。
+- 改完后至少做一次构建验证；若改动影响运行流程，也要将新构建出的 App 替换到 `/Applications/NeatEditor.app` 后再启动验证。
+
+## 常用命令
+### 工程生成
+```bash
+xcodegen generate
+```
+- 在修改 `project.yml`、新增/删除源文件、调整 target/scheme 后必须运行。
+- 当前环境已验证 `xcodegen` 可用，版本为 `2.46.0`（2026-10-30 双渠道工具验收）。
+
+### 构建
+```bash
+xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration Debug -destination 'platform=macOS' -derivedDataPath build/DerivedData build
+```
+- 这是当前仓库最可靠的编译检查方式。
+- 推荐固定使用 `build/DerivedData`，便于后续启动 App 和排查产物。
+
+### 分析 / 近似 lint
+```bash
+xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration Debug -destination 'platform=macOS' analyze
+```
+- 仓库当前没有 SwiftLint、SwiftFormat、`swift-format` 或 `.swiftlint.yml` 配置。
+- 当前最接近 lint 的命令是 `xcodebuild ... analyze`。
+- `swiftlint` 在当前环境中未安装，不要假设它可用。
+
+### 运行 App
+先执行上面的构建命令，然后关闭旧进程，用新构建产物替换 `/Applications/NeatEditor.app`，再从 `/Applications` 启动。若测试或另一个 Agent 可能同时运行同 bundle 的测试宿主，不要按名称 `pkill`：只针对 `/Applications/NeatEditor.app` 的实际可执行文件 PID，通过 `NSRunningApplication.terminate()` 请求正常退出，并等待该 PID 消失。测试宿主同样会被按名杀死，导致另一方验证中断。
+```bash
+installed_pid="$(pgrep -f '^/Applications/NeatEditor\.app/Contents/MacOS/NeatEditor$' || true)"
+if [ -n "$installed_pid" ]; then
+  swift -e "import AppKit; guard let app = NSRunningApplication(processIdentifier: $installed_pid), app.bundleURL?.path == \"/Applications/NeatEditor.app\", app.terminate() else { fatalError(\"Could not request normal termination\") }"
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    pgrep -f '^/Applications/NeatEditor\.app/Contents/MacOS/NeatEditor$' >/dev/null || break
+    sleep 0.5
+  done
+fi
+rm -rf "/Applications/NeatEditor.app"
+ditto "build/DerivedData/Build/Products/Debug/NeatEditor.app" "/Applications/NeatEditor.app"
+for attempt in 1 2 3; do
+    if open "/Applications/NeatEditor.app"; then
+        break
+    fi
+    if [ "$attempt" -eq 3 ]; then
+        echo "Failed to launch NeatEditor after 3 attempts" >&2
+        exit 1
+    fi
+    sleep 1
+done
+```
+- 对 UI、窗口行为、命令菜单、保存流程做了修改时，优先执行这组命令验证。
+- 启动验证时，以 `/Applications/NeatEditor.app` 作为唯一准入版本，不要直接打开 `build/DerivedData` 下的产物。
+- 如果 `open` 失败，必须继续重试 2 次；只有连续 3 次都失败时，才可以向用户报告无法启动。
+
+### 测试
+```bash
+xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration Debug -destination 'platform=macOS' test
+```
+- `NeatEditorTests` covers text synchronization, document persistence, autosave scheduling, workspace failure paths, native composition commits, and font preferences.
+- 手动编辑场景（剪切/撤销/输入法/切 tab/懒加载竞态/缩放手势）见 `docs/editing-text-sync-test-cases.md`。
+
+单个测试类：
+```bash
+xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration Debug -destination 'platform=macOS' -only-testing:NeatEditorTests/EditorTextSyncStateTests test
+```
+单个测试方法：
+```bash
+xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration Debug -destination 'platform=macOS' -only-testing:NeatEditorTests/EditorTextSyncStateTests/staleSnapshotKeepsTextView test
+```
+
+- 如果你新增了测试，请同时更新 `project.yml`，确保 scheme 的 test action 生效。
+- 不要假设 `swift test` 可用；这是 XcodeGen app 工程，不是纯 SwiftPM 包。
+
+## 代码风格
+### 导入（Imports）
+- 每个 import 单独一行。
+- 不保留未使用 import。
+- 优先按语义分层排列：基础框架在前，UI 框架在后。
+- 常见顺序：`Foundation` -> `Observation` -> `AppKit` -> `SwiftUI`。
+- 只有用到 macOS 专属 API 时才引入 `AppKit`；纯 View 文件通常只需要 `SwiftUI`。
+
+### 格式化
+- 使用 4 空格缩进，不使用 tab。
+- 使用 UTF-8 + LF。
+- 类型、函数、条件语句的大括号与声明同行。
+- 主要声明块之间保留一个空行；长表达式优先拆为局部变量。
+- 不要为了“整洁”重排无关代码，避免制造大 diff。
+
+### 命名
+- 类型名使用 `UpperCamelCase`。
+- 变量、属性、函数、参数使用 `lowerCamelCase`。
+- 布尔值使用 `is`、`has`、`can`、`should` 前缀。
+- 标识符主键或关联字段使用 `...ID` 后缀，例如 `selectedTabID`。
+- 动作函数用动词开头，例如 `createNewDocument()`、`saveAllDocuments()`。
+
+### 类型与建模
+- 纯数据优先用 `struct`。
+- 共享可变状态优先放在 `@Observable` 类型中。
+- 引用语义确有必要时使用 `final class`，不要默认可继承。
+- UI 相关状态或副作用入口尽量标记为 `@MainActor`。
+- 能用 `some` / `any` 表达的地方遵循 Swift 6 语义明确写法。
+
+### 并发与状态管理
+- 默认按 Swift 6 严格并发思维写代码。
+- 新代码优先使用 `async` / `await`，避免继续扩散回调风格。
+- 需要保护可变共享状态时，优先考虑 actor 或清晰的 MainActor 隔离。
+- 当前项目已经采用 Observation：优先使用 `@Observable`、`@Environment`、`@Bindable`。
+- 不要在新代码中引入 `ObservableObject`、`@Published`、`@StateObject`、`@ObservedObject`，除非必须兼容外部 API。
+- `View` 保持轻量；业务逻辑、持久化、状态转换放进管理对象或服务层。
+
+### SwiftUI 约定
+- View 负责声明 UI，不负责承载大块业务逻辑。
+- 复用的视图片段拆成小组件或 `ViewModifier`。
+- 优先保留 macOS 桌面交互习惯：标题栏、工具栏、快捷键、菜单命令、窗口尺寸。
+- 修改窗口/命令相关逻辑时，同时检查 `Sources/NeatEditor/App/NeatEditorApp.swift`。
+- 修改工作区或 tab 行为时，同时检查 `Sources/NeatEditor/Features/Workspace/WorkspaceView.swift` 与 `Sources/NeatEditor/Features/Workspace/EditorTabStripView.swift`。
+- 修改编辑器行为时，同时检查 `Sources/NeatEditor/Features/Editor/AppKitBridge/EditorTextView.swift` 与 `Sources/NeatEditor/Features/Editor/AppKitBridge/EditorTextContainerView.swift`。
+
+### 错误处理
+- 不要新增 `!`、`try!`、强制 `as!`。
+- 仓库里已有个别历史写法时，新增代码不要复制这种模式；触达相关代码时可顺手收敛。
+- 可恢复错误优先通过 `throws`、显式错误状态或用户可见反馈处理。
+- 不要只 `print(error)` 然后吞掉错误；更推荐把错误提升到调用层，或落到统一日志/提示。
+- 文件 IO、保存、加载这类逻辑必须考虑失败路径。
+
+### 极致的启动速度 (Ultimate Startup Speed)
+- 严禁在 `@main` 或视图初始化等应用启动关键路径上，进行任何多余的同步文件 I/O 或阻塞操作。
+- 任何耗时的文档加载必须采用**懒加载 (Lazy Load)**方案，如果首屏需要展示内容，必须**异步加载 (Async Load)**内容以确保主线程瞬间完成首帧渲染。
+- 对于文件读取，尽可能使用 `Data(contentsOf:options:)` 结合 `.mappedIfSafe` 内存映射（mmap）技术，推迟物理内存分配并将文件 I/O 托付给操作系统的分页机制。
+
+### 注释与文档
+- 只在“意图不明显”或“约束容易误解”时加注释。
+- 公共 API、复杂算法、重要状态机优先使用 `///` 文档注释。
+- 注释描述“为什么”，不要机械复述“代码做了什么”。
+- 不保留过期 TODO；如果留下 TODO，要具体说明缺什么。
+
+### 多语言（Localization）
+- 当前应用已内建英文与简体中文；所有用户可见文本必须同时提供 `en.lproj/Localizable.strings` 与 `zh-Hans.lproj/Localizable.strings` 两套文案。
+- 不要在 Swift 代码里硬编码单语文案；包括 `Text`、`Button`、`Label`、菜单、右键菜单、alert、placeholder、accessibility label、错误提示、空状态、设置说明文案都要走本地化。
+- 新增或修改文案时，优先使用稳定的英文 key；避免继续扩散“直接用中文句子做 key”的写法。
+- `AppLanguage.system` 表示跟随系统语言；若你修改了文案或语言切换逻辑，必须确认应用在中英文环境下都能正确显示，并与当前“重启后生效”的产品行为保持一致。
+- 特别注意 tab 标题、右键菜单、设置页、命令菜单，以及重命名/保存/加载失败提示和任何 `LocalizedError` 返回值，这些位置最容易漏掉本地化。
+
+### 文件与工程变更
+- 新增 Swift 文件后，如果工程未自动包含，更新 `project.yml` 并重新执行 `xcodegen generate`。
+- 非必要不要提交 `.xcodeproj` 内部手工改动。
+- 不引入第三方库，除非用户明确要求并确认；优先使用系统框架：`Foundation`、`SwiftUI`、`Observation`、`OSLog`、`SwiftData` 等。
+
+## 与当前代码保持一致的实现提示
+- 文档标签页由 `EditorTab` 建模，集中存放在 `WorkspaceStore.tabs`。
+- 当前选中文档由 `WorkspaceStore.selectedTabID` 驱动。
+- 标签栏手势通过 `TitleBarEventMonitor` (AppKit `NSEvent` 局部监听) 实现，以绕过 SwiftUI `TapGesture` 导致的 ~250ms 点击延迟。
+- 标签双击重命名使用 `NSEvent.doubleClickInterval` 手动判定；空白标题栏双击由系统原生处理，详见 `TabStripGestures.md`。
+- 重命名编辑模式通过 `tabStripPendingRename` 在视图销毁前同步状态，确保点击外部区域或应用失去焦点时能正确保存并退出。
+- 自动保存由 `WorkspaceStore.queueAutoSave(for:)` 触发，底层通过 `AutoSaveScheduler` 做 2 秒 debounce。
+- 新建标签前、切换标签时、关闭当前标签时，都会先保存当前选中文档。
+- 外部文件打开入口由 `ExternalFileOpenCoordinator` 接入，实际打开逻辑集中在 `WorkspaceStore.openFiles(at:)`。
+- 同一路径的外部文件不会重复打开多个标签；重命名已落盘文件时会同步重命名磁盘文件并保留原扩展名。
+- 切换标签时会保存旧标签；应用转入 inactive/background 时会保存全部文档。
+- 空白内容（包括仅空白字符）不落盘是当前产品约定；触碰保存逻辑时不要把“清空文档后未覆盖磁盘文件”当作 bug 修掉，README 与实现需保持一致。
+- 当前工作区支持内嵌搜索栏、`Command + +/-` 缩放，以及标题栏图钉控制窗口置顶；触碰相关交互时要连同命令菜单和最小窗口尺寸一起验证。
+- 触碰这些逻辑时，要连同保存时机一起验证，不要只看 UI 是否能显示。
+
+## Agent 工作方式
+- 先读上下文，再改代码。
+- 尽量小步提交，避免把“修功能”和“重排格式”混在一起。
+- 完成修改后至少执行一次构建；如果变更影响运行流程，先用新构建产物替换 `/Applications/NeatEditor.app`，再启动该版本验证。
+- 重启 App 时，必须从 `/Applications/NeatEditor.app` 启动；如果 `open` 启动失败，必须再重试 2 次；只有连续 3 次都失败时，才可结束并明确说明启动失败。
+- 测试已配置（`NeatEditorTests`）：改完跑一次 `test`；不要谎称已跑测试。
+- 若你新增了测试设施，请同步更新本文件中的命令示例。
+
+## 文档导航
+
+- [Distribution toolkit](tools/macos-distribution/README.md): Reusable direct-download/Mac App Store target templates, local archive/export and artifact audits; research, native verification and store-adoption limits.
+- [TabStripGestures.md](docs/TabStripGestures.md): Full-height sidebar, compact 40 pt top row (empty compact toolbar, sidebar accessory, + and pin in the tab band), owner-retained stepped tabs, continuous joins, hover close with filename fade, click/rename/drag and acceptance.
+- [docs/editing-text-sync-test-cases.md](docs/editing-text-sync-test-cases.md): Editing and persistence contracts, failure recovery, input-method ownership, and manual acceptance scenarios.
+- [docs/code-review.md](docs/code-review.md): Review findings, external-writer safety research/implementation, native concurrency and installed acceptance, macOS 26 baseline, retained diagnostics and architecture limits.
+- [Notarization agreement rejection](docs/troubleshooting/2026-10-01-notary-agreement.md): Account agreement preflight failure and release recovery.
+- `docs/troubleshooting/2026-08-09-app-icon-stale-install.md`：改、替换、还原代码或排查「图标变成白底手写 A / 被还原到几个月前」前**必读**。不读会把公开仓里的占位图装回本机，盖掉现行蓝底卷纸图标。
+- 现行图标母版：`design/app-icon/AppIcon-1024.png`。工程内 `AppIcon.appiconset` 必须跟这张走，不要跟 git 历史上的占位图走。
 
 <!-- managed:inherited-agents:end -->
 
