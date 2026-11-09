@@ -151,6 +151,59 @@ resize 988×563 → 952×590. Click-to-focus on an inactive window could not be
 verified here: posted clicks did not change activation even on Finder's titlebar,
 so this environment cannot prove it either way (see `docs/TabStripGestures.md`).
 
+## 1.0.32 publication evidence (2026-11-09)
+
+Published [v1.0.32](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.32)
+(build 32) from immutable source `5e6ee4b`; appcast commit `5bbeaab`. The release
+contains only the iCloud attribute-event reconciliation repair (`ae8fe34`) and
+its documentation, excluding four unrelated uncommitted settings/model files.
+The already completed 208-test / 24-suite Debug runs covered the application
+source; the version preparation changed only version metadata, the generated
+project, CHANGELOG and taskboard. The publisher then completed a fresh universal
+Release archive and Developer ID export, retaining only the assessed AppIntents
+metadata notice.
+
+Apple accepted app submission `173d80c0-68a9-4831-a954-d9d83c34047a` and DMG
+submission `b2e6f56a-0c19-4568-b004-b293e4cc8a6e`. The publisher verified the
+exact three-asset set, draft download byte comparison, Sparkle EdDSA signature,
+public Release and build-32 appcast.
+
+| Published artifact | SHA256 |
+|---|---|
+| `NeatEditor-1.0.32.dmg` | `718d48841331fc41d3f3df93f07d8a8348342e7ff72508f886e1fdf1f2244983` |
+| `NeatEditor-1.0.32.zip` | `3beb1c6d6fa127187149d30e5245257d08fc71aca409769a35967ddfaf625d7e` |
+
+Independent anonymous full downloads matched the local bytes and
+`SHA256SUMS.txt`. The public DMG passed ticket validation; its universal app
+passed strict nested signing and `spctl` (`source=Notarized Developer ID`,
+`override=security disabled`). It now launches from `/Applications` as 1.0.32
+(32), with executable SHA256
+`e9d433bbb1cf1f2362128463a93c97a9629f89942de67c09144153076a5a0ecc`
+matching the mounted public DMG. Anonymous verification files are under
+`build/release-1.0.32/anonymous/` (ignored).
+
+Homebrew Cask 1.0.32 was published in `x0c/homebrew-tap` commit `696b949`.
+After `brew update`, the installed tap read back that version and DMG hash;
+`brew style`, `brew audit --online` and `brew info` passed. Homebrew also emitted
+its vendor `rubocop-md` obsolete `IgnoredPatterns` configuration warning after
+the Homebrew self-update; this is outside the Cask and was not suppressed.
+
+Transport recovery: direct SSH/22 and HTTPS briefly failed before publication.
+Git operations used GitHub's documented [SSH-over-HTTPS port](https://docs.github.com/en/authentication/troubleshooting-ssh/using-ssh-over-the-https-port)
+(`ssh.github.com:443`) without changing global Git or SSH configuration. No
+artifact was rebuilt merely to retry transport.
+
+A nested clean release clone triggered the inherited-AGENTS generator and an
+unrelated duplicated `AGENTS.md` snapshot entered appcast commit `5bbeaab`. The
+immutable `v1.0.32` tag's AGENTS source, application inputs and signed bytes
+were verified unaffected. A following documentation commit restored the exact
+tagged AGENTS content without rewriting history or moving the tag; the
+`agents-md-edit` audit then found one balanced managed region and all 12 local
+links present (the two navigation headings are the pre-existing inherited/local
+structure). Environment follow-up: run future clean release clones outside the
+product workspace and inspect the appcast commit's name list before push so this
+generator interaction cannot recur.
+
 ## Durable release requirements
 
 R1 — Committed clean source before build. The coordinator commits only its
