@@ -202,7 +202,8 @@ tagged AGENTS content without rewriting history or moving the tag; the
 links present (the two navigation headings are the pre-existing inherited/local
 structure). Environment follow-up: run future clean release clones outside the
 product workspace and inspect the appcast commit's name list before push so this
-generator interaction cannot recur.
+generator interaction cannot recur. Reusable transport and clean-checkout
+rules now live in the [shared GitHub publishing guide](~/.config/agentsync/docs/OPEN_SOURCE_GITHUB_GUIDE.md).
 
 ## Durable release requirements
 
