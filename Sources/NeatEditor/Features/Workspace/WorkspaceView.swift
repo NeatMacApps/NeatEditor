@@ -41,10 +41,9 @@ struct WorkspaceView: View {
             theme: workspaceStore.preferences.editorTheme
         )
         .ignoresSafeArea(.container, edges: .top)
-        // The native toolbar stays visible but must not paint an opaque background:
-        // that view otherwise claims blank band presses and blocks native window
-        // dragging. The split view's band view paints the same color underneath.
-        .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
+        // Keep native toolbar controls and hit routing, but let the split view's
+        // band own its background from the first frame, including key-window launch.
+        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .toolbar(removing: .title)
         .background {
             WindowPinningView(isWindowPinned: isWindowPinned)

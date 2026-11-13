@@ -41,6 +41,11 @@ struct WorkspaceSplitView: NSViewControllerRepresentable {
 }
 
 final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelegate {
+    #if DEBUG
+    // Scene fixtures must reproduce a key window BEFORE native chrome is built.
+    static var prepareWindowForTesting: ((NSWindow) -> Void)?
+    #endif
+
     private var configuration: WorkspaceSplitView
     private let sidebarController: NSHostingController<AnyView>
     private let detailController: WorkspaceEditorViewController
@@ -177,13 +182,16 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
 
     private func attachToWindow() {
         guard let window = view.window else { return }
-        // SwiftUI's toolbar background preference can reset this after attachment.
-        // Keep its color, but leave blank hits with the native opaque toolbar.
+        // Hiding SwiftUI's toolbar paint can also make the titlebar transparent.
+        // Keep native toolbar hit routing while the split view owns the band color.
         if window.titlebarAppearsTransparent {
             window.titlebarAppearsTransparent = false
         }
         guard attachedWindow !== window else { return }
         attachedWindow = window
+        #if DEBUG
+        Self.prepareWindowForTesting?(window)
+        #endif
         window.titleVisibility = .hidden
         // The band color also shows around the floating sidebar panel; the
         // editor column paints its own light surface.

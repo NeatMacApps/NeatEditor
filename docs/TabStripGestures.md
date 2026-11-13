@@ -559,9 +559,10 @@ build or hit-testing results alone.
   collapsed and the window is key. An inactive-window screenshot that hides
   the native white cap does not accept this requirement. The selected stepped
   tab still matches the editor surface; no geometry or gesture change is requested.
-- Inspected reference: `WorkspaceView`, `WorkspaceSplitViewController` and
-  `TabBandBackgroundView`. Retain their compact native toolbar, accessories and
-  theme palette. Use SwiftUI's public
+- Historical 2026-11-06 implementation (superseded by the native-drag repair
+  and the 2026-11-13 cold-launch correction below): inspected `WorkspaceView`,
+  `WorkspaceSplitViewController` and `TabBandBackgroundView`, retaining their
+  compact native toolbar, accessories and theme palette. It used SwiftUI's public
   [`toolbarBackground(_:for:)`](https://developer.apple.com/documentation/swiftui/view/toolbarbackground(_:for:))
   on `.windowToolbar`, with `.visible` background visibility and the same
   `EditorChrome` band token. The API is present in Xcode 27.2 (macOS 13+).
@@ -575,8 +576,9 @@ build or hit-testing results alone.
   A scene probe with active-application drawing reproduced the old white cap, then showed the same rendered color
   behind the traffic lights and inactive tabs with the custom style and opaque
   titlebar together. Native toolbar blank hits remain outside content. Do not
-  modify private chrome views, manually position traffic lights, hide the
-  toolbar background or repeat the `.hiddenTitleBar` regression.
+  modify private chrome views or manually position traffic lights. The earlier
+  prohibition on hiding toolbar paint is superseded by the cold-launch correction
+  below; `.hiddenTitleBar` and transparent native hit routing remain rejected.
 - Acceptance: inspect the top-left and inactive-tab-band pixels in the same
   key-window capture, light/dark and both themes, sidebar open/closed; retain
   native blank-titlebar hit routing. Locked-session inactive pixels alone leave
@@ -620,6 +622,46 @@ build or hit-testing results alone.
   temporary documents folder/defaults suite and removes them on success/failure.
   Scene-owned preference scope, active/inactive evidence and native routing
   caveats are maintained in the [shared macOS guide](~/.config/agentsync/docs/MACOS_APP_DEVELOPMENT_GUIDE.md#scene-owned-toolbar-backgrounds-verified-2026-11-06).
+
+### Cold-launch white-cap regression (owner report 2026-11-13)
+
+- Acceptance is reopened: launching with the sidebar collapsed can leave a white
+  rectangle behind the traffic lights and sidebar button; expanding the sidebar
+  clears it. The initial frame must already use the uninterrupted band color.
+  Toggling the sidebar, resizing, delayed synthetic redraws, or accepting only
+  inactive-window pixels is not a fix.
+- Reuse the existing native compact toolbar, titlebar accessories and
+  `TabBandBackgroundView`; preserve native dragging, double-click and controls.
+  Verify a fresh collapsed launch before any resize or sidebar transition, then
+  both sidebar states, themes and appearances. The existing scene fixture forces
+  resize/layout/cache drawing before comparison, so its passing matrix alone
+  does not cover this startup path.
+- Inspected implementation: the existing `WorkspaceView` toolbar preference,
+  `WorkspaceSplitViewController` opacity guard and `TabBandBackgroundView`.
+  Use the public
+  [`toolbarBackgroundVisibility(.hidden, for: .windowToolbar)`](https://developer.apple.com/documentation/swiftui/view/toolbarbackgroundvisibility(_:for:))
+  to remove only the competing native background paint. Keep `.titleBar`, the
+  visible empty `.unifiedCompact` toolbar, native accessories and
+  `titlebarAppearsTransparent == false`. The split view remains the single band
+  painter. This is not `.hiddenTitleBar`, toolbar removal, transparent titlebar
+  hit routing, or the custom toolbar-color modifier that blocked dragging.
+- Reference applicability: Apple's
+  [window customization sample](https://developer.apple.com/documentation/swiftui/customizing-window-styles-and-state-restoration-behavior-in-macos)
+  documents the background-visibility API; the installed SDK supports it. Reuse
+  this API only, not the sample's titlebar removal, new gestures or layout.
+  The scene matrix checks native blank hits outside content, native
+  `mouseDownCanMoveWindow`, visible toolbar/controls and the 40 pt geometry.
+- First-frame evidence must come from `winshot` while the fixture is running
+  with `--cold-launch`, before any cache drawing. Its `--verify-capture` mode
+  reads that image from `NEATEDITOR_CHROME_CAPTURE` and compares leading-band
+  pixels with the inactive-tab band. Run each theme/appearance/sidebar/width
+  combination in a fresh process. The cached matrix remains a separate
+  transition/routing check; it can pass while an initial compositor cap exists.
+- The Debug-only `prepareWindowForTesting` hook exercises key-before-toolbar
+  ordering. Active-application/key drawing is simulated in the scene fixture;
+  screen-lock captures of the installed application do not establish genuine
+  foreground activation or physical dragging/double-click. Do not turn those
+  limitations into an active-window acceptance claim.
 
 ## First-tab join clearance (owner report 2026-10-27)
 
@@ -772,9 +814,10 @@ The installed app also required removing
 `.toolbarBackground(color, for: .windowToolbar)`: that modifier gives the
 native toolbar an opaque background whose view claims blank band presses and
 rejects the native drag (harness matrix: colour 0/0 pt, colour + visibility
-0/0 pt, visibility alone +71/+35 pt). Keep `Visibility(.visible)` and let the
-split view's band view paint the same colour; the band colour is unchanged in
-the inspected installed window.
+0/0 pt, visibility alone +71/+35 pt). The 2026-11-13 cold-launch correction
+supersedes the earlier `Visibility(.visible)` choice: hide native background
+paint only, preserve opaque native hit routing, and let the split view's band
+view own the colour. The custom toolbar-colour modifier remains absent.
 
 Installed acceptance (2026-11-07, universal Release from `d5934fe` + this
 change): top-band drags measured +71/+35 pt over sidebar blank, tab gutter and

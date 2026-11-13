@@ -61,6 +61,7 @@ struct WorkspaceTitlebarTests {
         let delegate = try #require(toolbar.delegate)
         #expect(delegate.responds(to: #selector(NSToolbarDelegate.toolbar(_:itemForItemIdentifier:willBeInsertedIntoToolbar:))))
         #expect(toolbar.items.isEmpty)
+        #expect(toolbar.isVisible)
         #expect(window.toolbarStyle == .unifiedCompact)
         #expect(!toolbar.allowsUserCustomization && !toolbar.allowsDisplayModeCustomization)
         #expect(window.frame.height - window.contentLayoutRect.height == EditorTabLayout.stripHeight)
