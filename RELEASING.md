@@ -278,6 +278,61 @@ pointer/IME interaction, native Intel and minimum-macOS runtime acceptance remai
 unverified under screen lock. Complete logs, public-verification receipts and
 private installed captures are retained in `build/release-1.0.33/`.
 
+## 1.0.34 corrective publication evidence (2026-11-13)
+
+Published [v1.0.34](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.34)
+(build 34) from immutable source `8a3ac69`; appcast commit `7e52cf5`. This
+contains the actual native-accessory paint correction `782e6e6`, replacing the
+ineffective toolbar-background preference change published in 1.0.33.
+
+The same native active/key-window fixture and configuration reproduce white
+leading pixels against the pre-fix binary and band-colored pixels against the
+corrected binary. Its compositor detector rejects the original and accepts the
+correction. All 16 native theme/appearance/sidebar/width configurations pass;
+209 tests / 24 suites and clean universal Debug/Release build/analysis pass.
+These same-session gates were reused after a version-only preparation; a fresh
+versioned Release build, universal archive and Developer ID export also pass.
+The sole build/archive warning remains the assessed AppIntents metadata notice.
+
+Apple accepted app submission `8a3ac907-dc1e-424c-ad64-73e327111a09` and DMG
+submission `70af0491-9cac-4f31-afb1-028712b08fe7`. Both tickets are stapled.
+Independent anonymous full downloads matched the exact three published assets,
+local bytes and checksum manifest. The live normal update feed advertises build
+34 with the correct update length and English-first bilingual notes. Public-key
+Ed25519 verification accepts the update ZIP and rejects a one-byte modification.
+The existing feed remains unsigned; updater policy was not changed.
+
+| Published artifact | SHA256 |
+|---|---|
+| `NeatEditor-1.0.34.dmg` | `b6148011f5e8fdd1af37cf19f6683678319562f42c3f80a25ab8f3d4821b8bf9` |
+| `NeatEditor-1.0.34.zip` | `d3689bcb93964d6bfca5e13a09e1664a1e6dca91be7c3122af97fe8dac0a1b6a` |
+
+Homebrew Cask 1.0.34 is published in `x0c/homebrew-tap` commit `dee4686`;
+style, online audit and info pass and anonymous Cask bytes match. The unchanged
+vendor `rubocop-md` warning and its risk/follow-up are assessed in the 1.0.33
+record above. No unrelated tap README or Settings/model edit was included.
+
+The app from the anonymous downloaded DMG matches the exported app's full file
+and symlink catalog. `/Applications/NeatEditor.app` now reports 1.0.34 (34), with
+installed/public-DMG executable SHA256
+`5bb044f4b12107a8ed1bae1231120c69cbc744a71ad4bd6a77e627c25490cbf3`.
+Developer ID team `SHZQ3MWP3B`, strict nested signatures and app/DMG tickets pass.
+`spctl` reports Notarized Developer ID with `override=security disabled`, so
+normal clean-machine Gatekeeper enforcement remains unverified. Fresh normal
+quit/relaunch captures with new process/window identities show continuous
+leading-band paint with initially collapsed and expanded sidebars. The expanded
+state was restored and the task-mounted DMG was ejected.
+
+The [validation-only tag CI](https://github.com/NeatMacApps/NeatEditor/actions/runs/43415887722)
+retains the same pre-existing Xcode 26.0.1 SDK failure at
+`NSMenuItem.preferredImageVisibility` documented for 1.0.33; it does not supply
+public assets and was not represented as passing. Genuine foreground launch,
+physical pointer/IME interaction, Intel execution and the minimum-macOS runtime
+remain unverified under screen lock. The native before/after control is rendering
+evidence, not physical input evidence. Private logs, receipts and installed
+captures: `build/release-1.0.34/`; repair red/green evidence:
+`build/ActiveCapRepair/`.
+
 ## Durable release requirements
 
 R1 — Committed clean source before build. The coordinator commits only its

@@ -737,11 +737,15 @@ sidebars were inspected, with the original expanded state restored. Evidence:
 `build/ActiveCapRepair/`, including raw native baseline/fixed captures and
 `native-before-after.png` (identically cropped real fixture screenshots).
 
-The app remains a local unnotarized 1.0.33 source build; the immutable public
-1.0.33 packages do not contain this correction. Physical foreground launch,
-pointer drag/double-click and a macOS 26 runtime remain unverified under screen
-lock. The native control establishes the repaired painting defect, not those
-input behaviors. Native hit routing is unchanged and structurally tested.
+The correction is now published and installed as notarized 1.0.34 (34), from
+source `8a3ac69`; the immutable public 1.0.33 packages do not contain it.
+Installed/public-DMG executable SHA256 is
+`5bb044f4b12107a8ed1bae1231120c69cbc744a71ad4bd6a77e627c25490cbf3`.
+See [corrective publication](../RELEASING.md#1034-corrective-publication-evidence-2026-11-13)
+for the verified DMG, feed, Cask and installation receipts. Physical foreground
+launch, pointer drag/double-click and a macOS 26 runtime remain unverified under
+screen lock. The native control establishes the repaired painting defect, not
+those input behaviors. Native hit routing is unchanged and structurally tested.
 
 ## First-tab join clearance (owner report 2026-10-27)
 
