@@ -3,6 +3,28 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.34</title>
+            <pubDate>Fri, 13 Nov 2026 19:16:47 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>34</sparkle:version>
+            <sparkle:shortVersionString>1.0.34</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.34
+
+
+### Fixed
+
+- Correct the white background behind the window controls that remained in 1.0.33. Paint that region inside the existing native titlebar accessory, above the system background rather than underneath it.
+- Preserve native window controls and titlebar hit targets across sidebar changes, resizing, appearance changes and full-screen transitions.
+
+### 简体中文
+
+- 修复 1.0.33 中仍然存在的红绿灯后方白底：把该区域的背景绘制放入现有原生标题栏附件，画在系统背景上方，而不是被系统背景盖住的内容层。
+- 保留原生窗口按钮和标题栏点击区域，并覆盖侧栏切换、窗口缩放、外观变化及全屏切换。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.34/NeatEditor-1.0.34.zip" length="5747980" type="application/octet-stream" sparkle:edSignature="0B4I6crEguBJxfXL+Mz86i3AvYq/6WLlKE0tw6wPj6kmCRbIHW3/LseovVJfCXOQm24ZCOjghUSbgZMnVnTrBg=="/>
+        </item>
+        <item>
             <title>1.0.33</title>
             <pubDate>Fri, 13 Nov 2026 16:38:08 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
@@ -234,26 +256,6 @@
 - 更新检查改为首个窗口出现后启动，不再占用启动路径。
 ]]></description>
             <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.25/NeatEditor-1.0.25.zip" length="3716900" type="application/octet-stream" sparkle:edSignature="jXNu8pAuZivpI37xSupZmOMnmZgUfLK9/JDriM0Csyzkk9N0JVPooclq+BGa8ubpOHiNN4EHAnQOL4ygTuJaCw=="/>
-        </item>
-        <item>
-            <title>1.0.24</title>
-            <pubDate>Tue, 27 Oct 2026 18:28:08 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatEditor</link>
-            <sparkle:version>24</sparkle:version>
-            <sparkle:shortVersionString>1.0.24</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.24
-
-
-### Changed
-
-- Give the sidebar the same color as the tab bar, including the margins around it, so only the editor uses the light background.
-
-### 简体中文
-
-- 侧边栏（包括周围边距）改为与标签栏相同的颜色，只有编辑区使用浅色背景。
-]]></description>
-            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.24/NeatEditor-1.0.24.zip" length="3678952" type="application/octet-stream" sparkle:edSignature="tukG7TtzjuGLJGygztbYqVqWqc/RYe5VCNSnUbCOZgvL0OUT+6c8/EFPb0qXzYPiULlTMTMfc+NYlQZM8EknAw=="/>
         </item>
         <item>
             <title>1.0.14</title>
