@@ -625,6 +625,32 @@ build or hit-testing results alone.
 
 ### Cold-launch white-cap regression (owner report 2026-11-13)
 
+- Owner rejection after 1.0.33: the traffic-light/sidebar-button region still
+  renders white in the active window (`paste-vzkdu019.jpg`). Hiding SwiftUI's
+  toolbar background did not fix native active-titlebar paint. The previous
+  scene/cached matrices and inactive installed captures are insufficient and
+  their passing results do not establish this defect as fixed. Acceptance is
+  reopened; require a reproducing active/native control with a failing baseline
+  and passing corrected compositor pixels before another completion claim.
+- Preserve native controls, 40 pt geometry, drag/double-click and corner resizing.
+  Research and inspect painting in the existing native titlebar accessory: a
+  background beneath the opaque native titlebar is the wrong ownership layer.
+  Do not mutate private AppKit chrome, toggle the sidebar as initialization,
+  synthesize gestures, or weaken the active-window evidence requirement.
+- Revised implementation reference: reuse `TabBandBackgroundView` as a
+  non-interactive background subview of the existing native sidebar `NSButton`,
+  below its native image (owned layer z = -1), inside
+  `NSTitlebarAccessoryViewController`. Its frame
+  extends from the window's leading edge to the tab accessory's leading edge;
+  no control or hit target is enlarged. The inspected native active-window
+  control changes from white to the band color when an owned accessory layer
+  paints there. The content-side painter cannot cover the native background.
+  Apple's public [NSView.clipsToBounds](https://developer.apple.com/documentation/appkit/nsview/clipstobounds)
+  explicitly permits out-of-bounds drawing without changing hit testing (macOS
+  14+). Set this only on the owned button; do not alter any private ancestor.
+  Reuse existing palette/drawing/native accessory geometry, not a replacement
+  toolbar or button. Verify compositor colors plus unchanged native blank/control
+  hits, appearance changes, resizing, sidebar transitions and full-screen rehoming.
 - Acceptance is reopened: launching with the sidebar collapsed can leave a white
   rectangle behind the traffic lights and sidebar button; expanding the sidebar
   clears it. The initial frame must already use the uninterrupted band color.
@@ -636,9 +662,9 @@ build or hit-testing results alone.
   both sidebar states, themes and appearances. The existing scene fixture forces
   resize/layout/cache drawing before comparison, so its passing matrix alone
   does not cover this startup path.
-- Inspected implementation: the existing `WorkspaceView` toolbar preference,
-  `WorkspaceSplitViewController` opacity guard and `TabBandBackgroundView`.
-  Use the public
+- Failed 1.0.33 implementation (not the current fix): the existing
+  `WorkspaceView` toolbar preference, `WorkspaceSplitViewController` opacity
+  guard and `TabBandBackgroundView` used the public
   [`toolbarBackgroundVisibility(.hidden, for: .windowToolbar)`](https://developer.apple.com/documentation/swiftui/view/toolbarbackgroundvisibility(_:for:))
   to remove only the competing native background paint. Keep `.titleBar`, the
   visible empty `.unifiedCompact` toolbar, native accessories and

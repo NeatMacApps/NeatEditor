@@ -319,6 +319,38 @@ struct WorkspaceTitlebarTests {
         }
     }
 
+    @Test("leading band paint lives in native chrome without enlarging controls or taking hits",
+          arguments: [true, false], [CGFloat(470), 900])
+    func leadingBandPaint(sidebarVisible: Bool, width: CGFloat) throws {
+        let window = makeWindow(sidebarVisible: sidebarVisible, width: width)
+        defer { window.close() }
+        let sidebar = try sidebarButton(window)
+        let background = try #require(sidebar.subviews.first {
+            $0.identifier?.rawValue == "WorkspaceLeadingBandBackground"
+        })
+        #expect(!sidebar.clipsToBounds)
+        #expect((background.layer?.zPosition ?? 0) < 0)
+        #expect(sidebar.frame.width == EditorTabLayout.newDocumentSlotWidth)
+        #expect(background.hitTest(NSPoint(x: 1, y: 1)) == nil)
+        for size in [width, width + 80] {
+            window.setContentSize(NSSize(width: size, height: 500))
+            window.layoutIfNeeded()
+            window.contentView?.layoutSubtreeIfNeeded()
+            let frame = background.convert(background.bounds, to: nil)
+            let buttonFrame = sidebar.convert(sidebar.bounds, to: nil)
+            #expect(abs(frame.minX) < 0.5)
+            #expect(frame.maxX >= buttonFrame.maxX)
+            #expect(abs(frame.minY - window.contentLayoutRect.maxY) < 0.5)
+            #expect(abs(frame.maxY - window.frame.height) < 0.5)
+        }
+        NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
+        window.layoutIfNeeded()
+        #expect(background.isHidden)
+        NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
+        window.layoutIfNeeded()
+        #expect(!background.isHidden)
+    }
+
     private func findStrip(in window: NSWindow) -> EditorTabStripView? {
         let accessories = window.styleMask.contains(.titled)
             ? window.titlebarAccessoryViewControllers.map(\.view) : []

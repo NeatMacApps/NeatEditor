@@ -55,6 +55,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     private let sidebarAccessory = NSTitlebarAccessoryViewController()
     private let tabAccessory = NSTitlebarAccessoryViewController()
     private let topBandBackground = TabBandBackgroundView()
+    private let leadingBandBackground = TabBandBackgroundView()
     private let sidebarButton = WorkspaceSplitViewController.titlebarButton(symbol: "sidebar.left")
     private var pinButton: NSButton { detailController.pinButton }
     private let topBandDrag = TopBandDragController()
@@ -73,6 +74,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         detailController.accessoryViews = [sidebarButton]
         detailController.strip.theme = configuration.theme
         topBandBackground.theme = configuration.theme
+        leadingBandBackground.theme = configuration.theme
     }
 
     @available(*, unavailable)
@@ -103,6 +105,13 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         sidebarButton.setAccessibilityLabel(sidebarLabel)
         sidebarButton.target = self
         sidebarButton.action = #selector(toggleSidebar(_:))
+        // Paint above AppKit's active white titlebar, not beneath it in content.
+        // Only drawing extends left: the native button's frame/hit area is unchanged.
+        sidebarButton.clipsToBounds = false
+        leadingBandBackground.wantsLayer = true
+        leadingBandBackground.layer?.zPosition = -1
+        leadingBandBackground.identifier = NSUserInterfaceItemIdentifier("WorkspaceLeadingBandBackground")
+        sidebarButton.addSubview(leadingBandBackground, positioned: .below, relativeTo: nil)
         sidebarAccessory.view = sidebarButton
         sidebarAccessory.layoutAttribute = .leading
         tabAccessory.layoutAttribute = .trailing
@@ -122,6 +131,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     override func viewDidLayout() {
         super.viewDidLayout()
         attachToWindow()
+        updateLeadingBandBackground()
     }
 
     override func splitViewDidResizeSubviews(_ notification: Notification) {
@@ -144,6 +154,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         if self.configuration.theme != configuration.theme {
             detailController.strip.theme = configuration.theme
             topBandBackground.theme = configuration.theme
+            leadingBandBackground.theme = configuration.theme
             attachedWindow?.backgroundColor = EditorChrome.tabBarBackgroundColor(for: configuration.theme)
         }
         self.configuration = configuration
@@ -174,6 +185,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         detailController.moveTabBand(to: nil)
         tabAccessory.removeFromParent()
         sidebarAccessory.removeFromParent()
+        leadingBandBackground.isHidden = true
         if attachedWindow?.toolbar === heightToolbar {
             attachedWindow?.toolbar = nil
         }
@@ -223,24 +235,47 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
             name: NSWindow.didUpdateNotification, object: window
         )
         detailController.view.needsLayout = true
+        updateLeadingBandBackground()
         topBandDrag.tabBand = detailController.tabBand
         topBandDrag.install(in: window)
     }
 
     @objc private func preserveOpaqueTitlebar(_ notification: Notification) {
-        guard let window = attachedWindow, window.titlebarAppearsTransparent else { return }
-        window.titlebarAppearsTransparent = false
+        guard let window = attachedWindow else { return }
+        if window.titlebarAppearsTransparent { window.titlebarAppearsTransparent = false }
+        updateLeadingBandBackground()
+    }
+
+    private func updateLeadingBandBackground() {
+        guard let window = attachedWindow, sidebarButton.window === window,
+              window.titlebarAccessoryViewControllers.contains(tabAccessory),
+              !window.styleMask.contains(.fullScreen) else {
+            leadingBandBackground.isHidden = true
+            return
+        }
+        leadingBandBackground.isHidden = false
+        let buttonFrame = sidebarButton.convert(sidebarButton.bounds, to: nil)
+        let tabBand = detailController.tabBand
+        let tabsLeading = tabBand.window === window
+            ? tabBand.convert(tabBand.bounds, to: nil).minX : buttonFrame.maxX
+        let nativeBand = CGRect(x: 0, y: window.contentLayoutRect.maxY,
+                                width: max(buttonFrame.maxX, tabsLeading),
+                                height: max(0, window.frame.height - window.contentLayoutRect.maxY))
+        let frame = sidebarButton.convert(nativeBand, from: nil)
+        if leadingBandBackground.frame != frame { leadingBandBackground.frame = frame }
     }
 
     @objc private func didEnterFullScreen(_ notification: Notification) {
         detailController.moveTabBand(to: nil)
         tabAccessory.removeFromParent()
+        leadingBandBackground.isHidden = true
     }
 
     @objc private func didExitFullScreen(_ notification: Notification) {
         guard let window = attachedWindow else { return }
         detailController.moveTabBand(to: tabAccessory)
         window.addTitlebarAccessoryViewController(tabAccessory)
+        updateLeadingBandBackground()
     }
 
     private func updatePinButton() {
@@ -258,9 +293,9 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     }
 
     /// The band color and the tab rule span the whole window above both panes,
-    /// ending at the band's bottom edge. The background covers AppKit's titlebar
-    /// section backgrounds (white in the key window); the rule continues left
-    /// across the sidebar. Neither takes hits, so native titlebar gestures stay.
+    /// ending at the band's bottom edge. This content-side paint cannot cover
+    /// active native titlebar chrome; the leading accessory owns that region.
+    /// The rule continues across the sidebar. Neither view takes hits.
     private func installTopBand() {
         let background = topBandBackground
         let rule = detailController.topRule
@@ -431,6 +466,11 @@ private final class TabBandBackgroundView: NSView {
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         // Bounds, not dirtyRect: views no longer clip by default, and the dirty
