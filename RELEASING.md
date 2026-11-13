@@ -205,6 +205,69 @@ product workspace and inspect the appcast commit's name list before push so this
 generator interaction cannot recur. Reusable transport and clean-checkout
 rules now live in the [shared GitHub publishing guide](~/.config/agentsync/docs/OPEN_SOURCE_GITHUB_GUIDE.md).
 
+## 1.0.33 publication evidence (2026-11-13)
+
+Published [v1.0.33](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.33)
+(build 33) from immutable source `5bcb465`; appcast commit `9be64a4`.
+Scope: the cold-launch titlebar-background repair and its rendering regression
+fixture, with native compact toolbar and event routing retained. Four unrelated
+uncommitted Settings/model files were excluded and preserved. The clean release
+clone was outside the product workspace, and the appcast commit contains only
+`appcast.xml`.
+
+The accepted application sources and tests are byte-identical to `56cd8c2`:
+only version metadata, generated project and bilingual CHANGELOG changed during
+release preparation. The same-session 208-test / 24-suite arm64 gate, universal
+Debug/Release analysis and 16 cold-launch compositor checks were reused rather
+than reported as new executions. A fresh versioned universal Release build,
+archive and Developer ID export passed. Their only warning was the existing
+AppIntents metadata-extraction notice assessed in `docs/code-review.md`.
+
+Apple accepted app submission `53841d43-d17d-4585-bf3d-86fcec7e54ec` and DMG
+submission `4741993e-f3a6-4851-9ac2-67627eca8723`. The maintained publisher
+completed both staples, draft download/byte comparison, publication and the
+live build-33 appcast. Independent anonymous full downloads matched all three
+local assets and `SHA256SUMS.txt`; the English-first bilingual Release/feed
+notes match CHANGELOG. The update ZIP's Ed25519 signature verified against the
+app's public key, and a one-byte-modified archive was rejected. The existing
+feed itself remains unsigned; updater policy was not changed.
+
+| Published artifact | SHA256 |
+|---|---|
+| `NeatEditor-1.0.33.dmg` | `5a17050b7a49f169fe9a676c7e45328f52a807490ccbd3a769a400df0d63cd09` |
+| `NeatEditor-1.0.33.zip` | `ba183ee95de2d81cb4d01f5f0ac8d6639e41190aefe2bd2a5f1abd5f72dce951` |
+
+Homebrew Cask 1.0.33 was published in `x0c/homebrew-tap` commit `e6c30c2`;
+style, online audit and info passed, and anonymous Cask bytes match. The existing
+vendor `rubocop-md` 2.0.4 warning remains: `Layout/LineLength` renamed
+`IgnoredPatterns` to `AllowedPatterns` in Homebrew's vendored configuration.
+It is not a Cask offense and does not affect the verified download/install;
+no suppression or vendor edit was made. Reassess after the upstream plugin or
+Homebrew configuration update. The tap's unrelated README edit was preserved.
+
+The app from the anonymous public DMG matched the exported app's full file and
+symlink catalog and is installed at `/Applications/NeatEditor.app` as 1.0.33 (33),
+retaining Developer ID team `SHZQ3MWP3B`. Installed executable SHA256:
+`bc13a67002d221de05d57e5b635377318716b463dae803ab2e88817fa866b2d3`.
+Strict nested signatures and app/DMG tickets pass. `spctl` reports Notarized
+Developer ID with `override=security disabled`; ordinary Gatekeeper enforcement
+is not proven on this host and no security setting was changed. Separate normal
+quit/relaunch captures with new process/window identities show an uninterrupted
+top band for initially collapsed and initially expanded sidebars. The original
+expanded state was restored and the task-mounted DMG was ejected.
+
+Auxiliary [tag CI run 43394868095](https://github.com/NeatMacApps/NeatEditor/actions/runs/43394868095)
+failed on Xcode 26.0.1: `EditorTabStripView+Interaction.swift:113` references
+macOS 27's `NSMenuItem.preferredImageVisibility`, absent from that SDK despite
+the runtime availability guard. This is an existing source-build compatibility
+limit, not a failure of the independently built, notarized and downloaded
+packages. Follow-up: add a compile-time SDK/toolchain guard and validate both
+Xcode 26 and the newer SDK, rather than disabling tag validation or changing the
+immutable release/tag. Do not claim CI passed. Foreground cold launch, physical
+pointer/IME interaction, native Intel and minimum-macOS runtime acceptance remain
+unverified under screen lock. Complete logs, public-verification receipts and
+private installed captures are retained in `build/release-1.0.33/`.
+
 ## Durable release requirements
 
 R1 — Committed clean source before build. The coordinator commits only its
