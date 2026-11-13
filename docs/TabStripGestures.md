@@ -662,6 +662,27 @@ build or hit-testing results alone.
   screen-lock captures of the installed application do not establish genuine
   foreground activation or physical dragging/double-click. Do not turn those
   limitations into an active-window acceptance claim.
+- Verification (2026-11-13): universal Debug and Release clean builds and static
+  analysis pass; the arm64 suite passes 208 tests in 24 suites. The existing
+  AppIntents metadata notice remains assessed in `docs/code-review.md`; there
+  are no Swift compiler/analyzer warnings. The accepted source snapshot excludes
+  the four unrelated Settings/model edits in the shared checkout.
+  All 16 fresh-process compositor captures (two themes, appearances, sidebar
+  states and widths 470/900) pass peer-color comparison; 17 cached
+  initial/transition checks retain native toolbar routing and geometry. The
+  detector rejects the known-white standalone native-window control image;
+  that control is not a reproduced active SwiftUI application launch.
+- Source `56cd8c2` is installed as the existing Developer ID-signed universal
+  Release `1.0.32 (32)` at `/Applications/NeatEditor.app`, without a public release
+  or appcast change. Build and installed executable SHA256 both equal
+  `0c9d51b41f5f3d202358ef22d036bf5735a9ebe2266cce65200226c2c9c27e0c`;
+  strict nested signature verification passes. Separate normal quit/relaunch
+  captures with new process/window identities show a continuous band with the
+  sidebar initially collapsed and initially expanded, with no post-launch
+  sidebar toggle or resize before capture. The original expanded state is
+  restored. Logs and private/component captures: `build/ColdLaunchRepair/`.
+  The installed captures are inactive under screen lock; genuine foreground
+  cold launch, physical drag/double-click and a macOS 26 runtime remain unverified.
 
 ## First-tab join clearance (owner report 2026-10-27)
 
