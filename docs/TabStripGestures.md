@@ -710,6 +710,39 @@ build or hit-testing results alone.
   The installed captures are inactive under screen lock; genuine foreground
   cold launch, physical drag/double-click and a macOS 26 runtime remain unverified.
 
+### Corrected native accessory paint verification (2026-11-13)
+
+The replacement fix is source `782e6e6`, not the published 1.0.33 toolbar-visibility
+change. `ActiveTitlebarProbe.swift` runs the same native workspace with public
+application/key/main-window getter overrides, fictional content and no user
+preferences. Its unchanged first-frame capture reproduces the white cap against
+the pre-fix binary: leading RGB `(255,255,255)` versus band `(237,232,225)`.
+Against the corrected binary, all sampled regions are `(237,232,225)`. The same
+compositor assertion rejects the baseline and accepts the correction. Never
+substitute a passing, non-reproducing scene fixture for this red/green control.
+
+All 16 native-control combinations (two themes, appearances, sidebar states and
+470/900 pt widths) pass fresh compositor capture and native-button/blank hit
+checks. The independent real SwiftUI scene also passes 17 cached
+initial/transition geometry/routing checks. The full arm64 suite passes 209 tests
+in 24 suites, including native accessory paint bounds, unchanged button width,
+resize and full-screen rehoming. Fresh clean universal Debug/Release builds and
+analysis pass; only the existing assessed AppIntents metadata notice remains.
+
+The same Developer ID-signed universal Release from `782e6e6` is installed at
+`/Applications/NeatEditor.app`; installed/build executable SHA256 both equal
+`f50fb7e1f09b51679c68a0dcd887036df64c0efea6a1fff7b53990c41f388690`.
+Normal quit/relaunch captures of initially collapsed and initially expanded
+sidebars were inspected, with the original expanded state restored. Evidence:
+`build/ActiveCapRepair/`, including raw native baseline/fixed captures and
+`native-before-after.png` (identically cropped real fixture screenshots).
+
+The app remains a local unnotarized 1.0.33 source build; the immutable public
+1.0.33 packages do not contain this correction. Physical foreground launch,
+pointer drag/double-click and a macOS 26 runtime remain unverified under screen
+lock. The native control establishes the repaired painting defect, not those
+input behaviors. Native hit routing is unchanged and structurally tested.
+
 ## First-tab join clearance (owner report 2026-10-27)
 
 - Owner report: with the sidebar expanded, the selected tab's outline stops

@@ -209,6 +209,16 @@ rules now live in the [shared GitHub publishing guide](~/.config/agentsync/docs/
 
 Published [v1.0.33](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.33)
 (build 33) from immutable source `5bcb465`; appcast commit `9be64a4`.
+
+Owner rejection after publication: the active titlebar's white cap remains in
+these immutable public packages. The later native-accessory correction
+`782e6e6` passes a reproducing native control's before/after compositor check
+and is installed locally as a same-version Developer ID source build; it is not
+part of the published 1.0.33 downloads. See the corrected acceptance record in
+[TabStripGestures.md](docs/TabStripGestures.md#corrected-native-accessory-paint-verification-2026-11-13).
+The publication evidence below records distribution, not successful resolution
+of the owner's active-window defect.
+
 Scope: the cold-launch titlebar-background repair and its rendering regression
 fixture, with native compact toolbar and event routing retained. Four unrelated
 uncommitted Settings/model files were excluded and preserved. The clean release

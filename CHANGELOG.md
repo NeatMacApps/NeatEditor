@@ -6,6 +6,18 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## Unreleased
 
+## 1.0.34 - 2026-11-13
+
+### Fixed
+
+- Correct the white background behind the window controls that remained in 1.0.33. Paint that region inside the existing native titlebar accessory, above the system background rather than underneath it.
+- Preserve native window controls and titlebar hit targets across sidebar changes, resizing, appearance changes and full-screen transitions.
+
+### 简体中文
+
+- 修复 1.0.33 中仍然存在的红绿灯后方白底：把该区域的背景绘制放入现有原生标题栏附件，画在系统背景上方，而不是被系统背景盖住的内容层。
+- 保留原生窗口按钮和标题栏点击区域，并覆盖侧栏切换、窗口缩放、外观变化及全屏切换。
+
 ## 1.0.33 - 2026-11-13
 
 ### Fixed
