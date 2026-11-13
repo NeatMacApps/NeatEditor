@@ -6,6 +6,18 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## Unreleased
 
+## 1.0.33 - 2026-11-13
+
+### Fixed
+
+- Remove the competing system toolbar background that can leave a white block behind the window controls when launching with the sidebar collapsed. The existing tab-band background now owns the full top row without requiring a sidebar toggle.
+- Keep the native compact toolbar, window controls and titlebar event routing unchanged.
+
+### 简体中文
+
+- 移除重复绘制的系统工具栏背景，修复侧边栏收起时启动应用后窗口按钮区域出现白块的问题。顶部整行统一使用现有标签栏背景，不再依赖展开侧边栏刷新。
+- 保留原生紧凑工具栏、窗口按钮和标题栏事件处理方式。
+
 ## 1.0.32 - 2026-11-09
 
 ### Fixed
