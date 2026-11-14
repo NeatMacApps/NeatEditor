@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import AppKit
 import SwiftUI
@@ -309,6 +310,17 @@ struct WorkspaceSidebarTests {
         #expect(legacy.isSidebarVisible)
     }
 
+    @Test("sidebar content reads skip iCloud and File Provider placeholders")
+    func sidebarContentRequiresLocalBytes() {
+        #expect(!DocumentPersistenceService.canReadSidebarContents(downloadStatus: .notDownloaded, fileFlags: 0))
+        for status: URLUbiquitousItemDownloadingStatus? in [nil, .downloaded, .current] {
+            #expect(DocumentPersistenceService.canReadSidebarContents(downloadStatus: status, fileFlags: 0))
+            #expect(!DocumentPersistenceService.canReadSidebarContents(
+                downloadStatus: status, fileFlags: UInt32(SF_DATALESS)
+            ))
+        }
+    }
+
     @Test("preview excerpt stays bounded on huge single-line buffers")
     func excerptBoundsHugeBuffers() {
         let huge = String(repeating: "a", count: 100_000)
@@ -420,6 +432,93 @@ struct WorkspaceSidebarReviewTests {
 
 @MainActor
 struct WorkspaceSidebarRefreshTests {
+    private func waitUntil(_ condition: () -> Bool) async throws {
+        for _ in 0..<200 {
+            if condition() { return }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        Issue.record("Sidebar condition did not become true")
+    }
+
+    private func withEmptyStore(_ body: (WorkspaceStore, URL) async throws -> Void) async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeatEditorSidebarStages-\(UUID())", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let suite = "NeatEditorSidebarStages-\(UUID())"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = WorkspaceStore(
+            persistenceService: DocumentPersistenceService(defaultDirectory: directory),
+            userDefaults: defaults
+        )
+        defer { store.pendingSaveStateTask?.cancel() }
+        try await body(store, directory)
+        try await waitUntil { !store.isRefreshingSidebar }
+    }
+
+    @Test("file rows publish before a slow preview and live buffers remain authoritative")
+    func namesDoNotWaitForPreviews() async throws {
+        try await withEmptyStore { store, directory in
+            let fileURL = directory.appendingPathComponent("note.txt")
+            try "disk text".write(to: fileURL, atomically: true, encoding: .utf8)
+            let gate = DispatchSemaphore(value: 0)
+            defer { gate.signal() }
+            store.refreshSidebarFiles { _, _ in
+                _ = gate.wait(timeout: .now() + 5)
+                return "disk text"
+            }
+            try await waitUntil { !store.sidebarFiles.isEmpty }
+            #expect(store.isRefreshingSidebar)
+            #expect(store.sidebarFiles.first?.title == "note.txt")
+            #expect(store.sidebarFiles.first?.preview == "")
+            let tab = EditorTab(title: "note.txt", content: "latest live text", fileURL: fileURL)
+            store.tabs = [tab]
+            gate.signal()
+            try await waitUntil { !store.isRefreshingSidebar }
+            #expect(store.sidebarFiles.first?.preview == "latest live text")
+            #expect(store.sidebarDiskFiles.first?.preview == "disk text")
+        }
+    }
+
+    @Test("folder switches discard an in-flight old preview and load the new folder")
+    func folderSwitchDuringPreview() async throws {
+        try await withEmptyStore { store, directory in
+            let oldURL = directory.appendingPathComponent("old.txt")
+            try "old".write(to: oldURL, atomically: true, encoding: .utf8)
+            let next = directory.appendingPathComponent("next", isDirectory: true)
+            try FileManager.default.createDirectory(at: next, withIntermediateDirectories: true)
+            try "new".write(to: next.appendingPathComponent("new.txt"), atomically: true, encoding: .utf8)
+            let gate = DispatchSemaphore(value: 0)
+            defer { gate.signal() }
+            store.refreshSidebarFiles { _, url in
+                if url.lastPathComponent == "old.txt" { _ = gate.wait(timeout: .now() + 5) }
+                return url.lastPathComponent
+            }
+            try await waitUntil { !store.sidebarFiles.isEmpty }
+            store.setDocumentsFolder(next)
+            #expect(store.sidebarFiles.isEmpty)
+            gate.signal()
+            try await waitUntil { !store.isRefreshingSidebar }
+            #expect(store.sidebarFiles.map(\.title) == ["new.txt"])
+            #expect(store.sidebarDiskFiles.map(\.title) == ["new.txt"])
+            #expect(store.sidebarFailureMessage == nil)
+        }
+    }
+
+    @Test("an empty disk preview is retried even with unchanged file metadata")
+    func unavailablePreviewsRetry() async throws {
+        try await withEmptyStore { store, directory in
+            try "now local".write(to: directory.appendingPathComponent("note.txt"), atomically: true, encoding: .utf8)
+            store.refreshSidebarFiles { _, _ in "" }
+            try await waitUntil { !store.isRefreshingSidebar }
+            #expect(store.sidebarDiskFiles.first?.preview == "")
+            store.refreshSidebarFiles { _, _ in "now local" }
+            try await waitUntil { !store.isRefreshingSidebar }
+            #expect(store.sidebarFiles.first?.preview == "now local")
+        }
+    }
+
     @Test("unloaded tabs never shadow on-disk previews")
     func unloadedTabsKeepDiskPreview() async throws {
         let directory = FileManager.default.temporaryDirectory

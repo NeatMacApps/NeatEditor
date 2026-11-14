@@ -25,6 +25,7 @@ struct SettingsView: View {
                                 .accessibilityLabel(Text(verbatim: workspaceStore.documentsFolder.path))
                             Button(action: workspaceStore.chooseDocumentsFolder) {
                                 Label("Choose Folder…", systemImage: "folder")
+                                    .labelStyle(.titleOnly)
                             }
                             .accessibilityIdentifier("settings.documentsFolder.choose")
                         }
@@ -35,6 +36,7 @@ struct SettingsView: View {
                         ForEach(EditorTheme.allCases, id: \.self) { theme in
                             Label(LocalizedStringKey(theme.localizedNameKey),
                                   systemImage: theme.settingsSymbol)
+                                .labelStyle(.titleOnly)
                                 .tag(theme)
                         }
                     } label: {
@@ -45,6 +47,7 @@ struct SettingsView: View {
                         ForEach(TabBehavior.allCases, id: \.self) { behavior in
                             Label(LocalizedStringKey(behavior.rawValue),
                                   systemImage: behavior.settingsSymbol)
+                                .labelStyle(.titleOnly)
                                 .tag(behavior)
                         }
                     } label: {
@@ -54,6 +57,7 @@ struct SettingsView: View {
                         ForEach(AppLanguage.allCases, id: \.self) { language in
                             Label(LocalizedStringKey(language.localizedNameKey),
                                   systemImage: language.settingsSymbol)
+                                .labelStyle(.titleOnly)
                                 .tag(language)
                         }
                     } label: {

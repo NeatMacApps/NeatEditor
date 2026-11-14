@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 extension DocumentPersistenceService {
@@ -136,7 +137,8 @@ extension DocumentPersistenceService {
         at fileURL: URL,
         fileManager: FileManager = .default
     ) -> Bool {
-        guard let handle = try? FileHandle(forReadingFrom: fileURL) else {
+        guard Self.hasLocalSidebarContents(at: fileURL),
+              let handle = try? FileHandle(forReadingFrom: fileURL) else {
             return false
         }
         defer { try? handle.close() }
@@ -221,8 +223,30 @@ extension DocumentPersistenceService {
         return Self.sidebarPreviewExcerpt(from: content, maxLines: maxLines)
     }
 
+    /// Metadata checks must precede opening: opening a dataless file can
+    /// materialize it even when the subsequent read requests only a few bytes.
+    private static func hasLocalSidebarContents(at fileURL: URL) -> Bool {
+        var info = stat()
+        guard fileURL.withUnsafeFileSystemRepresentation({ path in
+            guard let path else { return false }
+            return lstat(path, &info) == 0
+        }) else { return false }
+        let values = try? fileURL.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey])
+        return canReadSidebarContents(
+            downloadStatus: values?.ubiquitousItemDownloadingStatus,
+            fileFlags: info.st_flags
+        )
+    }
+
+    static func canReadSidebarContents(
+        downloadStatus: URLUbiquitousItemDownloadingStatus?, fileFlags: UInt32
+    ) -> Bool {
+        downloadStatus != .notDownloaded && fileFlags & UInt32(SF_DATALESS) == 0
+    }
+
     private func sidebarPrefixData(for fileURL: URL) -> Data? {
-        guard let handle = try? FileHandle(forReadingFrom: fileURL) else {
+        guard Self.hasLocalSidebarContents(at: fileURL),
+              let handle = try? FileHandle(forReadingFrom: fileURL) else {
             return nil
         }
         defer { try? handle.close() }

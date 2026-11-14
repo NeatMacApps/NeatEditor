@@ -92,9 +92,19 @@ extension WorkspaceStore {
         NSWorkspace.shared.activateFileViewerSelecting([documentsFolder])
     }
 
-    /// Coalesces requests while enumerating and reading bounded prefixes off
-    /// the main actor. Resolve live buffers after the await, never before it.
+    /// Publish names before optional previews: even a bounded prefix can wait
+    /// for a cloud provider. Keep one refresh running and resolve live buffers
+    /// at each publication, never from a request-time snapshot.
     func refreshSidebarFiles() {
+        refreshSidebarFiles { service, fileURL in
+            service.sidebarPreview(for: fileURL)
+        }
+    }
+
+    /// The reader is injectable so tests can hold a slow preview without cloud I/O.
+    func refreshSidebarFiles(
+        readPreview: @escaping @Sendable (DocumentPersistenceService, URL) -> String
+    ) {
         guard !isRefreshingSidebar else {
             sidebarRefreshRequested = true
             return
@@ -119,16 +129,21 @@ extension WorkspaceStore {
                         cachedItems.map { ($0.fileURL, $0) },
                         uniquingKeysWith: { _, latest in latest }
                     )
-                    let items = try service.sidebarTextFiles().map { info in
+                    var items = try service.sidebarTextFiles().map { info in
                         let cached = cachedByURL[info.fileURL]
                         let canReuse = cached?.modificationDate == info.modificationDate
                             && cached?.fileSize == info.fileSize
                         return WorkspaceSidebarItem(
                             fileURL: info.fileURL,
                             modificationDate: info.modificationDate,
-                            preview: canReuse ? cached?.preview ?? "" : service.sidebarPreview(for: info.fileURL),
+                            preview: canReuse ? cached?.preview ?? "" : "",
                             fileSize: info.fileSize
                         )
+                    }
+                    await self.publishSidebarFiles(items, in: directory)
+                    for index in items.indices where items[index].preview.isEmpty {
+                        guard await self.documentsFolder == directory else { break }
+                        items[index].preview = readPreview(service, items[index].fileURL)
                     }
                     return (items, migrationCompleted)
                 }.value
@@ -140,26 +155,33 @@ extension WorkspaceStore {
                     )
                 }
 
-                sidebarDiskFiles = diskItems
-                sidebarFiles = diskItems
-                rebuildSidebarIndex()
-                for tab in tabs where tab.isContentLoaded {
-                    if let fileURL = tab.fileURL {
-                        updateSidebarPreview(for: fileURL, content: tab.content)
-                    }
-                }
-                sidebarFailureMessage = nil
+                publishSidebarFiles(diskItems, in: directory)
             } catch {
                 // Keep the previous usable list; an unreadable folder is not empty.
-                sidebarFailureMessage = error.localizedDescription
-                Self.logger.error("Sidebar refresh failed: \(error.localizedDescription, privacy: .public)")
+                if directory == documentsFolder {
+                    sidebarFailureMessage = error.localizedDescription
+                    Self.logger.error("Sidebar refresh failed: \(error.localizedDescription, privacy: .public)")
+                }
             }
             isRefreshingSidebar = false
             if sidebarRefreshRequested {
                 sidebarRefreshRequested = false
-                refreshSidebarFiles()
+                refreshSidebarFiles(readPreview: readPreview)
             }
         }
+    }
+
+    private func publishSidebarFiles(_ items: [WorkspaceSidebarItem], in directory: URL) {
+        guard directory == documentsFolder else { return }
+        sidebarDiskFiles = items
+        sidebarFiles = items
+        rebuildSidebarIndex()
+        for tab in tabs where tab.isContentLoaded {
+            if let fileURL = tab.fileURL {
+                updateSidebarPreview(for: fileURL, content: tab.content)
+            }
+        }
+        sidebarFailureMessage = nil
     }
 
     func openSidebarFile(_ fileURL: URL) {
