@@ -6,6 +6,28 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## Unreleased
 
+## 1.0.35 - 2026-11-15
+
+### Fixed
+
+- The sidebar lists file names and their order as soon as the folder is read, then fills in previews, so a slow iCloud or other file provider read no longer leaves an available folder stuck behind the loading state.
+- Empty previews are retried once a file becomes local, and listing no longer opens cloud placeholders just to produce previews.
+
+### Changed
+
+- Settings values read as plain text: the Choose Folder button and the Theme, Tab Behavior and Language pickers no longer draw a symbol beside each value. Row labels keep their icons, and no preference, control type or default changed.
+
+### Build
+
+- Release builds enable the Xcode compilation cache and no longer write an index store for the Release configuration; the checked-in project follows `project.yml`.
+
+### 简体中文
+
+- 侧边栏在读取文件夹后先列出文件名与顺序，再补充预览，因此 iCloud 或其他文件提供方读取缓慢时，可用的文件夹不再停在加载状态。
+- 文件变为本地后重试空预览；列目录不再为了生成预览而打开云端占位文件。
+- 设置页的取值改为纯文本：选择文件夹按钮，以及主题、制表符行为、语言三个选择器不再在每个取值旁绘制图标。左侧行标签的图标保留，偏好设置、控件类型和默认值均未改变。
+- Release 构建启用 Xcode 编译缓存，不再为 Release 配置写入索引存储；已提交的工程与 `project.yml` 一致。
+
 ## 1.0.34 - 2026-11-13
 
 ### Fixed
