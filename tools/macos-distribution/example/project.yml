@@ -7,8 +7,12 @@ options:
     macOS: "13.0"
 settings:
   base:
+    COMPILATION_CACHE_ENABLE_CACHING: YES
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
+  configs:
+    Release:
+      COMPILER_INDEX_STORE_ENABLE: NO
 packages:
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
