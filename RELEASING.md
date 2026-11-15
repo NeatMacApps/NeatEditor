@@ -333,6 +333,65 @@ evidence, not physical input evidence. Private logs, receipts and installed
 captures: `build/release-1.0.34/`; repair red/green evidence:
 `build/ActiveCapRepair/`.
 
+## 1.0.35 publication evidence (2026-11-15)
+
+Published [v1.0.35](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.35)
+(build 35) from immutable source `78e18bf`; appcast commit `4c146d6`. This release
+ships four user-visible fixes: sidebar metadata-first listing (`b2ef8df`), Settings
+values as plain text, the themed line-number gutter (`4dbeb4b`) and the themed
+Settings page background (`c845bca`), whose notes also cover the build-cache
+settings change.
+
+Gates on `78e18bf`: 215 tests / 24 suites (Debug, arm64) and Debug analyze pass
+with no Swift compiler or analyzer warning beyond the assessed AppIntents
+metadata notice; the publisher's clean universal Release archive and export carry
+only that same notice. The publisher ran from a fresh clean clone fast-forwarded
+to `78e18bf`, because a second session was committing and verifying in the shared
+product checkout; no source was archived from that dirty tree, and the clone's
+tree was verified clean before the run.
+
+Apple accepted app submission `2f66c17e-defa-4ab1-963d-2950bec169e9` and DMG
+submission `12010246-1b5b-4184-a0e5-5b98cfb86dc6`; both tickets are stapled.
+Independent anonymous downloads matched the exact three published assets, the
+local bytes and `SHA256SUMS.txt`. The live update feed advertises build 35 with
+the 1.0.35 ZIP length and English-first bilingual notes; the update ZIP's Ed25519
+signature verifies against the app's public key and rejects a one-byte
+modification. The feed itself remains unsigned; updater policy was not changed.
+
+| Published artifact | SHA256 |
+|---|---|
+| `NeatEditor-1.0.35.dmg` | `84693677125de8b52fdbce25ad2722f54a190672c0087d1aff0df376d2354a01` |
+| `NeatEditor-1.0.35.zip` | `0db95d2926ba5edf981dd6c91f5cb3cd3bc759d87224c27ac5237814b8ab65b1` |
+
+Anonymous sizes: DMG 5,710,733 bytes, ZIP 5,754,307 bytes, `SHA256SUMS.txt` 176
+bytes. Homebrew Cask 1.0.35 is published in `x0c/homebrew-tap` commit `a09fff1`;
+style, online audit and info pass with only the unchanged vendor `rubocop-md`
+warning assessed in the 1.0.33 record.
+
+The anonymously downloaded DMG installs at `/Applications/NeatEditor.app` as
+1.0.35 (35) with Developer ID team `SHZQ3MWP3B` and executable SHA256
+`97d6106e7e94156118418c9f47972f02c054ae3464ede327a3231a39e24c37d4`. Strict nested
+signatures, the DMG ticket and `spctl` (`source=Notarized Developer ID`,
+`override=security disabled`) pass, and the previous local build was replaced
+after normal termination. The parallel session's same-source build is
+installed-equivalent but has executable SHA256
+`959b1e4a46b03bb4329e56ddb50fe236e38102b767bec0fa79ebc878911b3979` because it is
+a separate signed build. Fresh inspected pixels show the Warm Settings page with
+text-only values and no white rectangle: the page background measures the warm
+surface (0.985/0.978/0.969) in English and Chinese, and Theme, Tab Behavior and
+Language selections persisted before being restored to Warm / 2 Spaces / System
+Default.
+
+The [validation-only tag CI](https://github.com/NeatMacApps/NeatEditor/actions/runs/43689325841)
+keeps the pre-existing Xcode 26.0.1 SDK failure at
+`NSMenuItem.preferredImageVisibility` documented for 1.0.33 and 1.0.34; it supplies
+no public assets and was not represented as passing. Genuine foreground
+pointer/IME interaction, native Intel execution and minimum-macOS runtime remain
+unverified, and installed dark-appearance pixels were not captured for this
+release; the two-tone appearance fixtures cover both appearances at unit level.
+Private logs, anonymous receipts and installed captures:
+`~/.config/neateditor/development/release-1.0.35/`.
+
 ## Durable release requirements
 
 R1 — Committed clean source before build. The coordinator commits only its
