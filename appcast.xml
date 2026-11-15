@@ -3,6 +3,42 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.35</title>
+            <pubDate>Sun, 15 Nov 2026 15:17:16 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>35</sparkle:version>
+            <sparkle:shortVersionString>1.0.35</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.35
+
+
+### Fixed
+
+- The sidebar lists file names and their order as soon as the folder is read, then fills in previews, so a slow iCloud or other file provider read no longer leaves an available folder stuck behind the loading state.
+- Empty previews are retried once a file becomes local, and listing no longer opens cloud placeholders just to produce previews.
+- The line-number gutter is painted with the selected theme's editor surface, so the White / Black theme no longer leaves a Warm-tinted gutter beside white or black text.
+- The Settings page background follows the selected editor theme, so the Warm theme no longer shows a white rectangle behind the form. Native section backgrounds, controls, width and spacing are unchanged.
+
+### Changed
+
+- Settings values read as plain text: the Choose Folder button and the Theme, Tab Behavior and Language pickers no longer draw a symbol beside each value. Row labels keep their icons, and no preference, control type or default changed.
+
+### Build
+
+- Release builds enable the Xcode compilation cache and no longer write an index store for the Release configuration; the checked-in project follows `project.yml`.
+
+### 简体中文
+
+- 侧边栏在读取文件夹后先列出文件名与顺序，再补充预览，因此 iCloud 或其他文件提供方读取缓慢时，可用的文件夹不再停在加载状态。
+- 文件变为本地后重试空预览；列目录不再为了生成预览而打开云端占位文件。
+- 行号栏改用当前主题的编辑器底色绘制，白色 / 黑色主题下不再出现暖黄色行号栏与白色或黑色正文不一致。
+- 设置页背景跟随所选编辑器主题，暖黄色主题下不再出现表单背后的白色矩形底板。原生分区背景、控件、宽度和间距均未改变。
+- 设置页的取值改为纯文本：选择文件夹按钮，以及主题、制表符行为、语言三个选择器不再在每个取值旁绘制图标。左侧行标签的图标保留，偏好设置、控件类型和默认值均未改变。
+- Release 构建启用 Xcode 编译缓存，不再为 Release 配置写入索引存储；已提交的工程与 `project.yml` 一致。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.35/NeatEditor-1.0.35.zip" length="5754307" type="application/octet-stream" sparkle:edSignature="KGSMLQz0PrXnUvfRbSt2Gse4FChcuZAeOOHgkaQV6g7+8sHjOr+vQ2bFYEkEwQCY+Q+6G+LkBQHD4gog9+W0CA=="/>
+        </item>
+        <item>
             <title>1.0.34</title>
             <pubDate>Fri, 13 Nov 2026 19:16:47 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
@@ -227,35 +263,6 @@
 - 浮动字数统计不再遮住编辑区底部，最后几行恢复正常的底部留白。
 ]]></description>
             <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.26/NeatEditor-1.0.26.zip" length="5508120" type="application/octet-stream" sparkle:edSignature="eBwP6m2xRCaIEVZWNMr2iNsAcl86OddNT6+en25lyImXcMyxxvOaWnohixV9+dvPhLEj3m5n4gykAZDFHRucDw=="/>
-        </item>
-        <item>
-            <title>1.0.25</title>
-            <pubDate>Thu, 29 Oct 2026 13:42:01 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatEditor</link>
-            <sparkle:version>25</sparkle:version>
-            <sparkle:shortVersionString>1.0.25</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.25
-
-## 1.0.25 - 2026-10-29
-
-### Changed
-
-- Faster typing in large documents: line numbers now update incrementally instead of rescanning the whole file on every keystroke.
-- Faster folder listing: sorting no longer re-reads file names on every comparison.
-- Faster, lighter saving: blank checks no longer copy the document, first-save naming reuses its formatter, and automatic saving writes in the background while manual saves keep their immediate behavior.
-- Large files (over 2 MB) load through memory mapping; smaller files keep the faster direct read.
-- Update checks now start after the first window appears instead of during launch.
-
-### 简体中文
-
-- 大文档输入更快：行号改为增量更新，不再每次击键都全量扫描。
-- 文件夹列表更快：排序不再每次比较都重复读取文件名。
-- 保存更快更轻：空白检查不再复制全文，首次命名复用日期格式器，自动保存改为后台写入，手动保存仍保持即时行为。
-- 大文件（超过 2 MB）走内存映射加载，小文件保持更快的直接读取。
-- 更新检查改为首个窗口出现后启动，不再占用启动路径。
-]]></description>
-            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.25/NeatEditor-1.0.25.zip" length="3716900" type="application/octet-stream" sparkle:edSignature="jXNu8pAuZivpI37xSupZmOMnmZgUfLK9/JDriM0Csyzkk9N0JVPooclq+BGa8ubpOHiNN4EHAnQOL4ygTuJaCw=="/>
         </item>
         <item>
             <title>1.0.14</title>
