@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import Testing
 
 @testable import NeatEditor
@@ -111,6 +112,39 @@ struct EditorThemeTests {
         // Sample below the labels: drawing can cover an otherwise correct layer color.
         return try #require(bitmap.colorAt(x: bitmap.pixelsWide / 2,
                                            y: bitmap.pixelsHigh / 2)?.usingColorSpace(.sRGB))
+    }
+
+    @Test("Settings Form page matches the theme behind it after live changes",
+          arguments: [NSAppearance.Name.aqua, .darkAqua])
+    func settingsPage(appearanceName: NSAppearance.Name) async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeatEditorSettingsTheme-\(UUID())", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let suite = "NeatEditorSettingsTheme-\(UUID())"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = WorkspaceStore(
+            persistenceService: DocumentPersistenceService(defaultDirectory: directory), userDefaults: defaults
+        )
+        defer { store.pendingSaveStateTask?.cancel() }
+        let host = NSHostingView(rootView: SettingsView().environment(store))
+        host.frame = CGRect(x: 0, y: 0, width: 800, height: 650)
+        host.appearance = NSAppearance(named: appearanceName)
+        for theme in [EditorTheme.warm, .whiteBlack, .warm] {
+            store.preferences.editorTheme = theme
+            await Task.yield()
+            host.layoutSubtreeIfNeeded()
+            let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            // Below all sections: the fixed-width Form must not leave a different page rectangle.
+            let y = bitmap.pixelsHigh - 20
+            let edge = try #require(bitmap.colorAt(x: 20, y: y)?.usingColorSpace(.sRGB))
+            let center = try #require(bitmap.colorAt(x: bitmap.pixelsWide / 2, y: y)?.usingColorSpace(.sRGB))
+            #expect(abs(edge.redComponent - center.redComponent) < 0.005)
+            #expect(abs(edge.greenComponent - center.greenComponent) < 0.005)
+            #expect(abs(edge.blueComponent - center.blueComponent) < 0.005)
+        }
     }
 
     @Test("theme selection persists through the workspace save and reload path", arguments: EditorTheme.allCases)

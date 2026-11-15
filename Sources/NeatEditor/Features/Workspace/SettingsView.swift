@@ -85,11 +85,13 @@ struct SettingsView: View {
                 Section { aboutRow }
             }
             .formStyle(.grouped)
+            .scrollContentBackground(.hidden)
             .toggleStyle(.switch)
             .scrollDisabled(true)
             .frame(width: 480)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(EditorChrome.editorSurface(for: workspaceStore.preferences.editorTheme))
         .focusEffectDisabled()
     }
 
