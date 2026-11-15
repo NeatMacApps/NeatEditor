@@ -37,7 +37,7 @@ struct EditorThemeTests {
     }
 
     @Test("live theme changes repaint the native editor and gutter without changing text, selection or undo",
-          arguments: [NSAppearance.Name.aqua, .darkAqua])
+          arguments: [NSAppearance.Name.aqua, .darkAqua, .accessibilityHighContrastAqua, .accessibilityHighContrastDarkAqua])
     func liveEditorRepaint(appearanceName: NSAppearance.Name) throws {
         let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 400, height: 300),
                               styleMask: [.titled], backing: .buffered, defer: false)
@@ -75,6 +75,42 @@ struct EditorThemeTests {
             #expect(container.textView.undoManager === undo)
             #expect(container.textView.undoManager?.canUndo == couldUndo)
         }
+    }
+
+    @Test("gutter pixels follow live theme and appearance changes", arguments: EditorTheme.allCases)
+    func liveGutterAppearance(theme: EditorTheme) throws {
+        let container = EditorTextContainerView()
+        container.frame = CGRect(x: 0, y: 0, width: 400, height: 300)
+        container.theme = theme
+        let otherTheme: EditorTheme = theme == .warm ? .whiteBlack : .warm
+        let gutter = try #require(container.subviews.compactMap { $0 as? LineNumberGutterView }.first)
+        for name in [NSAppearance.Name.aqua, .darkAqua, .aqua,
+                     .accessibilityHighContrastDarkAqua, .accessibilityHighContrastAqua] {
+            container.appearance = NSAppearance(named: name)
+            for selectedTheme in [theme, otherTheme, theme] {
+                container.theme = selectedTheme
+                let expected = EditorChrome.resolvedColor(
+                    EditorChrome.editorSurfaceColor(for: selectedTheme), for: container.effectiveAppearance
+                )
+                try expectGutterPixels(gutter, match: expected)
+            }
+        }
+    }
+
+    private func expectGutterPixels(_ gutter: LineNumberGutterView, match expected: NSColor) throws {
+        gutter.superview?.layoutSubtreeIfNeeded()
+        let pixel = try backgroundPixel(of: gutter)
+        #expect(abs(pixel.redComponent - expected.redComponent) < 0.005)
+        #expect(abs(pixel.greenComponent - expected.greenComponent) < 0.005)
+        #expect(abs(pixel.blueComponent - expected.blueComponent) < 0.005)
+    }
+
+    private func backgroundPixel(of view: NSView) throws -> NSColor {
+        let bitmap = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        // Sample below the labels: drawing can cover an otherwise correct layer color.
+        return try #require(bitmap.colorAt(x: bitmap.pixelsWide / 2,
+                                           y: bitmap.pixelsHigh / 2)?.usingColorSpace(.sRGB))
     }
 
     @Test("theme selection persists through the workspace save and reload path", arguments: EditorTheme.allCases)
