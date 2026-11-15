@@ -13,6 +13,7 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 - The sidebar lists file names and their order as soon as the folder is read, then fills in previews, so a slow iCloud or other file provider read no longer leaves an available folder stuck behind the loading state.
 - Empty previews are retried once a file becomes local, and listing no longer opens cloud placeholders just to produce previews.
 - The line-number gutter is painted with the selected theme's editor surface, so the White / Black theme no longer leaves a Warm-tinted gutter beside white or black text.
+- The Settings page background follows the selected editor theme, so the Warm theme no longer shows a white rectangle behind the form. Native section backgrounds, controls, width and spacing are unchanged.
 
 ### Changed
 
@@ -27,6 +28,7 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 - 侧边栏在读取文件夹后先列出文件名与顺序，再补充预览，因此 iCloud 或其他文件提供方读取缓慢时，可用的文件夹不再停在加载状态。
 - 文件变为本地后重试空预览；列目录不再为了生成预览而打开云端占位文件。
 - 行号栏改用当前主题的编辑器底色绘制，白色 / 黑色主题下不再出现暖黄色行号栏与白色或黑色正文不一致。
+- 设置页背景跟随所选编辑器主题，暖黄色主题下不再出现表单背后的白色矩形底板。原生分区背景、控件、宽度和间距均未改变。
 - 设置页的取值改为纯文本：选择文件夹按钮，以及主题、制表符行为、语言三个选择器不再在每个取值旁绘制图标。左侧行标签的图标保留，偏好设置、控件类型和默认值均未改变。
 - Release 构建启用 Xcode 编译缓存，不再为 Release 配置写入索引存储；已提交的工程与 `project.yml` 一致。
 
