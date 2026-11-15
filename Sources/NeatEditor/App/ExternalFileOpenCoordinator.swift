@@ -44,6 +44,12 @@ final class ExternalFileOpenCoordinator {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // A background launch never activates, so the SwiftUI scene window is
+        // not created. The E2E launch presents its own window instead.
+        E2ETestWindow.presentIfNeeded()
+    }
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         ExternalFileOpenCoordinator.shared.saveBeforeTermination?() == false
             ? .terminateCancel

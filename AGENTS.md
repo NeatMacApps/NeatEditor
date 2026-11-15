@@ -151,6 +151,23 @@ xcodebuild -project "NeatEditor.xcodeproj" -scheme "NeatEditor" -configuration D
 - 如果你新增了测试，请同时更新 `project.yml`，确保 scheme 的 test action 生效。
 - 不要假设 `swift test` 可用；这是 XcodeGen app 工程，不是纯 SwiftPM 包。
 
+### 后台 UI 回归（`Tests/E2E`）
+
+`Tests/E2E` 是前台零打扰的 macos-e2e 套件：后台 `open -g` 启动、`screencapture -l` 取窗口像素、每次调用校验光标与前台进程。
+
+```bash
+# 仓库根目录执行（run_e2e.sh 会固定用 toolkit 的 venv 跑 pytest）
+./Tests/E2E/run_e2e.sh -q
+E2E_UPDATE_BASELINES=1 ./Tests/E2E/run_e2e.sh -q   # 重冻结基线，先看新图再信任
+MACOS_E2E_GUARD=frontmost ./Tests/E2E/run_e2e.sh -q   # 仅当 owner 真的在动鼠标导致 FocusViolation
+```
+
+- 数据隔离靠 `--e2e-root=<dir>`（`E2ETestMode`）：文档目录固定为 `<root>/documents`，工作区状态写入 `com.x0c.NeatEditor.e2e` 套件并在每次启动清空；未同时带 `--e2e-testing` 的启动走原生产路径。
+- 所有 E2E 参数必须写成 `--flag=value`：`open --args` 把裸值当作文档路径交给 LaunchServices，会弹出 “Open Failed” 并多出标签页。
+- 后台启动不激活，SwiftUI `Window` 场景不会创建窗口，因此 `--e2e-testing` 下由 `E2ETestWindow` 自建 `NSWindow` + `NSHostingView`，用 `orderBack(nil)` 呈现。
+- 后台无法用菜单（`invoke_menu` 需要 key window），也无法坐标点击（无截图上文）；改用 AX 元素 token 点击。侧边栏刷新没有可见按钮，外部新增文件后需重启 App 才能被列出。
+- 空白标签标题取自启动时间戳（`yyyyMMdd-HHmmss`），像素基线只对标题栏/标签带做遮罩，标题本身用 AX 断言。
+
 ## 代码风格
 ### 导入（Imports）
 - 每个 import 单独一行。

@@ -1,0 +1,16 @@
+{
+  "app_path": "build/DerivedData/Build/Products/Debug/NeatEditor.app",
+  "bundle_id": "com.x0c.NeatEditor",
+  "window_size": [
+    720,
+    480
+  ],
+  "launch_args": [
+    "--e2e-window-size=720x480"
+  ],
+  "build": false,
+  "configuration": "Debug",
+  "artifacts": "Tests/E2E/artifacts",
+  "baselines": "Tests/E2E/baselines",
+  "templates": "Tests/E2E/templates"
+}

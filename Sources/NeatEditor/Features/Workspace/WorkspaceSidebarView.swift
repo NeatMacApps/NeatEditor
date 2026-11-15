@@ -38,6 +38,7 @@ struct WorkspaceSidebarView: View {
             Section {
                 ForEach(workspaceStore.sidebarFiles) { item in
                     WorkspaceSidebarFileRow(title: item.title, preview: item.preview)
+                    .accessibilityIdentifier("sidebar.row.\(item.title)")
                     .tag(item.fileURL)
                     .id(item.fileURL)
                     .contextMenu {

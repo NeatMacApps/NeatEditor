@@ -36,6 +36,7 @@ struct EditorTextView: NSViewRepresentable {
         let textView = containerView.textView
 
         textView.delegate = context.coordinator
+        textView.setAccessibilityIdentifier("editor.text")
         textView.string = text
         textView.isEditable = isEditable
         textView.isSelectable = isEditable
