@@ -25,11 +25,4 @@ enum EditorTheme: String, Codable, CaseIterable {
         case .whiteBlack: "theme.whiteBlack"
         }
     }
-
-    var settingsSymbol: String {
-        switch self {
-        case .warm: "paintpalette"
-        case .whiteBlack: "circle.lefthalf.filled"
-        }
-    }
 }

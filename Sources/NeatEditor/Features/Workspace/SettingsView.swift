@@ -24,7 +24,7 @@ struct SettingsView: View {
                                 .help(workspaceStore.documentsFolder.path)
                                 .accessibilityLabel(Text(verbatim: workspaceStore.documentsFolder.path))
                             Button(action: workspaceStore.chooseDocumentsFolder) {
-                                Label("Choose Folder…", systemImage: "folder")
+                                Text("Choose Folder…")
                                     .labelStyle(.titleOnly)
                             }
                             .accessibilityIdentifier("settings.documentsFolder.choose")
@@ -34,8 +34,7 @@ struct SettingsView: View {
                     }
                     Picker(selection: $workspace.preferences.editorTheme) {
                         ForEach(EditorTheme.allCases, id: \.self) { theme in
-                            Label(LocalizedStringKey(theme.localizedNameKey),
-                                  systemImage: theme.settingsSymbol)
+                            Text(LocalizedStringKey(theme.localizedNameKey))
                                 .labelStyle(.titleOnly)
                                 .tag(theme)
                         }
@@ -45,8 +44,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings.theme")
                     Picker(selection: $workspace.preferences.tabBehavior) {
                         ForEach(TabBehavior.allCases, id: \.self) { behavior in
-                            Label(LocalizedStringKey(behavior.rawValue),
-                                  systemImage: behavior.settingsSymbol)
+                            Text(LocalizedStringKey(behavior.rawValue))
                                 .labelStyle(.titleOnly)
                                 .tag(behavior)
                         }
@@ -55,8 +53,7 @@ struct SettingsView: View {
                     }
                     Picker(selection: $workspace.preferences.appLanguage) {
                         ForEach(AppLanguage.allCases, id: \.self) { language in
-                            Label(LocalizedStringKey(language.localizedNameKey),
-                                  systemImage: language.settingsSymbol)
+                            Text(LocalizedStringKey(language.localizedNameKey))
                                 .labelStyle(.titleOnly)
                                 .tag(language)
                         }
