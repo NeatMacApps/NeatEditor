@@ -45,11 +45,13 @@
 		4C28ACC82CF6ADE661F5C511 /* WorkspaceSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8918469298602DC5C5D7047 /* WorkspaceSearchState.swift */; };
 		4C6DD29CD0452D9311044BE8 /* EditorTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FC9CB3A37D479100CB1B9D6 /* EditorTextView.swift */; };
 		4FCF5DB5C7FC0F1E1FC740D4 /* WorkspaceStore+StateRestoration.swift in Sources */ = {isa = PBXBuildFile; fileRef = E32406E8C86E9797FA92149D /* WorkspaceStore+StateRestoration.swift */; };
+		52495B589794DC0B4D452A02 /* AdaptiveFontSizeLearner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03FB4E6F27D8FCC69430863A /* AdaptiveFontSizeLearner.swift */; };
 		5855456C8D0DA35249228762 /* TopBandNativeDragTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D87EE011CD8C5F66C63D863 /* TopBandNativeDragTests.swift */; };
 		631477781C9CCF8DFA063DAE /* EditorTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1229AF71F03BBD6F3F34F9F /* EditorTheme.swift */; };
 		6C4A4EF55D4E956B1CB30509 /* DocumentPersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A960C8B24796C5DB2C6589 /* DocumentPersistenceService.swift */; };
 		6EE8A2AE67E17A04AF894495 /* EditorCharacterCount.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21D82FF259624A148B41268D /* EditorCharacterCount.swift */; };
 		7538ECC920EF461816EFFBF7 /* HoverFocusTopmostCheckTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B6594887CEEA1D1B0EF81A6 /* HoverFocusTopmostCheckTests.swift */; };
+		7FFEA9EF20394E37C849C849 /* AdaptiveFontSizeLearnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9690FEEBE41E3844A96BC731 /* AdaptiveFontSizeLearnerTests.swift */; };
 		818709F57F4B8418DD649E92 /* EditorRegexSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D94BB36B65A3298F5F39F27 /* EditorRegexSearchTests.swift */; };
 		831AAEA13FC9D93A0DE008C9 /* DocumentFilePublicationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A16CB5FBBADE84CAFE975C8 /* DocumentFilePublicationTests.swift */; };
 		833161AD0662EF0AA75851C0 /* WorkspaceSidebarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A6D6237DD372EDEF3850424 /* WorkspaceSidebarItem.swift */; };
@@ -92,6 +94,7 @@
 
 /* Begin PBXFileReference section */
 		034DD46D84F8B203A8D6476F /* WorkspaceStore+Preferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Preferences.swift"; sourceTree = "<group>"; };
+		03FB4E6F27D8FCC69430863A /* AdaptiveFontSizeLearner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveFontSizeLearner.swift; sourceTree = "<group>"; };
 		04E92B1CA43CA429B446891A /* WorkspaceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceStoreTests.swift; sourceTree = "<group>"; };
 		07068A45202138CF3BE28417 /* EditorCharacterCountTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorCharacterCountTests.swift; sourceTree = "<group>"; };
 		0CA0DD15623CA315741B803E /* ZoomableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomableTextView.swift; sourceTree = "<group>"; };
@@ -135,6 +138,7 @@
 		8A6D6237DD372EDEF3850424 /* WorkspaceSidebarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSidebarItem.swift; sourceTree = "<group>"; };
 		90E210DA60748200EFC436BE /* EditorTabLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTabLayout.swift; sourceTree = "<group>"; };
 		92666547B16D790D180C7153 /* TopBandDragController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBandDragController.swift; sourceTree = "<group>"; };
+		9690FEEBE41E3844A96BC731 /* AdaptiveFontSizeLearnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveFontSizeLearnerTests.swift; sourceTree = "<group>"; };
 		98813FD87C11733B55049246 /* EditorTabItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTabItemView.swift; sourceTree = "<group>"; };
 		99578BE1CA3CF5872EE01B50 /* EditorTabTopRuleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTabTopRuleView.swift; sourceTree = "<group>"; };
 		9AC3D0698104CA17378999F0 /* WorkspaceSplitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSplitView.swift; sourceTree = "<group>"; };
@@ -182,6 +186,7 @@
 		13FFF4BFB75B916FA0599860 /* Workspace */ = {
 			isa = PBXGroup;
 			children = (
+				03FB4E6F27D8FCC69430863A /* AdaptiveFontSizeLearner.swift */,
 				D049BE5437111809BD8E49EE /* EditorCharacterCountView.swift */,
 				CEE07E7303361F05267B1085 /* EditorTab.swift */,
 				98813FD87C11733B55049246 /* EditorTabItemView.swift */,
@@ -259,6 +264,7 @@
 		65E9A4E7DC74B3FFC4182F01 /* NeatEditorTests */ = {
 			isa = PBXGroup;
 			children = (
+				9690FEEBE41E3844A96BC731 /* AdaptiveFontSizeLearnerTests.swift */,
 				7E545B076D7BD325F2B4EF46 /* AutoSaveSchedulerTests.swift */,
 				D035068B3B78F2DD5BA7F66B /* ConnectedTabGeometryTests.swift */,
 				3DC995CE28879B63ADA21A6B /* DocumentConcurrencyTests.swift */,
@@ -488,6 +494,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7FFEA9EF20394E37C849C849 /* AdaptiveFontSizeLearnerTests.swift in Sources */,
 				1647932DE3AFF5096BA1A56C /* AutoSaveSchedulerTests.swift in Sources */,
 				3B6E495A74F54A444CE0B0B3 /* ConnectedTabGeometryTests.swift in Sources */,
 				09AC467E72D24BDC60799EDF /* DocumentConcurrencyTests.swift in Sources */,
@@ -514,6 +521,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				52495B589794DC0B4D452A02 /* AdaptiveFontSizeLearner.swift in Sources */,
 				EE8FDF1E46F208FEEE81F43F /* AppLanguage.swift in Sources */,
 				92AE87B6A8CBD6148076B130 /* AppUpdater.swift in Sources */,
 				AB52501F00EC0F86E18D6C3C /* AutoSaveScheduler.swift in Sources */,

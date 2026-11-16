@@ -63,4 +63,74 @@ struct WorkspacePreferencesTests {
 
         #expect(decoded.editorFontSize == 36)
     }
+
+    @Test("old snapshots without the learner decode to the cold start")
+    func oldSnapshotDecodesToColdStartLearner() throws {
+        let encoded = try JSONEncoder().encode(
+            WorkspacePreferences(editorFontSize: 14, adaptiveEditorFontSizeLearner: AdaptiveFontSizeLearner(estimate: 22, evidence: 9))
+        )
+        var object = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object.removeValue(forKey: "adaptiveEditorFontSizeLearner")
+        let data = try JSONSerialization.data(withJSONObject: object)
+
+        let decoded = try JSONDecoder().decode(WorkspacePreferences.self, from: data)
+
+        #expect(decoded.adaptiveEditorFontSizeLearner.estimate == 13)
+        #expect(decoded.adaptiveEditorFontSizeLearner.evidence == 4)
+        #expect(decoded.editorFontSize == 14)
+    }
+
+    @Test("invalid learner values are repaired without discarding other preferences")
+    func invalidLearnerPreservesOtherPreferences() throws {
+        let encoded = try JSONEncoder().encode(
+            WorkspacePreferences(
+                editorFontSize: 18,
+                adaptiveEditorFontSizeLearner: AdaptiveFontSizeLearner(estimate: 22, evidence: 9),
+                isSidebarVisible: false
+            )
+        )
+        var object = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object["adaptiveEditorFontSizeLearner"] = ["estimate": 999, "evidence": 0]
+        let data = try JSONSerialization.data(withJSONObject: object)
+
+        let decoded = try JSONDecoder().decode(WorkspacePreferences.self, from: data)
+
+        #expect(decoded.adaptiveEditorFontSizeLearner.estimate == 36)
+        #expect(decoded.adaptiveEditorFontSizeLearner.evidence == 4)
+        #expect(decoded.editorFontSize == 18)
+        #expect(decoded.isSidebarVisible == false)
+    }
+
+    @Test("remembered size > adaptive default > unknown-existing baseline")
+    func fontSizePriority() {
+        var preferences = WorkspacePreferences(
+            adaptiveEditorFontSizeLearner: AdaptiveFontSizeLearner(estimate: 20, evidence: 8)
+        )
+
+        preferences.applyRememberedEditorFontSize(for: nil)
+        #expect(preferences.editorFontSize == 20)
+
+        let unknown = URL(fileURLWithPath: "/tmp/unknown-\(UUID().uuidString).txt")
+        preferences.applyRememberedEditorFontSize(for: unknown)
+        #expect(preferences.editorFontSize == WorkspacePreferences.defaultEditorFontSize)
+
+        let remembered = URL(fileURLWithPath: "/tmp/remembered-\(UUID().uuidString).txt")
+        preferences.editorFontSize = 13
+        _ = preferences.stepEditorFontSize(by: 12, rememberingFor: remembered)
+        preferences.applyRememberedEditorFontSize(for: nil)
+        #expect(preferences.editorFontSize == 20)
+        preferences.applyRememberedEditorFontSize(for: remembered)
+        #expect(preferences.editorFontSize == 25)
+    }
+
+    @Test("learning never rewrites the current size or the per-file memory")
+    func learningIsIsolated() {
+        var preferences = WorkspacePreferences(editorFontSize: 17)
+
+        preferences.learnAdaptiveEditorFontSize(30)
+
+        #expect(preferences.editorFontSize == 17)
+        #expect(preferences.rememberedEditorFontSizes.isEmpty)
+        #expect(abs(preferences.adaptiveEditorFontSizeLearner.estimate - (13 + (30 - 13) / 5.0)) < 0.000_001)
+    }
 }

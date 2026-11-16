@@ -11,6 +11,7 @@ extension WorkspaceStore {
         tabs.append(newTab)
         selectedTabID = newTab.id
         loadTabContentIfNeeded(id: newTab.id)
+        settlePendingAdaptiveFontSample()
         applyEditorFontPreferenceForSelectedTab()
         saveState()
     }
@@ -22,6 +23,7 @@ extension WorkspaceStore {
         }
 
         saveSelectedDocumentIfNeeded()
+        settlePendingAdaptiveFontSample()
 
         var targetTabID: UUID?
 
@@ -50,6 +52,7 @@ extension WorkspaceStore {
             return
         }
 
+        settlePendingAdaptiveFontSample()
         saveSelectedDocumentIfNeeded()
         selectedTabID = id
         loadTabContentIfNeeded(id: id)
@@ -91,6 +94,7 @@ extension WorkspaceStore {
     }
 
     private func removeDocument(at index: Int, preserveForReopening: Bool) {
+        settlePendingAdaptiveFontSample()
         let closedTab = tabs[index]
         autoSaveScheduler.cancel(for: closedTab.id)
         stopObservingDocument(id: closedTab.id)
@@ -116,6 +120,7 @@ extension WorkspaceStore {
 
     func closeOtherDocuments(keeping id: UUID) {
         guard tabs.contains(where: { $0.id == id }), saveAllDocuments() else { return }
+        settlePendingAdaptiveFontSample()
         let idsToClose = tabs.filter { $0.id != id }.map { $0.id }
         for closeID in idsToClose {
             guard let index = tabs.firstIndex(where: { $0.id == closeID }) else { continue }
@@ -134,6 +139,7 @@ extension WorkspaceStore {
     }
 
     func reopenLastClosedDocument() {
+        settlePendingAdaptiveFontSample()
         while let closedTabSnapshot = closedTabs.popLast() {
             saveSelectedDocumentIfNeeded()
 
@@ -158,6 +164,7 @@ extension WorkspaceStore {
     }
 
     func openSettings() {
+        settlePendingAdaptiveFontSample()
         if let existingSettingsTab = tabs.first(where: { $0.isSettings }) {
             selectTab(existingSettingsTab.id)
             return

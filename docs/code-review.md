@@ -5,6 +5,61 @@ AppKit text synchronization, preferences, accessibility, and local/public
 release tooling. Behavior requirements are recorded before implementation in
 [editing-text-sync-test-cases.md](editing-text-sync-test-cases.md).
 
+## Adaptive default font size acceptance (2026-11-16)
+
+Scope: macOS only. The owner asked for a local adaptive default for future new
+documents, no font-size Settings preference, and a DeepSeek implementation
+worker. The adopted algorithm and boundaries are in the [editor KB](../../docs/EDITOR_SYNC_KNOWLEDGE_BASE.md#adaptive-default-font-size-owner-ruling-2026-11-16).
+`AdaptiveFontSizeLearner` stores only estimate/evidence; explicit per-file
+memory remains authoritative, unknown existing files remain at 13 pt, and no
+content, path history or network model is involved. The current Settings source
+already had no font-size row, so no new control or explanatory copy was added.
+
+Pre-install evidence on Xcode 27.2 (27B52), macOS 27.3 / arm64:
+
+- 236 Swift Testing tests in 25 suites pass. Structured build results for the
+  full test, Debug analyze and universal Release build each report zero
+  compiler warnings, analyzer warnings and errors. The Release executable
+  contains arm64 + x86_64 and passes strict nested signature verification with
+  the existing Developer ID team. Native Intel and macOS 26 execution were not
+  performed.
+- The background E2E suite passes 10 tests with 22 guarded calls after the
+  required bounded wake preparation; actual 2× window captures were inspected.
+  The first no-wake run failed capture/AX readiness and is not product evidence.
+- An isolated native application-menu AX path performed three View > Zoom In
+  actions on alpha, then New Document. The persisted result is one 16 pt sample,
+  estimate 13.6 / evidence 5 and a 14 pt new draft. Returning to alpha restores
+  its explicit 16 pt memory without another sample; unknown beta uses 13 pt.
+  Settings has no font-size text. New-draft, alpha and beta captures were
+  inspected. PID-posted keys and window-scoped menu lookup did not reach the
+  command; direct public ApplicationServices `AXPress` on the application menu
+  was the successful driver, not a product-code fallback.
+
+Logs, structured results and privacy-safe synthetic-document captures:
+`~/.config/neateditor/verification/2026-11-16-adaptive-font/`.
+Installed Release behavior and the Settings capture are pending and must be
+recorded before closing this task.
+
+Retained diagnostics, without suppression:
+
+- The existing AppIntents metadata notice remains inapplicable: this target
+  declares no intents and needs no Shortcuts metadata. Reassess only if intents
+  are adopted; no artificial framework dependency was added.
+- The full test host logs AppKit's `layoutSubtreeIfNeeded` recursion WarnOnce.
+  The relevant native path is `WorkspaceSplitView.swift`'s tab-band layout
+  flush, outside this feature's diff; titlebar/layout tests pass. Residual risk
+  is future AppKit layout compatibility or timing, not a demonstrated font
+  defect. Follow-up: isolate which child is already laying out and remove the
+  forced nested layout flush with fresh titlebar captures, rather than hiding
+  the warning or changing layout in this unrelated feature.
+- Coordinated rename tests log Foundation related-item sandbox-extension
+  failures (`NSFileSandboxingRequestRelatedItemExtension` and
+  `itemAtURL:willMoveToURL:`), while the rename, source/destination and buffer
+  assertions pass. Those persistence paths are unchanged here; no sandbox or
+  permission setting was changed. Residual coverage remains native
+  file-provider coordination, not proof of arbitrary external-writer safety.
+  Recheck the focused coordinated-rename cases on OS/runtime updates.
+
 ## Release-readiness review (2026-11-05)
 
 Scope: `v1.0.28..e298115`, including theme preferences/native repaint,

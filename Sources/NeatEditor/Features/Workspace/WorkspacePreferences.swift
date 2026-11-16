@@ -134,6 +134,7 @@ struct WorkspacePreferences: Codable, Equatable {
         case editorTheme
         case editorTextSoftness
         case isSidebarVisible
+        case adaptiveEditorFontSizeLearner
     }
 
     var editorFontSize: CGFloat = EditorFontMetrics.defaultSize
@@ -143,6 +144,7 @@ struct WorkspacePreferences: Codable, Equatable {
     var editorTheme: EditorTheme = .defaultValue
     var editorTextSoftness = EditorTextSoftnessConfiguration()
     var isSidebarVisible = true
+    var adaptiveEditorFontSizeLearner = AdaptiveFontSizeLearner()
     private var nextEditorFontAccessSequence: UInt64 = 0
 
     init(
@@ -152,6 +154,7 @@ struct WorkspacePreferences: Codable, Equatable {
         appLanguage: AppLanguage = .system,
         editorTheme: EditorTheme = .defaultValue,
         editorTextSoftness: EditorTextSoftnessConfiguration = EditorTextSoftnessConfiguration(),
+        adaptiveEditorFontSizeLearner: AdaptiveFontSizeLearner = AdaptiveFontSizeLearner(),
         isSidebarVisible: Bool = true
     ) {
         self.editorFontSize = Self.clampedEditorFontSize(editorFontSize)
@@ -160,6 +163,7 @@ struct WorkspacePreferences: Codable, Equatable {
         self.appLanguage = appLanguage
         self.editorTheme = editorTheme
         self.editorTextSoftness = editorTextSoftness.sanitized()
+        self.adaptiveEditorFontSizeLearner = adaptiveEditorFontSizeLearner
         self.isSidebarVisible = isSidebarVisible
         normalizeRememberedEditorFontSizes()
     }
@@ -197,6 +201,10 @@ struct WorkspacePreferences: Codable, Equatable {
             Bool.self,
             forKey: .isSidebarVisible
         ) ?? defaults.isSidebarVisible
+        adaptiveEditorFontSizeLearner = try container.decodeIfPresent(
+            AdaptiveFontSizeLearner.self,
+            forKey: .adaptiveEditorFontSizeLearner
+        ) ?? defaults.adaptiveEditorFontSizeLearner
         normalizeRememberedEditorFontSizes()
     }
 
@@ -210,6 +218,7 @@ struct WorkspacePreferences: Codable, Equatable {
         try container.encode(editorTheme, forKey: .editorTheme)
         try container.encode(editorTextSoftness.sanitized(), forKey: .editorTextSoftness)
         try container.encode(isSidebarVisible, forKey: .isSidebarVisible)
+        try container.encode(adaptiveEditorFontSizeLearner, forKey: .adaptiveEditorFontSizeLearner)
     }
 
     static var defaultEditorFontSize: CGFloat {
@@ -217,7 +226,8 @@ struct WorkspacePreferences: Codable, Equatable {
     }
 
     mutating func applyRememberedEditorFontSize(for fileURL: URL?) {
-        let nextSize = rememberedEditorFontSize(for: fileURL) ?? Self.defaultEditorFontSize
+        let nextSize = rememberedEditorFontSize(for: fileURL)
+            ?? adaptiveDefaultEditorFontSize(for: fileURL)
         editorFontSize = Self.clampedEditorFontSize(nextSize)
 
         guard let key = rememberedEditorFontSizeKey(for: fileURL),
@@ -226,6 +236,22 @@ struct WorkspacePreferences: Codable, Equatable {
         }
 
         touchRememberedEditorFontSize(forKey: key)
+    }
+
+    /// New drafts use the learned default; unknown existing files keep the
+    /// fixed baseline. An explicit remembered size always wins over both.
+    private func adaptiveDefaultEditorFontSize(for fileURL: URL?) -> CGFloat {
+        guard fileURL == nil else {
+            return Self.defaultEditorFontSize
+        }
+
+        return adaptiveEditorFontSizeLearner.defaultFontSize
+    }
+
+    /// Records one explicit user adjustment into the adaptive learner without
+    /// touching the active document size or the per-file memory.
+    mutating func learnAdaptiveEditorFontSize(_ sample: CGFloat) {
+        adaptiveEditorFontSizeLearner.learn(sample: sample)
     }
 
     mutating func stepEditorFontSize(by delta: CGFloat, rememberingFor fileURL: URL?) -> Bool {

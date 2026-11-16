@@ -6,6 +6,14 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## Unreleased
 
+### Changed
+
+- New documents now choose their default text size through a local, bounded learning algorithm based on settled manual zoom adjustments. Per-file sizes still win, existing files without a remembered size keep the 13 pt baseline, and no document content or behavior history leaves the workspace. Font size is not exposed as a Settings preference; native View-menu zoom remains available.
+
+### 简体中文
+
+- 新建文档的默认字号现在通过本地、有界的学习算法，根据已稳定的手动缩放调整自动选择。逐文件字号仍然优先，未记忆字号的既有文件保持 13pt 基线；文档正文和行为历史不会离开工作区。设置页不提供字号偏好，原生「显示」菜单中的缩放操作保留不变。
+
 ## 1.0.35 - 2026-11-15
 
 ### Fixed

@@ -88,6 +88,18 @@ final class WorkspaceStore {
     @ObservationIgnored
     var pendingSaveStateTask: Task<Void, Never>?
 
+    /// Explicit font-size adjustments are folded into the adaptive new-draft
+    /// default after a short trailing debounce. The pending sample and its
+    /// task are observation-ignored bookkeeping, not UI state.
+    @ObservationIgnored
+    var pendingAdaptiveFontSample: CGFloat?
+
+    @ObservationIgnored
+    var pendingAdaptiveFontTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    let adaptiveFontSampleDelay: Duration
+
     /// Tabs with an in-flight lazy content load. `isContentLoaded` flips to
     /// `true` only when the load *completes*, so this set also dedupes
     /// overlapping load requests for the same tab.
@@ -126,11 +138,13 @@ final class WorkspaceStore {
     init(
         persistenceService: DocumentPersistenceService = DocumentPersistenceService(),
         autoSaveScheduler: AutoSaveScheduler = AutoSaveScheduler(),
-        userDefaults: UserDefaults = .standard
+        userDefaults: UserDefaults = .standard,
+        adaptiveFontSampleDelay: Duration = .seconds(2)
     ) {
         self.persistenceService = persistenceService
         self.autoSaveScheduler = autoSaveScheduler
         self.userDefaults = userDefaults
+        self.adaptiveFontSampleDelay = adaptiveFontSampleDelay
         self.documentsFolder = persistenceService.normalizedFileURL(
             for: persistenceService.defaultDirectory
         )

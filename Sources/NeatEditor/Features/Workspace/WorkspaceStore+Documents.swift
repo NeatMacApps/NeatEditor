@@ -17,6 +17,7 @@ extension WorkspaceStore {
     func moveToTrash(id: UUID) {
         guard let index = tabs.firstIndex(where: { $0.id == id }),
               !tabs[index].isSettings, tabs[index].fileURL != nil else { return }
+        settlePendingAdaptiveFontSample()
         autoSaveScheduler.cancel(for: id)
         saveGenerations[id, default: 0] += 1
         do {

@@ -22,6 +22,35 @@ extension WorkspaceStore {
         ) else {
             return
         }
+        scheduleAdaptiveFontSample(preferences.editorFontSize)
+    }
+
+    // MARK: - Adaptive font size
+
+    private func scheduleAdaptiveFontSample(_ fontSize: CGFloat) {
+        pendingAdaptiveFontSample = fontSize
+        pendingAdaptiveFontTask?.cancel()
+        pendingAdaptiveFontTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                try await Task.sleep(for: self.adaptiveFontSampleDelay)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            self.settlePendingAdaptiveFontSample()
+        }
+    }
+
+    /// Commits the pending sample synchronously and clears the bookkeeping.
+    /// Mutating preferences here schedules a debounced save; callers that are
+    /// themselves flushing state cancel that task before their final write.
+    func settlePendingAdaptiveFontSample() {
+        guard let sample = pendingAdaptiveFontSample else { return }
+        pendingAdaptiveFontSample = nil
+        pendingAdaptiveFontTask?.cancel()
+        pendingAdaptiveFontTask = nil
+        preferences.learnAdaptiveEditorFontSize(sample)
     }
 
     func handlePreferencesChange(

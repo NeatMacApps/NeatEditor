@@ -7,7 +7,9 @@ import Testing
 
 @MainActor
 struct WorkspaceStoreTests {
-    private func makeWorkspace() throws -> (WorkspaceStore, URL, UserDefaults, String) {
+    private func makeWorkspace(
+        adaptiveFontSampleDelay: Duration = .seconds(2)
+    ) throws -> (WorkspaceStore, URL, UserDefaults, String) {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("NeatEditorWorkspaceTests-\(UUID())", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -20,13 +22,16 @@ struct WorkspaceStoreTests {
         defaults.set(try JSONEncoder().encode(state), forKey: WorkspaceStore.UserDefaultsKey.workspaceState)
         let store = WorkspaceStore(
             persistenceService: DocumentPersistenceService(defaultDirectory: directory),
-            userDefaults: defaults
+            userDefaults: defaults,
+            adaptiveFontSampleDelay: adaptiveFontSampleDelay
         )
         return (store, directory, defaults, suite)
     }
 
     private func cleanUp(_ store: WorkspaceStore, directory: URL, defaults: UserDefaults, suite: String) {
         store.pendingSaveStateTask?.cancel()
+        store.pendingAdaptiveFontTask?.cancel()
+        store.pendingAdaptiveFontSample = nil
         defaults.removePersistentDomain(forName: suite)
         try? FileManager.default.removeItem(at: directory)
     }
@@ -356,5 +361,163 @@ struct WorkspaceStoreTests {
         #expect(store.tabs.count == 1)
         #expect(store.tabs.allSatisfy { !$0.isSettings })
         #expect(store.selectedTabID == store.tabs.first?.id)
+    }
+
+    // MARK: - Adaptive font size
+
+    @Test("applying a remembered size never records a learning sample")
+    func applyDoesNotLearn() throws {
+        let (store, directory, defaults, suite) = try makeWorkspace()
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+        let before = store.preferences.adaptiveEditorFontSizeLearner
+
+        store.applyEditorFontPreferenceForSelectedTab()
+
+        #expect(store.preferences.adaptiveEditorFontSizeLearner == before)
+        #expect(store.pendingAdaptiveFontSample == nil)
+    }
+
+    @Test("a clamped no-op step records nothing")
+    func noOpStepDoesNotLearn() throws {
+        let (store, directory, defaults, suite) = try makeWorkspace()
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+
+        store.preferences = WorkspacePreferences(editorFontSize: 36)
+        store.updateEditorFontSize(by: 1)
+        #expect(store.pendingAdaptiveFontSample == nil)
+
+        store.preferences = WorkspacePreferences(editorFontSize: 10)
+        store.updateEditorFontSize(by: -1)
+        #expect(store.pendingAdaptiveFontSample == nil)
+    }
+
+    @Test("a run of adjustments coalesces into one debounced sample")
+    func runCoalescesIntoSingleSample() async throws {
+        let (store, directory, defaults, suite) = try makeWorkspace(adaptiveFontSampleDelay: .milliseconds(20))
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+        let cold = store.preferences.adaptiveEditorFontSizeLearner
+
+        store.increaseEditorFontSize()
+        store.increaseEditorFontSize()
+        store.increaseEditorFontSize()
+
+        #expect(store.preferences.adaptiveEditorFontSizeLearner == cold)
+        #expect(store.pendingAdaptiveFontSample == 16)
+
+        try await Task.sleep(for: .milliseconds(80))
+
+        #expect(store.preferences.adaptiveEditorFontSizeLearner.evidence == cold.evidence + 1)
+        #expect(abs(store.preferences.adaptiveEditorFontSizeLearner.estimate - (13 + (16 - 13) / 5.0)) < 0.000_001)
+        #expect(store.pendingAdaptiveFontSample == nil)
+    }
+
+    @Test("creating a new draft settles the pending sample and uses it as the default")
+    func newDraftSettlesImmediately() throws {
+        let (store, directory, defaults, suite) = try makeWorkspace()
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+
+        store.updateEditorFontSize(by: 10)
+        #expect(store.pendingAdaptiveFontSample == 23)
+
+        store.createNewDocument()
+
+        #expect(store.pendingAdaptiveFontSample == nil)
+        #expect(abs(store.preferences.adaptiveEditorFontSizeLearner.estimate - (13 + (23 - 13) / 5.0)) < 0.000_001)
+        #expect(store.preferences.adaptiveEditorFontSizeLearner.evidence == 5)
+        #expect(store.preferences.editorFontSize == 15)
+    }
+
+    @Test("switching tabs settles the pending sample")
+    func switchSettlesImmediately() throws {
+        let (store, directory, defaults, suite) = try makeWorkspace()
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+        let second = EditorTab(title: "second")
+        store.tabs.append(second)
+
+        store.updateEditorFontSize(by: 5)
+        #expect(store.pendingAdaptiveFontSample == 18)
+
+        store.selectTab(second.id)
+
+        #expect(store.pendingAdaptiveFontSample == nil)
+        #expect(abs(store.preferences.adaptiveEditorFontSizeLearner.estimate - (13 + (18 - 13) / 5.0)) < 0.000_001)
+    }
+
+    @Test("closing a document settles its pending sample")
+    func closeSettlesImmediately() throws {
+        let (store, directory, defaults, suite) = try makeWorkspace()
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+        let id = try #require(store.selectedTabID)
+
+        store.updateEditorFontSize(by: 6)
+        store.closeDocument(id: id)
+
+        #expect(store.pendingAdaptiveFontSample == nil)
+        #expect(abs(store.preferences.adaptiveEditorFontSizeLearner.estimate - (13 + (19 - 13) / 5.0)) < 0.000_001)
+        #expect(store.preferences.adaptiveEditorFontSizeLearner.evidence == 5)
+    }
+
+    @Test("adjusting two documents produces two samples without dropping either")
+    func twoDocumentsProduceTwoSamples() async throws {
+        let (store, directory, defaults, suite) = try makeWorkspace(adaptiveFontSampleDelay: .milliseconds(20))
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+        let second = EditorTab(title: "second")
+        store.tabs.append(second)
+
+        store.updateEditorFontSize(by: 4)
+        #expect(store.pendingAdaptiveFontSample == 17)
+
+        store.selectTab(second.id)
+        #expect(store.preferences.adaptiveEditorFontSizeLearner.evidence == 5)
+        #expect(store.pendingAdaptiveFontSample == nil)
+
+        store.updateEditorFontSize(by: -2)
+        #expect(store.pendingAdaptiveFontSample != nil)
+
+        try await Task.sleep(for: .milliseconds(80))
+
+        #expect(store.preferences.adaptiveEditorFontSizeLearner.evidence == 6)
+        #expect(store.pendingAdaptiveFontSample == nil)
+    }
+
+    @Test("the learned estimate and evidence persist across a state roundtrip")
+    func learnerPersistsAcrossRestart() throws {
+        let (store, directory, defaults, suite) = try makeWorkspace()
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+
+        store.updateEditorFontSize(by: 10)
+        store.settlePendingAdaptiveFontSample()
+        store.flushPendingSaveState()
+
+        let restored = WorkspaceStore(
+            persistenceService: DocumentPersistenceService(defaultDirectory: directory),
+            userDefaults: defaults
+        )
+        defer {
+            restored.pendingSaveStateTask?.cancel()
+            restored.pendingAdaptiveFontTask?.cancel()
+        }
+
+        #expect(restored.preferences.adaptiveEditorFontSizeLearner.evidence == 5)
+        #expect(abs(restored.preferences.adaptiveEditorFontSizeLearner.estimate - 15) < 0.000_001)
+        #expect(restored.preferences.editorFontSize == 15)
+    }
+
+    @Test("restoring state never schedules a learning sample")
+    func restoreDoesNotLearn() throws {
+        let (store, directory, defaults, suite) = try makeWorkspace()
+        defer { cleanUp(store, directory: directory, defaults: defaults, suite: suite) }
+        let state = WorkspaceStore.WorkspaceState(
+            tabs: [], selectedFileURL: nil, isSettingsSelected: false,
+            preferences: WorkspacePreferences(
+                adaptiveEditorFontSizeLearner: AdaptiveFontSizeLearner(estimate: 20, evidence: 8)
+            )
+        )
+
+        store.restoreState(state)
+
+        #expect(store.pendingAdaptiveFontSample == nil)
+        #expect(store.preferences.adaptiveEditorFontSizeLearner.evidence == 8)
+        #expect(store.preferences.adaptiveEditorFontSizeLearner.estimate == 20)
     }
 }

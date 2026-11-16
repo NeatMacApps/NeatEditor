@@ -102,6 +102,7 @@ extension WorkspaceStore {
     }
 
     func flushPendingSaveState() {
+        settlePendingAdaptiveFontSample()
         pendingSaveStateTask?.cancel()
         pendingSaveStateTask = nil
         performSaveStateNow()
