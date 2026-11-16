@@ -9,7 +9,8 @@ release tooling. Behavior requirements are recorded before implementation in
 
 Scope: macOS only. The owner asked for a local adaptive default for future new
 documents, no font-size Settings preference, and a DeepSeek implementation
-worker. The adopted algorithm and boundaries are in the [editor KB](../../docs/EDITOR_SYNC_KNOWLEDGE_BASE.md#adaptive-default-font-size-owner-ruling-2026-11-16).
+worker. The adopted algorithm and boundaries are in the editor KB's "Adaptive
+default font size" ruling ([EDITOR_SYNC_KNOWLEDGE_BASE.md](../../docs/EDITOR_SYNC_KNOWLEDGE_BASE.md)).
 `AdaptiveFontSizeLearner` stores only estimate/evidence; explicit per-file
 memory remains authoritative, unknown existing files remain at 13 pt, and no
 content, path history or network model is involved. The current Settings source
@@ -37,8 +38,30 @@ Pre-install evidence on Xcode 27.2 (27B52), macOS 27.3 / arm64:
 
 Logs, structured results and privacy-safe synthetic-document captures:
 `~/.config/neateditor/verification/2026-11-16-adaptive-font/`.
-Installed Release behavior and the Settings capture are pending and must be
-recorded before closing this task.
+
+Installed acceptance, from commit `89f6d91` (Release build):
+
+- The universal Release build from that clean commit was `ditto`-installed over
+  `/Applications/NeatEditor.app` as 1.0.35 (35), Developer ID team
+  `SHZQ3MWP3B`, executable SHA256
+  `a0db6497496161759a15021188b85d9610b95098d108c5e8f17ccb2453a99e47` (built and
+  installed copies identical). Strict nested signature verification passes and
+  `spctl` accepts the local unnotarized Developer ID build under the documented
+  local-install path; public distribution still requires notarization.
+- The same isolated native AX path ran against the installed bundle and produced
+  the same state: three settled `View > Zoom In` steps gave one 16 pt sample,
+  estimate 13.6 / evidence 5, a 14 pt new draft, alpha restored at its explicit
+  16 pt without a new sample, and unknown beta at 13 pt. Fresh installed-window
+  captures for the draft, alpha and beta were inspected; alpha renders visibly
+  larger than beta.
+- The installed Settings window was captured and inspected: Editor shows only
+  Documents Folder, Theme, Tab Behavior and Language; Updates shows its two
+  toggles and version 1.0.35. No font-size control or explanatory copy exists.
+  Receipt: `settings-installed-receipt.json`; capture: `settings-installed.png`.
+- Limits: behavior ran through the `--e2e-testing` isolated data root (fictional
+  alpha/beta documents only) because the harness must not read the owner's real
+  workspace; the binary, signature and UI are the installed artifact. No Intel
+  or macOS 26 execution was performed.
 
 Retained diagnostics, without suppression:
 
