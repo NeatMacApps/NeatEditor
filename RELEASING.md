@@ -392,6 +392,52 @@ release; the two-tone appearance fixtures cover both appearances at unit level.
 Private logs, anonymous receipts and installed captures:
 `~/.config/neateditor/development/release-1.0.35/`.
 
+## 1.0.36 publication evidence (2026-11-18)
+
+Published [v1.0.36](https://github.com/NeatMacApps/NeatEditor/releases/tag/v1.0.36)
+(build 36) from immutable source `442a054`; appcast commit `9c5a487`. This release
+ships the adaptive default editor font size (`89f6d91`), the background E2E
+suite (`d80b6bd`), and the macOS 26 collapsed cold-launch leading-titlebar
+white-cap fix (`42d8357`).
+
+Gates on `42d8357` (identical application/test sources before version-only
+preparation `442a054`): 236 tests / 25 suites (Debug, arm64) and Debug analyze
+pass with no Swift compiler or analyzer warning beyond the assessed AppIntents
+metadata notice; `WorkspaceChromeProbe` (17 cached matrix checks + cold-launch
+narrow compositor capture) and `ActiveTitlebarProbe` (narrow light collapsed and
+dark expanded compositor captures) pass. The publisher's clean universal Release
+archive and export pass with only the same AppIntents metadata notice.
+
+Apple accepted app submission `d552a25e-16a2-4c73-a091-463dd8a1e4e3` and DMG
+submission `a20a7434-d9b7-4632-8144-fbfeabb5a50f`; both tickets are stapled.
+Publisher log: `build/release-logs/publish-20261118-142956.log`.
+Independent anonymous full downloads matched the exact three published assets,
+local bytes (`cmp`) and `SHA256SUMS.txt`. The live update feed advertises build
+36 with the 1.0.36 ZIP length (`5,774,559` bytes), `edSignature`, and
+English-first bilingual notes; the feed itself remains unsigned.
+
+| Published artifact | SHA256 |
+|---|---|
+| `NeatEditor-1.0.36.dmg` | `5b22c3c36b839e9fbd0f554c9564b131ea36f9bef70739fc4a4a9abdbd9f85e0` |
+| `NeatEditor-1.0.36.zip` | `04a3be11ecee36ab788cd246705e8720ad55646bb0167c7b190a2e08d294deb6` |
+
+Anonymous sizes: DMG `5,726,605` bytes, ZIP `5,774,559` bytes, `SHA256SUMS.txt`
+`176` bytes. Homebrew Cask 1.0.36 was published from an isolated clean clone in
+`x0c/homebrew-tap` commit `5d401a1`; `brew style`, `brew audit --online` and
+`brew info` pass and report `1.0.36`.
+
+The anonymously downloaded notarized DMG installs at `/Applications/NeatEditor.app`
+as `1.0.36` (`36`) with Developer ID team `SHZQ3MWP3B` and executable SHA256
+`a6a61b1fdd93532bcb09a124e92fd2b32d58de272ff781faab90b1364a1e18ba` matching the
+mounted DMG. Strict nested signatures, the DMG ticket and `spctl`
+(`source=Notarized Developer ID`, `override=security disabled`) pass, and the
+previous local build was replaced after normal termination and relaunched.
+
+Remaining limits: native Intel execution and a physical macOS 26 runtime remain
+unverified on this macOS 27.3 host (container clipping was verified via unit
+tests); background `Tests/E2E/run_e2e.sh` failed under screen lock
+(`loginwindow` frontmost).
+
 ## Durable release requirements
 
 R1 — Committed clean source before build. The coordinator commits only its
