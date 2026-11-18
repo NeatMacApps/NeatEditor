@@ -433,10 +433,11 @@ mounted DMG. Strict nested signatures, the DMG ticket and `spctl`
 (`source=Notarized Developer ID`, `override=security disabled`) pass, and the
 previous local build was replaced after normal termination and relaunched.
 
-Remaining limits: native Intel execution and a physical macOS 26 runtime remain
-unverified on this macOS 27.3 host (container clipping was verified via unit
-tests); background `Tests/E2E/run_e2e.sh` failed under screen lock
-(`loginwindow` frontmost).
+Acceptance & limits: on 2026-11-18 the owner confirmed `v1.0.36` fixed the
+collapsed cold-launch white-cap defect on physical macOS 26 (container clipping
+was also verified via unit tests). Native Intel execution and background
+`Tests/E2E/run_e2e.sh` (failed under macOS 27.3 screen lock with `loginwindow`
+frontmost) remain the unverified limits for this release.
 
 ## Durable release requirements
 

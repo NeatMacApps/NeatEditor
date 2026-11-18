@@ -746,6 +746,9 @@ for the verified DMG, feed, Cask and installation receipts. Physical foreground
 launch, pointer drag/double-click and a macOS 26 runtime remain unverified under
 screen lock. The native control establishes the repaired painting defect, not
 those input behaviors. Native hit routing is unchanged and structurally tested.
+*Superseded on macOS 26 (2026-11-18)*: drawing out-of-bounds from `sidebarButton`
+fails under macOS 26 accessory-container clipping and was replaced by
+[macOS 26 collapsed cold-launch white-cap fix](#macos-26-collapsed-cold-launch-white-cap-fix-owner-report-2026-11-18).
 
 ### macOS 26 collapsed cold-launch white-cap fix (owner report 2026-11-18)
 
@@ -779,9 +782,11 @@ those input behaviors. Native hit routing is unchanged and structurally tested.
   titlebar hits still reach native chrome (`NSToolbarView`) directly.
   In full screen (`tabBand` rehomed into content), `leadingBandWidth` returns
   to `0` and `strip` fills the content band as before.
-- Constraint: macOS 27.3 passes unit/compositor/clipping-container checks here,
-  while physical execution on a macOS 26 host remains to be confirmed by the
-  owner unless a macOS 26 runtime is available.
+- Acceptance & authority: macOS 27.3 passes unit/compositor/clipping-container
+  checks (`42d8357`), and on 2026-11-18 the owner confirmed that notarized
+  `v1.0.36` resolved the collapsed cold-launch white-cap defect on physical
+  macOS 26. The reusable cross-project AppKit pattern is recorded in
+  [Scene-owned toolbar backgrounds](~/.config/agentsync/docs/MACOS_APP_DEVELOPMENT_GUIDE.md#scene-owned-toolbar-backgrounds-verified-2026-11-06).
 
 ## First-tab join clearance (owner report 2026-10-27)
 
