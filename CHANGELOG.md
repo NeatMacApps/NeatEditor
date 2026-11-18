@@ -6,12 +6,19 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## Unreleased
 
+## 1.0.36 - 2026-11-18
+
+### Fixed
+
+- Fix a cold-launch white block behind the window controls on macOS 26 when launching with the sidebar collapsed. The leading titlebar background now paints inside the full-width tab-band accessory below the native traffic lights and sidebar button, rather than relying on out-of-bounds drawing past an accessory container that clips on macOS 26.
+
 ### Changed
 
 - New documents now choose their default text size through a local, bounded learning algorithm based on settled manual zoom adjustments. Per-file sizes still win, existing files without a remembered size keep the 13 pt baseline, and no document content or behavior history leaves the workspace. Font size is not exposed as a Settings preference; native View-menu zoom remains available.
 
 ### 简体中文
 
+- 修复 macOS 26 上在侧边栏收起状态下冷启动时，左上角红绿灯后方出现白色方块的问题：前导标题栏背景改由铺满窗口宽度的标签带附件自身容器绘制并置于红绿灯与侧边栏按钮下方，不再依赖在 macOS 26 上会被容器裁剪的越界绘制。
 - 新建文档的默认字号现在通过本地、有界的学习算法，根据已稳定的手动缩放调整自动选择。逐文件字号仍然优先，未记忆字号的既有文件保持 13pt 基线；文档正文和行为历史不会离开工作区。设置页不提供字号偏好，原生「显示」菜单中的缩放操作保留不变。
 
 ## 1.0.35 - 2026-11-15
