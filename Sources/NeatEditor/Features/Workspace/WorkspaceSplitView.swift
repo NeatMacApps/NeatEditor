@@ -55,7 +55,6 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     private let sidebarAccessory = NSTitlebarAccessoryViewController()
     private let tabAccessory = NSTitlebarAccessoryViewController()
     private let topBandBackground = TabBandBackgroundView()
-    private let leadingBandBackground = TabBandBackgroundView()
     private let sidebarButton = WorkspaceSplitViewController.titlebarButton(symbol: "sidebar.left")
     private var pinButton: NSButton { detailController.pinButton }
     private let topBandDrag = TopBandDragController()
@@ -74,7 +73,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         detailController.accessoryViews = [sidebarButton]
         detailController.strip.theme = configuration.theme
         topBandBackground.theme = configuration.theme
-        leadingBandBackground.theme = configuration.theme
+        detailController.tabBand.leadingBackground.theme = configuration.theme
     }
 
     @available(*, unavailable)
@@ -105,13 +104,6 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         sidebarButton.setAccessibilityLabel(sidebarLabel)
         sidebarButton.target = self
         sidebarButton.action = #selector(toggleSidebar(_:))
-        // Paint above AppKit's active white titlebar, not beneath it in content.
-        // Only drawing extends left: the native button's frame/hit area is unchanged.
-        sidebarButton.clipsToBounds = false
-        leadingBandBackground.wantsLayer = true
-        leadingBandBackground.layer?.zPosition = -1
-        leadingBandBackground.identifier = NSUserInterfaceItemIdentifier("WorkspaceLeadingBandBackground")
-        sidebarButton.addSubview(leadingBandBackground, positioned: .below, relativeTo: nil)
         sidebarAccessory.view = sidebarButton
         sidebarAccessory.layoutAttribute = .leading
         tabAccessory.layoutAttribute = .trailing
@@ -131,12 +123,13 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     override func viewDidLayout() {
         super.viewDidLayout()
         attachToWindow()
-        updateLeadingBandBackground()
+        detailController.syncTabBandLayoutIfNeeded()
     }
 
     override func splitViewDidResizeSubviews(_ notification: Notification) {
         super.splitViewDidResizeSubviews(notification)
         detailController.view.needsLayout = true
+        detailController.syncTabBandLayoutIfNeeded()
         guard !isApplyingConfiguration, let sidebar = splitViewItems.first else { return }
         let visible = !sidebar.isCollapsed
         guard visible != configuration.isSidebarVisible else { return }
@@ -154,7 +147,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         if self.configuration.theme != configuration.theme {
             detailController.strip.theme = configuration.theme
             topBandBackground.theme = configuration.theme
-            leadingBandBackground.theme = configuration.theme
+            detailController.tabBand.leadingBackground.theme = configuration.theme
             attachedWindow?.backgroundColor = EditorChrome.tabBarBackgroundColor(for: configuration.theme)
         }
         self.configuration = configuration
@@ -185,7 +178,6 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         detailController.moveTabBand(to: nil)
         tabAccessory.removeFromParent()
         sidebarAccessory.removeFromParent()
-        leadingBandBackground.isHidden = true
         if attachedWindow?.toolbar === heightToolbar {
             attachedWindow?.toolbar = nil
         }
@@ -215,12 +207,15 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
         guard window.styleMask.contains(.titled) else { return }
         window.toolbar = heightToolbar
         window.toolbarStyle = .unifiedCompact
-        if !window.titlebarAccessoryViewControllers.contains(sidebarAccessory) {
-            window.addTitlebarAccessoryViewController(sidebarAccessory)
-        }
+        // Insert the full-width tab band below the sidebar accessory and traffic
+        // lights so leading titlebar paint stays inside its own container bounds
+        // even when macOS 26 clips accessory containers.
         if !window.styleMask.contains(.fullScreen) {
             detailController.moveTabBand(to: tabAccessory)
-            window.addTitlebarAccessoryViewController(tabAccessory)
+            window.insertTitlebarAccessoryViewController(tabAccessory, at: 0)
+        }
+        if !window.titlebarAccessoryViewControllers.contains(sidebarAccessory) {
+            window.addTitlebarAccessoryViewController(sidebarAccessory)
         }
         NotificationCenter.default.addObserver(
             self, selector: #selector(didEnterFullScreen(_:)),
@@ -235,7 +230,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
             name: NSWindow.didUpdateNotification, object: window
         )
         detailController.view.needsLayout = true
-        updateLeadingBandBackground()
+        detailController.syncTabBandLayoutIfNeeded()
         topBandDrag.tabBand = detailController.tabBand
         topBandDrag.install(in: window)
     }
@@ -243,39 +238,24 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
     @objc private func preserveOpaqueTitlebar(_ notification: Notification) {
         guard let window = attachedWindow else { return }
         if window.titlebarAppearsTransparent { window.titlebarAppearsTransparent = false }
-        updateLeadingBandBackground()
-    }
-
-    private func updateLeadingBandBackground() {
-        guard let window = attachedWindow, sidebarButton.window === window,
-              window.titlebarAccessoryViewControllers.contains(tabAccessory),
-              !window.styleMask.contains(.fullScreen) else {
-            leadingBandBackground.isHidden = true
-            return
-        }
-        leadingBandBackground.isHidden = false
-        let buttonFrame = sidebarButton.convert(sidebarButton.bounds, to: nil)
-        let tabBand = detailController.tabBand
-        let tabsLeading = tabBand.window === window
-            ? tabBand.convert(tabBand.bounds, to: nil).minX : buttonFrame.maxX
-        let nativeBand = CGRect(x: 0, y: window.contentLayoutRect.maxY,
-                                width: max(buttonFrame.maxX, tabsLeading),
-                                height: max(0, window.frame.height - window.contentLayoutRect.maxY))
-        let frame = sidebarButton.convert(nativeBand, from: nil)
-        if leadingBandBackground.frame != frame { leadingBandBackground.frame = frame }
+        detailController.syncTabBandLayoutIfNeeded()
     }
 
     @objc private func didEnterFullScreen(_ notification: Notification) {
         detailController.moveTabBand(to: nil)
         tabAccessory.removeFromParent()
-        leadingBandBackground.isHidden = true
     }
 
     @objc private func didExitFullScreen(_ notification: Notification) {
         guard let window = attachedWindow else { return }
         detailController.moveTabBand(to: tabAccessory)
-        window.addTitlebarAccessoryViewController(tabAccessory)
-        updateLeadingBandBackground()
+        window.insertTitlebarAccessoryViewController(tabAccessory, at: 0)
+        if window.titlebarAccessoryViewControllers.contains(sidebarAccessory) {
+            sidebarAccessory.removeFromParent()
+            window.addTitlebarAccessoryViewController(sidebarAccessory)
+        }
+        detailController.view.needsLayout = true
+        detailController.syncTabBandLayoutIfNeeded()
     }
 
     private func updatePinButton() {
@@ -407,28 +387,49 @@ private final class WorkspaceEditorViewController: NSViewController {
         if view.additionalSafeAreaInsets.top != reserved {
             view.additionalSafeAreaInsets.top = reserved
         }
-        let band = systemBand + reserved
+        applyTabBandLayout(fullScreenBandHeight: systemBand + reserved)
+    }
+
+    func syncTabBandLayoutIfNeeded() {
+        guard tabBand.superview !== view, view.window != nil else { return }
         let insets = accessoryInsets()
+        let metrics = windowBandMetrics(insets: insets)
+        if tabBand.frame.size != metrics.size || tabBand.leadingBandWidth != metrics.leadingWidth {
+            applyTabBandLayout(fullScreenBandHeight: EditorTabLayout.stripHeight, precomputedInsets: insets)
+        }
+    }
+
+    private func applyTabBandLayout(fullScreenBandHeight: CGFloat, precomputedInsets: NSEdgeInsets? = nil) {
+        let insets = precomputedInsets ?? accessoryInsets()
         if tabBand.superview === view {
-            tabBand.frame = CGRect(x: 0, y: view.bounds.height - band, width: view.bounds.width, height: band)
+            tabBand.frame = CGRect(x: 0, y: view.bounds.height - fullScreenBandHeight,
+                                   width: view.bounds.width, height: fullScreenBandHeight)
+            tabBand.leadingBandWidth = 0
             tabBand.accessoryInsets = insets
         } else {
-            // Do not overlap the leading native accessory when the sidebar is
-            // collapsed: its container would consume the sidebar button's hits.
-            let width = max(0, view.bounds.width - insets.left)
-            if tabBand.frame.width != width {
-                tabBand.setFrameSize(CGSize(width: width, height: tabBand.frame.height))
+            let metrics = windowBandMetrics(insets: insets)
+            if tabBand.frame.size != metrics.size {
+                tabBand.setFrameSize(metrics.size)
             }
+            tabBand.leadingBandWidth = metrics.leadingWidth
             tabBand.accessoryInsets = NSEdgeInsets()
         }
         tabBand.needsLayout = true
         tabBand.layoutSubtreeIfNeeded()
     }
 
+    private func windowBandMetrics(insets: NSEdgeInsets) -> (size: CGSize, leadingWidth: CGFloat) {
+        let column = view.convert(view.bounds, to: nil)
+        let windowWidth = view.window?.frame.width ?? column.maxX
+        let leadingWidth = column.minX + insets.left
+        return (CGSize(width: windowWidth, height: EditorTabLayout.stripHeight), leadingWidth)
+    }
+
     func moveTabBand(to accessory: NSTitlebarAccessoryViewController?) {
         tabBand.removeFromSuperview()
         if let accessory {
-            tabBand.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: EditorTabLayout.stripHeight)
+            let width = view.window?.frame.width ?? view.bounds.width
+            tabBand.frame = CGRect(x: 0, y: 0, width: width, height: EditorTabLayout.stripHeight)
             accessory.view = tabBand
         } else {
             view.addSubview(tabBand, positioned: .above, relativeTo: host.view)
@@ -482,12 +483,17 @@ private final class TabBandBackgroundView: NSView {
 
 /// Product content inside native chrome. Blank hits stay in AppKit's titlebar.
 private final class WorkspaceTabBandView: NSView {
+    let leadingBackground = TabBandBackgroundView()
     let strip = EditorTabStripView()
     let pinButton = WorkspaceSplitViewController.titlebarButton(symbol: "square.3.layers.3d.top.filled")
+    var leadingBandWidth: CGFloat = 0
     var accessoryInsets = NSEdgeInsets()
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
+        leadingBackground.wantsLayer = true
+        leadingBackground.identifier = NSUserInterfaceItemIdentifier("WorkspaceLeadingBandBackground")
+        addSubview(leadingBackground)
         addSubview(strip)
         addSubview(pinButton)
     }
@@ -497,7 +503,10 @@ private final class WorkspaceTabBandView: NSView {
 
     override func layout() {
         super.layout()
-        strip.frame = bounds
+        let leading = min(max(0, leadingBandWidth), bounds.width)
+        leadingBackground.isHidden = leading <= 0
+        leadingBackground.frame = CGRect(x: 0, y: 0, width: leading, height: bounds.height)
+        strip.frame = CGRect(x: leading, y: 0, width: max(0, bounds.width - leading), height: bounds.height)
         let slot = EditorTabLayout.newDocumentSlotWidth
         let trailingSlot = slot + EditorTabLayout.trailingMargin
         pinButton.frame = CGRect(x: bounds.width - trailingSlot,
@@ -510,6 +519,15 @@ private final class WorkspaceTabBandView: NSView {
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
+        guard frame.contains(point) else { return nil }
+        if leadingBandWidth > 0 {
+            let local = convert(point, from: superview)
+            if local.x < leadingBandWidth {
+                // Leave traffic lights, the sidebar button and leading blank
+                // titlebar space to native AppKit chrome above/behind this view.
+                return nil
+            }
+        }
         let hit = super.hitTest(point)
         guard hit === self else { return hit }
         // An accessory container consumes blank clicks before the titlebar sees

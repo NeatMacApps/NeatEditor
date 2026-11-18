@@ -319,36 +319,56 @@ struct WorkspaceTitlebarTests {
         }
     }
 
-    @Test("leading band paint lives in native chrome without enlarging controls or taking hits",
+    @Test("leading band paint stays inside its own accessory container without clipping or stealing hits",
           arguments: [true, false], [CGFloat(470), 900])
     func leadingBandPaint(sidebarVisible: Bool, width: CGFloat) throws {
         let window = makeWindow(sidebarVisible: sidebarVisible, width: width)
         defer { window.close() }
         let sidebar = try sidebarButton(window)
-        let background = try #require(sidebar.subviews.first {
+        let strip = try #require(findStrip(in: window))
+        let tabBand = try #require(strip.superview)
+        let background = try #require(tabBand.subviews.first {
             $0.identifier?.rawValue == "WorkspaceLeadingBandBackground"
         })
-        #expect(!sidebar.clipsToBounds)
-        #expect((background.layer?.zPosition ?? 0) < 0)
         #expect(sidebar.frame.width == EditorTabLayout.newDocumentSlotWidth)
         #expect(background.hitTest(NSPoint(x: 1, y: 1)) == nil)
+        // Simulate macOS 26 accessory-container clipping: leading paint stays inside
+        // tabBand's own container bounds rather than drawing out-of-bounds.
+        tabBand.superview?.wantsLayer = true
+        tabBand.superview?.clipsToBounds = true
+        tabBand.superview?.layer?.masksToBounds = true
+        sidebar.superview?.wantsLayer = true
+        sidebar.superview?.clipsToBounds = true
+        sidebar.superview?.layer?.masksToBounds = true
         for size in [width, width + 80] {
             window.setContentSize(NSSize(width: size, height: 500))
             window.layoutIfNeeded()
             window.contentView?.layoutSubtreeIfNeeded()
             let frame = background.convert(background.bounds, to: nil)
+            let containerFrame = try #require(tabBand.superview?.convert(tabBand.superview!.bounds, to: nil))
             let buttonFrame = sidebar.convert(sidebar.bounds, to: nil)
+            let stripFrame = strip.convert(strip.bounds, to: nil)
             #expect(abs(frame.minX) < 0.5)
+            #expect(frame.minX >= containerFrame.minX - 0.5)
+            #expect(frame.maxX <= containerFrame.maxX + 0.5)
             #expect(frame.maxX >= buttonFrame.maxX)
+            #expect(abs(frame.maxX - stripFrame.minX) < 0.5)
             #expect(abs(frame.minY - window.contentLayoutRect.maxY) < 0.5)
             #expect(abs(frame.maxY - window.frame.height) < 0.5)
+            let root = try #require(window.contentView?.superview)
+            let sidebarPoint = sidebar.convert(NSPoint(x: sidebar.bounds.midX, y: sidebar.bounds.midY), to: nil)
+            #expect(root.hitTest(root.convert(sidebarPoint, from: nil)) === sidebar)
         }
         NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
         window.layoutIfNeeded()
         #expect(background.isHidden)
         NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
         window.layoutIfNeeded()
+        window.contentView?.layoutSubtreeIfNeeded()
         #expect(!background.isHidden)
+        let root = try #require(window.contentView?.superview)
+        let sidebarPoint = sidebar.convert(NSPoint(x: sidebar.bounds.midX, y: sidebar.bounds.midY), to: nil)
+        #expect(root.hitTest(root.convert(sidebarPoint, from: nil)) === sidebar)
     }
 
     private func findStrip(in window: NSWindow) -> EditorTabStripView? {

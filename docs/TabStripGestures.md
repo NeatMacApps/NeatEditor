@@ -747,6 +747,42 @@ launch, pointer drag/double-click and a macOS 26 runtime remain unverified under
 screen lock. The native control establishes the repaired painting defect, not
 those input behaviors. Native hit routing is unchanged and structurally tested.
 
+### macOS 26 collapsed cold-launch white-cap fix (owner report 2026-11-18)
+
+- Owner report on macOS 26 (1.0.35): launching fresh with the sidebar collapsed
+  still renders a solid white rectangle behind the traffic lights (`x = 0..<81 pt`),
+  stopping sharply at the sidebar button's leading edge; expanding and
+  re-collapsing the sidebar clears it.
+- Root cause:
+  1. When `NSSplitViewController` starts with `sidebar.isCollapsed = true`,
+     AppKit places `NSTitlebarBackgroundView` inside `NSTitlebarContainerView`
+     above `NSSplitView` (so `topBandBackground` inside `NSSplitView` cannot
+     paint over it). Expanding the sidebar moves split-section
+     `NSTitlebarBackgroundView`s into `NSSplitView` below `topBandBackground`,
+     where they remain after re-collapsing.
+  2. The `782e6e6` fix placed `leadingBandBackground` inside `sidebarButton`
+     and drew out-of-bounds to the left (`x = -81..<0`) past
+     `sidebarButton`'s `NSTitlebarAccessoryContainerView` (`x = 81..<113`). On
+     macOS 27 that container leaves clipping disabled, whereas on macOS 26 it
+     clips to `81..<113`, leaving `0..<81` white until the sidebar toggles.
+- Fix: do not rely on out-of-bounds drawing past any `NSTitlebarAccessoryViewController`
+  container. Size the trailing `WorkspaceTabBandView` (`tabAccessory`) across the
+  full window width (`0..<window.frame.width`) in windowed mode and insert
+  `tabAccessory` at index 0 before `sidebarAccessory` (including after
+  full-screen exit by re-attaching `sidebarAccessory` after `tabAccessory`), so
+  `sidebarButton` and the native traffic lights sit above `tabBand` in
+  `NSTitlebarView`. Inside `WorkspaceTabBandView`, place `EditorTabStripView`
+  in the editor/post-accessory span (`leadingBandWidth..<bounds.width`), paint
+  `0..<leadingBandWidth` with a passive `TabBandBackgroundView` (`hitTest == nil`),
+  and return `nil` from `WorkspaceTabBandView.hitTest(_:)` for points in
+  `0..<leadingBandWidth` so traffic lights, `sidebarButton`, and blank leading
+  titlebar hits still reach native chrome (`NSToolbarView`) directly.
+  In full screen (`tabBand` rehomed into content), `leadingBandWidth` returns
+  to `0` and `strip` fills the content band as before.
+- Constraint: macOS 27.3 passes unit/compositor/clipping-container checks here,
+  while physical execution on a macOS 26 host remains to be confirmed by the
+  owner unless a macOS 26 runtime is available.
+
 ## First-tab join clearance (owner report 2026-10-27)
 
 - Owner report: with the sidebar expanded, the selected tab's outline stops
