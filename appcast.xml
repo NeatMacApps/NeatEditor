@@ -3,6 +3,31 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.36</title>
+            <pubDate>Wed, 18 Nov 2026 14:31:24 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>36</sparkle:version>
+            <sparkle:shortVersionString>1.0.36</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.36
+
+
+### Fixed
+
+- Fix a cold-launch white block behind the window controls on macOS 26 when launching with the sidebar collapsed. The leading titlebar background now paints inside the full-width tab-band accessory below the native traffic lights and sidebar button, rather than relying on out-of-bounds drawing past an accessory container that clips on macOS 26.
+
+### Changed
+
+- New documents now choose their default text size through a local, bounded learning algorithm based on settled manual zoom adjustments. Per-file sizes still win, existing files without a remembered size keep the 13 pt baseline, and no document content or behavior history leaves the workspace. Font size is not exposed as a Settings preference; native View-menu zoom remains available.
+
+### 简体中文
+
+- 修复 macOS 26 上在侧边栏收起状态下冷启动时，左上角红绿灯后方出现白色方块的问题：前导标题栏背景改由铺满窗口宽度的标签带附件自身容器绘制并置于红绿灯与侧边栏按钮下方，不再依赖在 macOS 26 上会被容器裁剪的越界绘制。
+- 新建文档的默认字号现在通过本地、有界的学习算法，根据已稳定的手动缩放调整自动选择。逐文件字号仍然优先，未记忆字号的既有文件保持 13pt 基线；文档正文和行为历史不会离开工作区。设置页不提供字号偏好，原生「显示」菜单中的缩放操作保留不变。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.36/NeatEditor-1.0.36.zip" length="5774559" type="application/octet-stream" sparkle:edSignature="z8qOEjbFr3FSIhe38+MaEKKxQpBUQmhVbCKLloAY2bIUXfh5OyFuKBSTehEY8dEgRsCNUdm0VZy7W2BDOyg2CQ=="/>
+        </item>
+        <item>
             <title>1.0.35</title>
             <pubDate>Sun, 15 Nov 2026 15:17:16 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
@@ -230,39 +255,6 @@
 - 应用图标在小尺寸下更清楚：打字机滚轴改为银色，不再融进深色背景；纸张改为更短的暖象牙色，不再压过打字机本身；整体视觉居中，对比度略有提高。
 ]]></description>
             <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.27/NeatEditor-1.0.27.zip" length="5385161" type="application/octet-stream" sparkle:edSignature="3oMgflJQ/c7Rn+2lOOCLp42tEW2Lvz+PRLAceUofmY28ukhJaIN9VWaPSXbs42BzYiUpDSgHzRD1Y9y2SgGwAQ=="/>
-        </item>
-        <item>
-            <title>1.0.26</title>
-            <pubDate>Tue, 03 Nov 2026 14:54:19 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatEditor</link>
-            <sparkle:version>26</sparkle:version>
-            <sparkle:shortVersionString>1.0.26</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.26
-
-
-### Changed
-
-- New app icon: a jade-green glass typewriter on a dark background, shipped as a layered Icon Composer icon for macOS 26 with the classic icon set kept for older surfaces.
-- The sidebar lists documents by modification date, newest first.
-
-### Fixed
-
-- Edits made to the same document from another app or device are no longer lost: independent changes merge, and overlapping changes keep both versions side by side instead of overwriting one.
-- Saves to the same document are applied in order, so a slower earlier save can no longer replace newer text.
-- File rows refresh after a document is moved or renamed outside NeatEditor.
-- The floating character count no longer clips the bottom of the editor, and the last lines keep their normal bottom padding.
-
-### 简体中文
-
-- 新应用图标：深色背景上的翡翠绿玻璃打字机；在 macOS 26 上使用 Icon Composer 分层图标，并保留传统图标集供旧界面使用。
-- 侧边栏文档改为按修改时间排列，最新的在最前。
-- 在其他应用或其他设备上同时修改同一文档时不再丢稿：互不冲突的改动自动合并，重叠的改动会把两个版本并排保留，而不是互相覆盖。
-- 同一文档的多次保存按顺序落盘，较慢的旧保存不会再覆盖较新的内容。
-- 文档在 NeatEditor 之外被移动或改名后，文件列表会及时刷新。
-- 浮动字数统计不再遮住编辑区底部，最后几行恢复正常的底部留白。
-]]></description>
-            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.26/NeatEditor-1.0.26.zip" length="5508120" type="application/octet-stream" sparkle:edSignature="eBwP6m2xRCaIEVZWNMr2iNsAcl86OddNT6+en25lyImXcMyxxvOaWnohixV9+dvPhLEj3m5n4gykAZDFHRucDw=="/>
         </item>
         <item>
             <title>1.0.14</title>
