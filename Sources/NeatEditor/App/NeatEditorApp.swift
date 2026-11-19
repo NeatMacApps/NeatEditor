@@ -37,7 +37,7 @@ struct NeatEditorApp: App {
             workspaceStore?.saveAllDocuments()
         }
         ExternalFileOpenCoordinator.shared.handler = { [weak workspaceStore] urls in
-            workspaceStore?.openFiles(at: urls)
+            workspaceStore?.openFiles(at: urls, source: .external)
         }
         ExternalFileOpenCoordinator.shared.saveBeforeTermination = { [weak workspaceStore] in
             workspaceStore?.saveAllDocuments() ?? true
@@ -53,7 +53,7 @@ struct NeatEditorApp: App {
                         sidebarVisible: workspaceStore.preferences.isSidebarVisible,
                         settingsSelected: settingsSelected
                     ),
-                    minHeight: settingsSelected ? max(480, EditorTabStripView.minimumWindowEdge) : EditorTabStripView.minimumWindowEdge
+                    minHeight: settingsSelected ? max(SettingsView.minimumContentHeight, EditorTabStripView.minimumWindowEdge) : EditorTabStripView.minimumWindowEdge
                 )
                 .environment(workspaceStore)
                 .task {

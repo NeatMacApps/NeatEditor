@@ -83,6 +83,9 @@ struct WorkspaceView: View {
             if newPhase == .active {
                 workspaceStore.reconcileOpenDocuments()
                 workspaceStore.refreshSidebarFiles()
+                Task {
+                    await workspaceStore.refreshDefaultFileTypeStatuses()
+                }
             }
             if newPhase == .inactive || newPhase == .background {
                 workspaceStore.saveAllDocuments()
@@ -95,12 +98,17 @@ struct WorkspaceView: View {
             presentCloseTabShortcutHintIfNeeded(for: newCount)
         }
         .dropDestination(for: URL.self) { items, _ in
-            workspaceStore.openFiles(at: items)
+            workspaceStore.openFiles(at: items, source: .external)
             return true
+        }
+        .sheet(item: defaultAppPromptBinding) { _ in
+            DefaultAppRegistrationSheet()
+                .environment(workspaceStore)
         }
         .task {
             workspaceStore.refreshSidebarFiles()
             presentCloseTabShortcutHintIfNeeded(for: workspaceStore.tabs.count)
+            await workspaceStore.evaluateDefaultAppPromptOnLaunch()
         }
     }
 
@@ -166,7 +174,7 @@ struct WorkspaceView: View {
                             workspaceStore.decreaseEditorFontSize()
                         },
                         onOpenFiles: { urls in
-                            workspaceStore.openFiles(at: urls)
+                            workspaceStore.openFiles(at: urls, source: .external)
                         },
                         onRegisterCommitHandler: { handler in
                             workspaceStore.commitEditorChanges = handler
@@ -286,6 +294,17 @@ struct WorkspaceView: View {
             set: { isPresented in
                 if !isPresented {
                     workspaceStore.dismissDocumentFailureAlert()
+                }
+            }
+        )
+    }
+
+    private var defaultAppPromptBinding: Binding<DefaultAppPromptState?> {
+        Binding(
+            get: { workspaceStore.defaultAppPrompt },
+            set: { newValue in
+                if newValue == nil, workspaceStore.defaultAppPrompt != nil {
+                    workspaceStore.dismissDefaultAppPrompt(suppressFuturePrompts: false)
                 }
             }
         )

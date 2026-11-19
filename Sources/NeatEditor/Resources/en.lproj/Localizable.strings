@@ -101,3 +101,24 @@
 "The selected folder no longer exists." = "The selected folder no longer exists.";
 
 "status.characters" = "%@ chars";
+
+"settings.defaultApp.label" = "Default File Types";
+"settings.defaultApp.choose" = "Choose…";
+"settings.defaultApp.summary.all" = "Plain Text, Markdown";
+"settings.defaultApp.summary.plainText" = "Plain Text";
+"settings.defaultApp.summary.markdown" = "Markdown";
+"settings.defaultApp.summary.none" = "Not Set";
+
+"defaultApp.sheet.title.prompt" = "Set NeatEditor as Default";
+"defaultApp.sheet.title.settings" = "Default File Types";
+"defaultApp.sheet.systemConfirmationNote" = "macOS asks to confirm each file type.";
+"defaultApp.type.plainText" = "Plain Text (.txt, .text)";
+"defaultApp.type.markdown" = "Markdown (.md, .markdown)";
+"defaultApp.currentApp.format" = "Current: %@";
+"defaultApp.currentApp.none" = "No default app";
+"defaultApp.status.default" = "Default";
+"defaultApp.action.dontAskAgain" = "Don't Ask Again";
+"defaultApp.action.notNow" = "Not Now";
+"defaultApp.action.done" = "Done";
+"defaultApp.action.setAsDefault" = "Set as Default";
+"defaultApp.feedback.confirmationRequired" = "System confirmation is required to change the default app.";

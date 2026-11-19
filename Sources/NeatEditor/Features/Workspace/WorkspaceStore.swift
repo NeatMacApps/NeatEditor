@@ -10,6 +10,9 @@ final class WorkspaceStore {
         static let workspaceState = "WorkspaceState"
         static let appleLanguages = "AppleLanguages"
         static let didMigrateLegacyAppDocuments = "didMigrateLegacyAppDocuments"
+        static let hasHandledStartupDefaultAppPrompt = "hasHandledStartupDefaultAppPrompt"
+        static let isDefaultAppPromptSuppressed = "isDefaultAppPromptSuppressed"
+        static let dismissedExternalDefaultAppPromptTypes = "dismissedExternalDefaultAppPromptTypes"
     }
 
     struct ClosedTabSnapshot {
@@ -40,6 +43,8 @@ final class WorkspaceStore {
     var isLanguageChangePendingRestart = false
     var searchState = WorkspaceSearchState()
     var documentFailureAlert: DocumentFailureAlert?
+    var defaultFileTypeStatuses: [DefaultFileType: DefaultFileTypeStatus] = [:]
+    var defaultAppPrompt: DefaultAppPromptState?
     var canReopenClosedTab: Bool {
         !closedTabs.isEmpty
     }
@@ -131,6 +136,27 @@ final class WorkspaceStore {
     @ObservationIgnored
     var sidebarOriginatedSelectionURL: URL?
 
+    @ObservationIgnored
+    let fileAssociationService: any FileAssociationManaging
+
+    @ObservationIgnored
+    let enablesAutomaticDefaultAppPrompts: Bool
+
+    @ObservationIgnored
+    let launchDefaultAppPromptDelay: Duration
+
+    @ObservationIgnored
+    var pendingExternalDefaultAppTypes: Set<DefaultFileType> = []
+
+    @ObservationIgnored
+    var hasCompletedLaunchDefaultAppCheck = false
+
+    @ObservationIgnored
+    var isAwaitingLaunchDefaultAppPrompt = false
+
+    @ObservationIgnored
+    var pendingDefaultAppTask: Task<Void, Never>?
+
     deinit {
         for observer in fileObservers.values { observer.stop() }
     }
@@ -139,12 +165,21 @@ final class WorkspaceStore {
         persistenceService: DocumentPersistenceService = DocumentPersistenceService(),
         autoSaveScheduler: AutoSaveScheduler = AutoSaveScheduler(),
         userDefaults: UserDefaults = .standard,
-        adaptiveFontSampleDelay: Duration = .seconds(2)
+        adaptiveFontSampleDelay: Duration = .seconds(2),
+        fileAssociationService: any FileAssociationManaging = SystemFileAssociationService(),
+        enablesAutomaticDefaultAppPrompts: Bool = !E2ETestMode.isActive
+            && ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
+        launchDefaultAppPromptDelay: Duration = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil
+            ? .milliseconds(300)
+            : .zero
     ) {
         self.persistenceService = persistenceService
         self.autoSaveScheduler = autoSaveScheduler
         self.userDefaults = userDefaults
         self.adaptiveFontSampleDelay = adaptiveFontSampleDelay
+        self.fileAssociationService = fileAssociationService
+        self.enablesAutomaticDefaultAppPrompts = enablesAutomaticDefaultAppPrompts
+        self.launchDefaultAppPromptDelay = launchDefaultAppPromptDelay
         self.documentsFolder = persistenceService.normalizedFileURL(
             for: persistenceService.defaultDirectory
         )

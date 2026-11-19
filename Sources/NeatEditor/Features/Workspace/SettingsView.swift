@@ -2,6 +2,8 @@ import AppKit
 import SwiftUI
 
 struct SettingsView: View {
+    static let minimumContentHeight: CGFloat = 576
+
     @Environment(WorkspaceStore.self) private var workspaceStore
     @State private var updater = AppUpdater.shared
 
@@ -31,6 +33,22 @@ struct SettingsView: View {
                         }
                     } label: {
                         Label("Documents Folder", systemImage: "folder")
+                    }
+                    LabeledContent {
+                        HStack {
+                            Text(workspaceStore.defaultFileTypesSummary)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .accessibilityIdentifier("settings.defaultApp.status")
+                            Button(action: workspaceStore.presentDefaultAppSettingsSheet) {
+                                Text("settings.defaultApp.choose")
+                                    .labelStyle(.titleOnly)
+                            }
+                            .accessibilityIdentifier("settings.defaultApp.manage")
+                        }
+                    } label: {
+                        Label("settings.defaultApp.label", systemImage: "doc.text")
                     }
                     Picker(selection: $workspace.preferences.editorTheme) {
                         ForEach(EditorTheme.allCases, id: \.self) { theme in
@@ -93,6 +111,9 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(EditorChrome.editorSurface(for: workspaceStore.preferences.editorTheme))
         .focusEffectDisabled()
+        .task {
+            await workspaceStore.refreshDefaultFileTypeStatuses()
+        }
     }
 
     private var aboutRow: some View {

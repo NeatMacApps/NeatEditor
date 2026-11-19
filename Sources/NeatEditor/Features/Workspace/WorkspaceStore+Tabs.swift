@@ -16,7 +16,7 @@ extension WorkspaceStore {
         saveState()
     }
 
-    func openFiles(at urls: [URL]) {
+    func openFiles(at urls: [URL], source: FileOpenSource = .internal) {
         let fileURLs = uniqueFileURLs(from: urls)
         guard !fileURLs.isEmpty else {
             return
@@ -45,6 +45,9 @@ extension WorkspaceStore {
         }
         saveState()
         refreshSidebarFiles()
+        if source == .external {
+            recordExternalFileOpenForDefaultAppCheck(urls: fileURLs)
+        }
     }
 
     func selectTab(_ id: UUID) {
