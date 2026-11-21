@@ -7,6 +7,7 @@ Ready-to-paste metadata and checklist for the first Mac App Store release (free,
 | Field | Value | Notes |
 |---|---|---|
 | Platform | `macOS` (add `iOS` later to the same App record) | Enables Universal Purchase |
+| App Store Connect App ID | `6837635367` | Created 2026-11-21 |
 | Bundle ID | `com.caozc.NeatEditor` | Registered as **Universal** (macOS + iOS) |
 | SKU | `neateditor` | Immutable after App creation |
 | Primary Language | English (U.S.) | Add Simplified Chinese (`zh-Hans`) localization |

@@ -633,8 +633,8 @@ Owner decisions for the first Mac App Store release:
   are persisted via app-scoped security-scoped bookmarks
   (`SecurityScopedBookmarkStore`) with balanced `startAccessing` /
   `stopAccessing` lifecycle management.
-- **Store submission materials**: see `docs/app-store/SUBMISSION_GUIDE.md` and
-  `docs/app-store/PRIVACY_POLICY.md`.
+- **Store submission materials & global playbook**: see `docs/app-store/SUBMISSION_GUIDE.md`, `docs/app-store/PRIVACY_POLICY.md`, and the shared execution playbook (`~/.config/agentsync/docs/APP_STORE_ASC_EXECUTION_GUIDE.md`).
+- **First submission record (2026-11-21)**: App ID `6837635367` (`com.caozc.NeatEditor`, SKU `neateditor`), version `1.0.36` / build `37` (`ec689104-c419-45fe-8fa8-9131a8ca1cec`, Universal `arm64 + x86_64`, commit `cd9b251`), submitted via `asc review submit` (Submission ID `590c4615-b3e2-40c5-8981-5daf3e1f97c4`, status `WAITING_FOR_REVIEW`, `MANUAL` release, China mainland excluded, 3 EN + 3 ZH-Hans `2560×1600` opaque RGB screenshots). Direct-download `NeatEditor` (`com.x0c.NeatEditor`) remains unaffected.
 
 ## Routes
 
