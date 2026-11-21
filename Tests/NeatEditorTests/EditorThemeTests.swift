@@ -173,6 +173,20 @@ struct EditorThemeTests {
         restored.pendingSaveStateTask?.cancel()
     }
 
+    @Test("localized theme display names resolve in both English and Simplified Chinese bundles",
+          arguments: [
+              ("en", EditorTheme.warm, "Warm Paper"),
+              ("en", EditorTheme.whiteBlack, "Pure"),
+              ("zh-Hans", EditorTheme.warm, "暖纸"),
+              ("zh-Hans", EditorTheme.whiteBlack, "纯净"),
+          ])
+    func localizedDisplayNames(locale: String, theme: EditorTheme, expected: String) throws {
+        let lprojPath = try #require(Bundle.main.path(forResource: locale, ofType: "lproj"))
+        let localizedBundle = try #require(Bundle(path: lprojPath))
+        let resolved = localizedBundle.localizedString(forKey: theme.localizedNameKey, value: nil, table: nil)
+        #expect(resolved == expected)
+    }
+
     @Test("changing themes invalidates unchanged selected tab descriptors")
     func tabRepaint() throws {
         let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 800, height: 40),
