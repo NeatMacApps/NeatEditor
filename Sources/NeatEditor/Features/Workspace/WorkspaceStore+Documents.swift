@@ -27,6 +27,9 @@ extension WorkspaceStore {
             return
         }
         stopObservingDocument(id: id)
+        if let fileURL = tabs[index].fileURL {
+            bookmarkStore.releaseFile(fileURL, removeStoredBookmark: true)
+        }
         closedTabs.append(ClosedTabSnapshot(tab: tabs[index], index: index))
         tabs.remove(at: index)
         if selectedTabID == id {
@@ -82,7 +85,9 @@ extension WorkspaceStore {
             guard let current = self.tabs.first(where: { $0.id == id }) else { return }
             self.saveGenerations[id, default: 0] += 1
             do {
-                self.publishSavedDocument(try self.persistenceService.saveCopy(tab: current, to: destination))
+                let savedCopy = try self.persistenceService.saveCopy(tab: current, to: destination)
+                self.bookmarkStore.storeAndActivateFile(destination)
+                self.publishSavedDocument(savedCopy)
             } catch {
                 self.presentDocumentFailure(title: String(localized: "Save Failed"),
                     message: error.localizedDescription, recoveryTabID: id)

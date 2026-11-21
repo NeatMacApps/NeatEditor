@@ -61,6 +61,9 @@ final class WorkspaceStore {
     let userDefaults: UserDefaults
 
     @ObservationIgnored
+    let bookmarkStore: SecurityScopedBookmarkStore
+
+    @ObservationIgnored
     var commitEditorChanges: (@MainActor (UUID) -> Void)?
 
     @ObservationIgnored
@@ -176,6 +179,7 @@ final class WorkspaceStore {
         self.persistenceService = persistenceService
         self.autoSaveScheduler = autoSaveScheduler
         self.userDefaults = userDefaults
+        self.bookmarkStore = SecurityScopedBookmarkStore(userDefaults: userDefaults)
         self.adaptiveFontSampleDelay = adaptiveFontSampleDelay
         self.fileAssociationService = fileAssociationService
         self.enablesAutomaticDefaultAppPrompts = enablesAutomaticDefaultAppPrompts

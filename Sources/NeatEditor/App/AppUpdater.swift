@@ -1,3 +1,4 @@
+#if DIRECT_DISTRIBUTION
 import Foundation
 import Observation
 import Sparkle
@@ -117,3 +118,4 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate, @preconcurrency SPUStandar
         immediateFocus
     }
 }
+#endif

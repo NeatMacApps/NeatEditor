@@ -597,11 +597,44 @@ Local export never uploads, publishes, notarizes, installs, or migrates data;
 product publishers retain those responsibilities. A development artifact is not
 an accepted or distributable store release.
 
-NeatEditor itself remains on its existing Developer ID release route. Store
-adoption additionally requires verified persistent file authorization, autosave,
-restore, storage isolation/migration decisions, store signing/profile readiness
-and App Store acceptance. This tooling task does not authorize automatic user
-data migration or claim that those requirements have passed.
+NeatEditor itself remains on its existing Developer ID release route for direct
+downloads.
+
+## Mac App Store distribution (adopted 2026-11-21)
+
+Owner decisions for the first Mac App Store release:
+
+- **Pricing and rollout**: launch free with no in-app purchases (IAPs or
+  subscriptions may be added in later versions); exclude mainland China on first
+  launch (add later once ICP filing is complete without rebuilding); use
+  **Manual Release** (`Pending Developer Release`).
+- **Bundle ID and Universal Purchase**: the Mac App Store target
+  (`NeatEditorAppStore`) uses `com.caozc.NeatEditor` (registered as a
+  `UNIVERSAL` Bundle ID so the planned iOS App Store release can share one App
+  Store Connect record under Universal Purchase). Direct downloads keep
+  `com.x0c.NeatEditor` unchanged so existing Sparkle and Homebrew Cask users
+  upgrade uninterrupted and can coexist without colliding on preferences or
+  container state.
+- **Channel isolation**:
+  - `NeatEditor` (direct): compiles with `DIRECT_DISTRIBUTION`, links Sparkle
+    2.9.5, keeps `Info.plist` `SU*` keys and Developer ID manual signing.
+  - `NeatEditorAppStore` (store): compiles with `APP_STORE`, has zero Sparkle
+    linkage or embedded frameworks, uses `Info-AppStore.plist` (no `SU*` keys,
+    `ITSAppUsesNonExemptEncryption = NO`, `DistributionChannel = app-store`),
+    and enables App Sandbox (`NeatEditorAppStore.entitlements`) with
+    `com.apple.security.app-sandbox`,
+    `com.apple.security.files.user-selected.read-write`, and
+    `com.apple.security.files.bookmarks.app-scope` (no network entitlement, no
+    temporary exceptions).
+- **Sandboxed file access**: default documents live inside the app's sandbox
+  container `Documents` directory so first launch works with zero permission
+  prompts; legacy `~/.config/neateditor/documents` migration is skipped on
+  `APP_STORE` builds. User-chosen document folders and externally opened files
+  are persisted via app-scoped security-scoped bookmarks
+  (`SecurityScopedBookmarkStore`) with balanced `startAccessing` /
+  `stopAccessing` lifecycle management.
+- **Store submission materials**: see `docs/app-store/SUBMISSION_GUIDE.md` and
+  `docs/app-store/PRIVACY_POLICY.md`.
 
 ## Routes
 

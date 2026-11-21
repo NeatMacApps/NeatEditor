@@ -12,7 +12,9 @@ enum NeatEditorEntry {
 struct NeatEditorApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     private let workspaceStore: WorkspaceStore
+    #if DIRECT_DISTRIBUTION
     private let updater = AppUpdater.shared
+    #endif
 
     init() {
         // The E2E launch keeps workspace state and documents inside its own
@@ -33,9 +35,11 @@ struct NeatEditorApp: App {
         LaunchProfiler.recordStoreReady()
         E2ETestWindow.prepare(store: workspaceStore)
 
+        #if DIRECT_DISTRIBUTION
         updater.onWillInstallUpdate = { [weak workspaceStore] in
             workspaceStore?.saveAllDocuments()
         }
+        #endif
         ExternalFileOpenCoordinator.shared.handler = { [weak workspaceStore] urls in
             workspaceStore?.openFiles(at: urls, source: .external)
         }
@@ -58,7 +62,9 @@ struct NeatEditorApp: App {
                 .environment(workspaceStore)
                 .task {
                     LaunchProfiler.recordFirstFrame()
+                    #if DIRECT_DISTRIBUTION
                     AppUpdater.shared.warmUp()
+                    #endif
                 }
         }
         .handlesExternalEvents(matching: [])
@@ -73,7 +79,9 @@ struct NeatEditorApp: App {
             height: E2ETestMode.windowSize?.height ?? 600
         )
         .commands {
+            #if DIRECT_DISTRIBUTION
             NeatEditorUpdateCommands()
+            #endif
             WorkspaceCommands(workspaceStore: workspaceStore)
         }
     }
@@ -83,6 +91,7 @@ struct NeatEditorApp: App {
     }
 }
 
+#if DIRECT_DISTRIBUTION
 private struct NeatEditorUpdateCommands: Commands {
     @State private var updater = AppUpdater.shared
 
@@ -98,6 +107,7 @@ private struct NeatEditorUpdateCommands: Commands {
         }
     }
 }
+#endif
 
 /// Launch-time test hooks for the background E2E harness.
 ///

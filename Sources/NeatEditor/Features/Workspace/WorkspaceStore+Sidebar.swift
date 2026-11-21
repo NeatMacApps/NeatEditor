@@ -80,6 +80,7 @@ extension WorkspaceStore {
         }
 
         documentsFolder = normalizedURL
+        bookmarkStore.storeAndActivateDocumentsFolder(normalizedURL)
         sidebarDiskFiles = []
         sidebarFiles = []
         cachedSidebarIndex = [:]
@@ -112,9 +113,13 @@ extension WorkspaceStore {
         isRefreshingSidebar = true
         let directory = documentsFolder
         let cachedItems = sidebarDiskFiles
+        #if APP_STORE
+        let shouldMigrateLegacyDocuments = false
+        #else
         let shouldMigrateLegacyDocuments = !userDefaults.bool(
             forKey: UserDefaultsKey.didMigrateLegacyAppDocuments
         ) && DocumentPersistenceService.isUserDocumentsDirectory(directory)
+        #endif
 
         Task {
             do {

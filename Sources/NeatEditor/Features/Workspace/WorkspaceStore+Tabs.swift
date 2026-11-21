@@ -28,6 +28,7 @@ extension WorkspaceStore {
         var targetTabID: UUID?
 
         for fileURL in fileURLs {
+            bookmarkStore.storeAndActivateFile(fileURL)
             if let existingTabID = existingTabID(for: fileURL) {
                 targetTabID = existingTabID
                 continue
@@ -101,6 +102,9 @@ extension WorkspaceStore {
         let closedTab = tabs[index]
         autoSaveScheduler.cancel(for: closedTab.id)
         stopObservingDocument(id: closedTab.id)
+        if let fileURL = closedTab.fileURL {
+            bookmarkStore.releaseFile(fileURL, removeStoredBookmark: !preserveForReopening)
+        }
         if preserveForReopening && !closedTab.isSettings {
             closedTabs.append(ClosedTabSnapshot(tab: closedTab, index: index))
         }

@@ -2,10 +2,16 @@ import AppKit
 import SwiftUI
 
 struct SettingsView: View {
+    #if DIRECT_DISTRIBUTION
     static let minimumContentHeight: CGFloat = 576
+    #else
+    static let minimumContentHeight: CGFloat = 440
+    #endif
 
     @Environment(WorkspaceStore.self) private var workspaceStore
+    #if DIRECT_DISTRIBUTION
     @State private var updater = AppUpdater.shared
+    #endif
 
     var body: some View {
         @Bindable var workspace = workspaceStore
@@ -84,6 +90,7 @@ struct SettingsView: View {
                             .foregroundStyle(.orange)
                     }
                 }
+                #if DIRECT_DISTRIBUTION
                 Section("Updates") {
                     Toggle(isOn: Binding(
                         get: { updater.automaticallyChecksForUpdates },
@@ -100,6 +107,7 @@ struct SettingsView: View {
                     }
                     .disabled(!updater.canCheckForUpdates || !updater.allowsAutomaticUpdates)
                 }
+                #endif
                 Section { aboutRow }
             }
             .formStyle(.grouped)
@@ -130,12 +138,14 @@ struct SettingsView: View {
             }
             .accessibilityElement(children: .combine)
             Spacer(minLength: 12)
+            #if DIRECT_DISTRIBUTION
             Button {
                 updater.checkForUpdates()
             } label: {
                 Label("Check for Updates…", systemImage: "arrow.triangle.2.circlepath")
             }
             .disabled(!updater.canCheckForUpdates)
+            #endif
             Button {
                 NSApp.terminate(nil)
             } label: {

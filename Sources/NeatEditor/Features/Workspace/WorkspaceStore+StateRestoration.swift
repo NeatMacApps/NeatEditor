@@ -140,6 +140,7 @@ extension WorkspaceStore {
         } catch {
             Self.logger.error("Failed to save workspace state: \(error.localizedDescription, privacy: .public)")
         }
+        bookmarkStore.pruneFileBookmarks(keeping: tabs.compactMap(\.fileURL))
     }
 
     func loadState() -> WorkspaceState? {
@@ -162,7 +163,13 @@ extension WorkspaceStore {
         var restoredSelectedTabID: UUID?
 
         preferences = state.preferences
-        if let folderPath = state.documentsFolderPath {
+        if let bookmarkedFolder = bookmarkStore.restoreAndActivateDocumentsFolder() {
+            var isDirectory: ObjCBool = false
+            if FileManager.default.fileExists(atPath: bookmarkedFolder.path, isDirectory: &isDirectory),
+               isDirectory.boolValue {
+                documentsFolder = persistenceService.normalizedFileURL(for: bookmarkedFolder)
+            }
+        } else if let folderPath = state.documentsFolderPath {
             var isDirectory: ObjCBool = false
             if FileManager.default.fileExists(atPath: folderPath, isDirectory: &isDirectory),
                isDirectory.boolValue {
@@ -176,11 +183,12 @@ extension WorkspaceStore {
             if tabState.isSettings {
                 continue
             } else if let fileURL = tabState.fileURL {
-                let openedTab = persistenceService.openDocumentLazily(at: fileURL)
+                let accessibleURL = bookmarkStore.restoreAndActivateFile(for: fileURL) ?? fileURL
+                let openedTab = persistenceService.openDocumentLazily(at: accessibleURL)
                 tabs.append(openedTab)
 
                 if let selectedFileURL = state.selectedFileURL,
-                   persistenceService.normalizedFileURL(for: selectedFileURL) == persistenceService.normalizedFileURL(for: fileURL) {
+                   persistenceService.normalizedFileURL(for: selectedFileURL) == persistenceService.normalizedFileURL(for: accessibleURL) {
                     restoredSelectedTabID = openedTab.id
                 }
             }
