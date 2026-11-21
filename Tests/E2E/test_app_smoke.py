@@ -256,3 +256,19 @@ def test_new_document_tab_stays_unsaved(driver):
     assert _wait(lambda: len(_tabs(driver)) == tabs_before + 1, timeout=5.0), "new tab did not appear"
     time.sleep(3.0)
     assert {p.name for p in DOCUMENTS.iterdir()} == before, "a blank new document published a file"
+
+
+def test_background_hotkey_opens_and_closes_search_bar(driver):
+    driver.press(label="alpha.md", role="AXRadioButton")
+    driver.hotkey(["cmd", "f"])
+    bar = _wait(
+        lambda: any(hit.identifier == "search.bar" for hit in driver.ax().walk()),
+        timeout=4.0,
+    )
+    assert bar, "background cmd+f did not open floating search bar"
+    driver.press("search.close")
+    closed = _wait(
+        lambda: not any(hit.identifier == "search.bar" for hit in driver.ax().walk()),
+        timeout=4.0,
+    )
+    assert closed, "pressing search.close did not dismiss floating search bar"
