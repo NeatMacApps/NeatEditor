@@ -875,11 +875,12 @@ The reusable mechanism is owned by the [shared file-list recipe](~/Codes/_standa
 
 - The owner explicitly retained the existing rounded stepped document tabs;
   this scoped exception is recorded in `TabStripGestures.md` and must not be
-  silently replaced by a segmented picker. The search surface is also custom.
-  Apple's native search integration is `NSTextView.usesFindBar`, backed by
-  `NSTextFinder` and `NSScrollView`. A container migration must first reconcile
-  the existing regular-expression and rename interactions with native
-  behavior. No replacement search control was added in this review.
+  silently replaced by a segmented picker. The search surface also remains a
+  custom native-control overlay (`EditorSearchBarView`, owner decision
+  2026-11-21): `NSTextFinder` lacks ICU regular expressions (`.*`) and
+  theme-coordinated surfaces and clips beside `LineNumberGutterView`, so
+  `ZoomableTextView` keeps `usesFindPanel = false` and routes `⌘F`/`⌘G`/`⇧⌘G`/`Esc`
+  to the top-right floating search bar.
 - Closed-tab snapshots retain document strings without a bound. A retention
   limit would change how far Reopen Closed Tab can go; no arbitrary limit was
   introduced without that decision.

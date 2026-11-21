@@ -3,9 +3,9 @@ import SwiftUI
 
 struct SettingsView: View {
     #if DIRECT_DISTRIBUTION
-    static let minimumContentHeight: CGFloat = 576
+    static let minimumContentHeight: CGFloat = 588
     #else
-    static let minimumContentHeight: CGFloat = 440
+    static let minimumContentHeight: CGFloat = 456
     #endif
 
     @Environment(WorkspaceStore.self) private var workspaceStore
@@ -16,106 +16,122 @@ struct SettingsView: View {
     var body: some View {
         @Bindable var workspace = workspaceStore
 
-        VStack(spacing: 0) {
-            Text("Settings")
-                .font(.title2.weight(.semibold))
-                .frame(width: 440, alignment: .leading)
-                .padding(.top, 20)
-            Form {
-                Section("Editor") {
-                    LabeledContent {
-                        HStack {
-                            Text(verbatim: workspaceStore.documentsFolderName)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                                .help(workspaceStore.documentsFolder.path)
-                                .accessibilityLabel(Text(verbatim: workspaceStore.documentsFolder.path))
-                            Button(action: workspaceStore.chooseDocumentsFolder) {
-                                Text("Choose Folder…")
-                                    .labelStyle(.titleOnly)
-                            }
-                            .accessibilityIdentifier("settings.documentsFolder.choose")
-                        }
-                    } label: {
-                        Label("Documents Folder", systemImage: "folder")
+        Form {
+            Section("settings.section.files") {
+                LabeledContent {
+                    Button(action: workspaceStore.chooseDocumentsFolder) {
+                        Text("settings.defaultApp.choose")
+                            .labelStyle(.titleOnly)
                     }
-                    LabeledContent {
-                        HStack {
-                            Text(workspaceStore.defaultFileTypesSummary)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                                .accessibilityIdentifier("settings.defaultApp.status")
-                            Button(action: workspaceStore.presentDefaultAppSettingsSheet) {
-                                Text("settings.defaultApp.choose")
-                                    .labelStyle(.titleOnly)
-                            }
-                            .accessibilityIdentifier("settings.defaultApp.manage")
-                        }
-                    } label: {
-                        Label("settings.defaultApp.label", systemImage: "doc.text")
+                    .accessibilityLabel("Choose Folder…")
+                    .accessibilityIdentifier("settings.documentsFolder.choose")
+                } label: {
+                    SettingsRowLabel(
+                        title: "Documents Folder",
+                        systemImage: "folder",
+                        subtitle: workspaceStore.documentsFolderName,
+                        subtitleHelp: workspaceStore.documentsFolder.path,
+                        subtitleAccessibilityLabel: workspaceStore.documentsFolder.path,
+                        subtitleTruncation: .middle
+                    )
+                }
+
+                LabeledContent {
+                    Button(action: workspaceStore.presentDefaultAppSettingsSheet) {
+                        Text("settings.defaultApp.choose")
+                            .labelStyle(.titleOnly)
                     }
-                    Picker(selection: $workspace.preferences.editorTheme) {
-                        ForEach(EditorTheme.allCases, id: \.self) { theme in
-                            Text(LocalizedStringKey(theme.localizedNameKey))
-                                .labelStyle(.titleOnly)
-                                .tag(theme)
-                        }
-                    } label: {
-                        Label("settings.theme", systemImage: "paintpalette")
+                    .accessibilityIdentifier("settings.defaultApp.manage")
+                } label: {
+                    SettingsRowLabel(
+                        title: "settings.defaultApp.label",
+                        systemImage: "doc.text",
+                        subtitle: workspaceStore.defaultFileTypesSummary,
+                        subtitleAccessibilityIdentifier: "settings.defaultApp.status",
+                        subtitleTruncation: .tail
+                    )
+                }
+            }
+
+            Section("Editor") {
+                Picker(selection: $workspace.preferences.editorTheme) {
+                    ForEach(EditorTheme.allCases, id: \.self) { theme in
+                        Text(LocalizedStringKey(theme.localizedNameKey))
+                            .labelStyle(.titleOnly)
+                            .tag(theme)
                     }
-                    .accessibilityIdentifier("settings.theme")
-                    Picker(selection: $workspace.preferences.tabBehavior) {
-                        ForEach(TabBehavior.allCases, id: \.self) { behavior in
-                            Text(LocalizedStringKey(behavior.rawValue))
-                                .labelStyle(.titleOnly)
-                                .tag(behavior)
-                        }
-                    } label: {
-                        Label("Tab Behavior", systemImage: "increase.indent")
+                } label: {
+                    SettingsRowLabel(title: "settings.theme", systemImage: "paintpalette")
+                }
+                .accessibilityIdentifier("settings.theme")
+
+                Picker(selection: $workspace.preferences.tabBehavior) {
+                    ForEach(TabBehavior.allCases, id: \.self) { behavior in
+                        Text(LocalizedStringKey(behavior.rawValue))
+                            .labelStyle(.titleOnly)
+                            .tag(behavior)
                     }
-                    Picker(selection: $workspace.preferences.appLanguage) {
-                        ForEach(AppLanguage.allCases, id: \.self) { language in
-                            Text(LocalizedStringKey(language.localizedNameKey))
-                                .labelStyle(.titleOnly)
-                                .tag(language)
-                        }
-                    } label: {
-                        Label("Language", systemImage: "globe")
+                } label: {
+                    SettingsRowLabel(title: "Tab Behavior", systemImage: "increase.indent")
+                }
+
+                Picker(selection: $workspace.preferences.appLanguage) {
+                    ForEach(AppLanguage.allCases, id: \.self) { language in
+                        Text(LocalizedStringKey(language.localizedNameKey))
+                            .labelStyle(.titleOnly)
+                            .tag(language)
                     }
-                    if workspaceStore.isLanguageChangePendingRestart {
+                } label: {
+                    SettingsRowLabel(title: "Language", systemImage: "globe")
+                }
+
+                if workspaceStore.isLanguageChangePendingRestart {
+                    HStack(alignment: .center, spacing: 10) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .frame(width: 18, height: 18, alignment: .center)
+                            .accessibilityHidden(true)
                         Text("A restart is required for language changes to take effect.")
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }
                 }
-                #if DIRECT_DISTRIBUTION
-                Section("Updates") {
-                    Toggle(isOn: Binding(
-                        get: { updater.automaticallyChecksForUpdates },
-                        set: { updater.setAutomaticChecks($0) }
-                    )) {
-                        Label("Automatically check for updates", systemImage: "arrow.triangle.2.circlepath")
-                    }
-                    .disabled(!updater.canCheckForUpdates)
-                    Toggle(isOn: Binding(
-                        get: { updater.automaticallyDownloadsUpdates },
-                        set: { updater.setAutomaticDownloads($0) }
-                    )) {
-                        Label("Automatically download and install updates", systemImage: "arrow.down.circle")
-                    }
-                    .disabled(!updater.canCheckForUpdates || !updater.allowsAutomaticUpdates)
-                }
-                #endif
-                Section { aboutRow }
             }
-            .formStyle(.grouped)
-            .scrollContentBackground(.hidden)
-            .toggleStyle(.switch)
-            .scrollDisabled(true)
-            .frame(width: 480)
+
+            #if DIRECT_DISTRIBUTION
+            Section("Updates") {
+                Toggle(isOn: Binding(
+                    get: { updater.automaticallyChecksForUpdates },
+                    set: { updater.setAutomaticChecks($0) }
+                )) {
+                    SettingsRowLabel(
+                        title: "Automatically check for updates",
+                        systemImage: "arrow.triangle.2.circlepath"
+                    )
+                }
+                .disabled(!updater.canCheckForUpdates)
+
+                Toggle(isOn: Binding(
+                    get: { updater.automaticallyDownloadsUpdates },
+                    set: { updater.setAutomaticDownloads($0) }
+                )) {
+                    SettingsRowLabel(
+                        title: "Automatically download and install updates",
+                        systemImage: "arrow.down.circle"
+                    )
+                }
+                .disabled(!updater.canCheckForUpdates || !updater.allowsAutomaticUpdates)
+            }
+            #endif
+
+            Section { aboutRow }
         }
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .toggleStyle(.switch)
+        .scrollDisabled(true)
+        .frame(width: 480)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(EditorChrome.editorSurface(for: workspaceStore.preferences.editorTheme))
         .focusEffectDisabled()
@@ -130,27 +146,99 @@ struct SettingsView: View {
                 .resizable()
                 .frame(width: 32, height: 32)
                 .accessibilityHidden(true)
+
             VStack(alignment: .leading, spacing: 1) {
-                Text(verbatim: "NeatEditor").fontWeight(.medium)
+                Text(verbatim: "NeatEditor")
+                    .fontWeight(.medium)
                 Text(verbatim: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             .accessibilityElement(children: .combine)
+
             Spacer(minLength: 12)
-            #if DIRECT_DISTRIBUTION
-            Button {
-                updater.checkForUpdates()
-            } label: {
-                Label("Check for Updates…", systemImage: "arrow.triangle.2.circlepath")
+
+            HStack(spacing: 8) {
+                #if DIRECT_DISTRIBUTION
+                Button {
+                    updater.checkForUpdates()
+                } label: {
+                    Label("Check for Updates…", systemImage: "arrow.triangle.2.circlepath")
+                }
+                .disabled(!updater.canCheckForUpdates)
+                #endif
+
+                Button {
+                    NSApp.terminate(nil)
+                } label: {
+                    Label("settings.quit", systemImage: "power")
+                }
             }
-            .disabled(!updater.canCheckForUpdates)
-            #endif
-            Button {
-                NSApp.terminate(nil)
-            } label: {
-                Label("settings.quit", systemImage: "power")
+            .fixedSize()
+        }
+    }
+}
+
+private struct SettingsRowLabel: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+    var subtitle: String? = nil
+    var subtitleHelp: String? = nil
+    var subtitleAccessibilityLabel: String? = nil
+    var subtitleAccessibilityIdentifier: String? = nil
+    var subtitleTruncation: Text.TruncationMode = .tail
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.system(size: 13.5, weight: .regular))
+                .foregroundStyle(.secondary)
+                .frame(width: 18, height: 18, alignment: .center)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                if let subtitle {
+                    subtitleView(subtitle)
+                }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func subtitleView(_ text: String) -> some View {
+        let base = Text(verbatim: text)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .truncationMode(subtitleTruncation)
+
+        subtitleWithAccessibility(
+            subtitleWithHelp(base)
+        )
+    }
+
+    @ViewBuilder
+    private func subtitleWithHelp<Content: View>(_ content: Content) -> some View {
+        if let subtitleHelp {
+            content.help(subtitleHelp)
+        } else {
+            content
+        }
+    }
+
+    @ViewBuilder
+    private func subtitleWithAccessibility<Content: View>(_ content: Content) -> some View {
+        if let subtitleAccessibilityLabel, let subtitleAccessibilityIdentifier {
+            content
+                .accessibilityLabel(Text(verbatim: subtitleAccessibilityLabel))
+                .accessibilityIdentifier(subtitleAccessibilityIdentifier)
+        } else if let subtitleAccessibilityLabel {
+            content.accessibilityLabel(Text(verbatim: subtitleAccessibilityLabel))
+        } else if let subtitleAccessibilityIdentifier {
+            content.accessibilityIdentifier(subtitleAccessibilityIdentifier)
+        } else {
+            content
         }
     }
 }

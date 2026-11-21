@@ -49,6 +49,10 @@ final class WorkspaceStore {
         !closedTabs.isEmpty
     }
 
+    var isSettingsSelected: Bool {
+        tabs.contains { $0.id == selectedTabID && $0.isSettings }
+    }
+
     var isRestoringState = false
 
     @ObservationIgnored
@@ -71,6 +75,12 @@ final class WorkspaceStore {
 
     @ObservationIgnored
     var applyExternalEditorChanges: (@MainActor (UUID, String, UInt64) -> Void)?
+
+    @ObservationIgnored
+    var editorSelectedSearchSeed: (@MainActor () -> String?)?
+
+    @ObservationIgnored
+    var focusEditor: (@MainActor () -> Void)?
 
     @ObservationIgnored
     var saveGenerations: [UUID: UInt64] = [:]

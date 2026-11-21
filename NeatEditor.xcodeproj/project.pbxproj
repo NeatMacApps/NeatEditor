@@ -105,6 +105,7 @@
 		9CFCFCA8FD288F099B820DB0 /* DocumentTextMerge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49617A697F3FCB69D04AD6E2 /* DocumentTextMerge.swift */; };
 		A00BDF0E3AB5234919B10C82 /* EditorCharacterCountTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07068A45202138CF3BE28417 /* EditorCharacterCountTests.swift */; };
 		A344426D812AD628E5414D35 /* TitleBarTrafficLightAlignmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DB9D86BBC9C10E24C2579C1 /* TitleBarTrafficLightAlignmentView.swift */; };
+		A484C7937383C5D39CAD9586 /* EditorSearchBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EABE9AF33F23832A857B8FF3 /* EditorSearchBarView.swift */; };
 		A5582DB4CFBBBB8EB2B04CB6 /* WorkspaceStore+DefaultApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D991469656C333D3D79A3FA /* WorkspaceStore+DefaultApp.swift */; };
 		A5CD4E4CA843E095AEF9E4F4 /* WorkspaceStore+Documents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE02D7D1B8648861CEB95405 /* WorkspaceStore+Documents.swift */; };
 		A93D25956A370646629EF51D /* WorkspaceStore+Tabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8E8818FBAFDC00F396FB2C0 /* WorkspaceStore+Tabs.swift */; };
@@ -117,6 +118,7 @@
 		B79A1658AD1BC7EFC6E0C776 /* SecurityScopedBookmarkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17EEED5F29AC7DFC60ED7913 /* SecurityScopedBookmarkStore.swift */; };
 		B94CDB60C07A6AB1960668D4 /* ExternalFileOpenCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C74314E17C1CDECDF2EDB4 /* ExternalFileOpenCoordinator.swift */; };
 		B9C68C688FB9046CCCE65A87 /* TitleBarTrafficLightAlignmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DB9D86BBC9C10E24C2579C1 /* TitleBarTrafficLightAlignmentView.swift */; };
+		B9D53AF327C522A780BC6244 /* EditorSearchBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EABE9AF33F23832A857B8FF3 /* EditorSearchBarView.swift */; };
 		BD35F172B988F22FD71B79B5 /* WorkspaceStore+StateRestoration.swift in Sources */ = {isa = PBXBuildFile; fileRef = E32406E8C86E9797FA92149D /* WorkspaceStore+StateRestoration.swift */; };
 		BD9F954901E066BF3EC44DD4 /* WorkspaceSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE6C7B02FE5A439B3DE095 /* WorkspaceSidebarView.swift */; };
 		C0514C58E53DDA0B9D07E4D3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4EDF9A6AA28B3E0BB1ED45 /* SettingsView.swift */; };
@@ -133,6 +135,7 @@
 		EA7FB4EBE9640552831F9E85 /* EditorTabTopRuleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99578BE1CA3CF5872EE01B50 /* EditorTabTopRuleView.swift */; };
 		ED897329FE6AEC90D16696B9 /* EditorCharacterCountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D049BE5437111809BD8E49EE /* EditorCharacterCountView.swift */; };
 		EE28E19EA5D96C5BF95CBF9A /* EditorTabItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98813FD87C11733B55049246 /* EditorTabItemView.swift */; };
+		EE8B843FD8CED6D7716F8961 /* EditorSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BD74CCA673835AB1E93C203 /* EditorSearchTests.swift */; };
 		EE8FDF1E46F208FEEE81F43F /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56530C158F57A8758BF0D6FF /* AppLanguage.swift */; };
 		EEEE492F3901D563DD230DD6 /* EditorExternalChangeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E12DE65BA58B0D8298BAE5 /* EditorExternalChangeTests.swift */; };
 		F06062D1F0E725C1BEB44E45 /* LaunchProfiler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F940423B3470B32EA92D1D9 /* LaunchProfiler.swift */; };
@@ -160,6 +163,7 @@
 		03FB4E6F27D8FCC69430863A /* AdaptiveFontSizeLearner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveFontSizeLearner.swift; sourceTree = "<group>"; };
 		04E92B1CA43CA429B446891A /* WorkspaceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceStoreTests.swift; sourceTree = "<group>"; };
 		07068A45202138CF3BE28417 /* EditorCharacterCountTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorCharacterCountTests.swift; sourceTree = "<group>"; };
+		0BD74CCA673835AB1E93C203 /* EditorSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSearchTests.swift; sourceTree = "<group>"; };
 		0CA0DD15623CA315741B803E /* ZoomableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomableTextView.swift; sourceTree = "<group>"; };
 		0CF0D55E27675FFDA411D699 /* LineNumberGutterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineNumberGutterView.swift; sourceTree = "<group>"; };
 		0D87EE011CD8C5F66C63D863 /* TopBandNativeDragTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBandNativeDragTests.swift; sourceTree = "<group>"; };
@@ -237,6 +241,7 @@
 		E1674FE73DFD3A99700320E6 /* WorkspacePreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacePreferences.swift; sourceTree = "<group>"; };
 		E32406E8C86E9797FA92149D /* WorkspaceStore+StateRestoration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+StateRestoration.swift"; sourceTree = "<group>"; };
 		E664E345AED01D4C6E486EB5 /* EditorNewlineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorNewlineTests.swift; sourceTree = "<group>"; };
+		EABE9AF33F23832A857B8FF3 /* EditorSearchBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSearchBarView.swift; sourceTree = "<group>"; };
 		F4F0D88DC1A7D3B01D9DBBD6 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
 		F8A84E2C617D983F5A9D375D /* WorkspacePreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacePreferencesTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -259,6 +264,7 @@
 				03FB4E6F27D8FCC69430863A /* AdaptiveFontSizeLearner.swift */,
 				B0218538ACF3AB05F86E39F5 /* DefaultAppRegistrationSheet.swift */,
 				D049BE5437111809BD8E49EE /* EditorCharacterCountView.swift */,
+				EABE9AF33F23832A857B8FF3 /* EditorSearchBarView.swift */,
 				CEE07E7303361F05267B1085 /* EditorTab.swift */,
 				98813FD87C11733B55049246 /* EditorTabItemView.swift */,
 				90E210DA60748200EFC436BE /* EditorTabLayout.swift */,
@@ -349,6 +355,7 @@
 				53E12DE65BA58B0D8298BAE5 /* EditorExternalChangeTests.swift */,
 				E664E345AED01D4C6E486EB5 /* EditorNewlineTests.swift */,
 				2D94BB36B65A3298F5F39F27 /* EditorRegexSearchTests.swift */,
+				0BD74CCA673835AB1E93C203 /* EditorSearchTests.swift */,
 				5A3812B102B3FA8E24D10FEE /* EditorTextSyncStateTests.swift */,
 				39F05C2872C0FB22FC3DEAE9 /* EditorThemeTests.swift */,
 				6B6594887CEEA1D1B0EF81A6 /* HoverFocusTopmostCheckTests.swift */,
@@ -617,6 +624,7 @@
 				EEEE492F3901D563DD230DD6 /* EditorExternalChangeTests.swift in Sources */,
 				3651C643249CE91F2F7AC409 /* EditorNewlineTests.swift in Sources */,
 				818709F57F4B8418DD649E92 /* EditorRegexSearchTests.swift in Sources */,
+				EE8B843FD8CED6D7716F8961 /* EditorSearchTests.swift in Sources */,
 				49CA09DC3AAEE99AB71E569E /* EditorTextSyncStateTests.swift in Sources */,
 				188C50D53BAD542FBC636C89 /* EditorThemeTests.swift in Sources */,
 				7538ECC920EF461816EFFBF7 /* HoverFocusTopmostCheckTests.swift in Sources */,
@@ -651,6 +659,7 @@
 				ED897329FE6AEC90D16696B9 /* EditorCharacterCountView.swift in Sources */,
 				4A7455D8ED46B4FC817A58B3 /* EditorChrome.swift in Sources */,
 				0A0C6C11839EF1CD4EA83AC3 /* EditorScrollView.swift in Sources */,
+				A484C7937383C5D39CAD9586 /* EditorSearchBarView.swift in Sources */,
 				30257E6B79239E28AD1DFF2A /* EditorTab.swift in Sources */,
 				83AA4C1985409273788FD141 /* EditorTabItemView.swift in Sources */,
 				326E8BB9A9E0975530B13BC1 /* EditorTabLayout.swift in Sources */,
@@ -710,6 +719,7 @@
 				1AFA554F81FE3792F57EB7D8 /* EditorCharacterCountView.swift in Sources */,
 				5E686B67DD0F2EE48B830CAE /* EditorChrome.swift in Sources */,
 				B794BD1FB229CCB81CCC0FC6 /* EditorScrollView.swift in Sources */,
+				B9D53AF327C522A780BC6244 /* EditorSearchBarView.swift in Sources */,
 				88C294D79CB99D747A6F74B8 /* EditorTab.swift in Sources */,
 				EE28E19EA5D96C5BF95CBF9A /* EditorTabItemView.swift in Sources */,
 				8E2725F3A32DDFDC8A360F99 /* EditorTabLayout.swift in Sources */,

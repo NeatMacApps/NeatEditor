@@ -2,8 +2,16 @@ import AppKit
 
 enum EditorSearchOutcome: Equatable, Sendable {
     case matches([NSRange])
+    case invalidPattern
     case timedOut
     case cancelled
+}
+
+enum EditorSearchNavigation: Equatable, Sendable {
+    case none
+    case nearest
+    case next
+    case previous
 }
 
 /// The deadline includes time spent waiting behind the previous evaluation.
@@ -14,12 +22,14 @@ typealias EditorSearchEvaluator = @Sendable (
 private func evaluateRegularExpressionOffMain(
     _ pattern: String,
     _ text: String,
-    _ deadline: ContinuousClock.Instant
+    isCaseSensitive: Bool,
+    deadline: ContinuousClock.Instant
 ) async -> EditorSearchOutcome {
     guard !Task.isCancelled else { return .cancelled }
     guard ContinuousClock.now < deadline else { return .timedOut }
-    guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else {
-        return .matches([])
+    let options: NSRegularExpression.Options = isCaseSensitive ? [] : [.caseInsensitive]
+    guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else {
+        return .invalidPattern
     }
     var ranges: [NSRange] = []
     var stopped: EditorSearchOutcome?
@@ -55,7 +65,6 @@ final class EditorTextContainerView: NSView {
     }
 
     private static let editorLineHeightMultiple: CGFloat = 1.08
-    private static let searchHighlightColor = NSColor.controlAccentColor.withAlphaComponent(0.22)
     private var currentEditorFontSize: CGFloat = NSFont.systemFontSize
     var textSoftness = WorkspacePreferences.EditorTextSoftnessConfiguration() {
         didSet {
@@ -85,9 +94,25 @@ final class EditorTextContainerView: NSView {
     /// timeout instead of freezing.
     var onSearchTimeoutChange: (Bool) -> Void = { _ in }
 
+    /// Published when match count, active index, invalid regex, or timeout
+    /// status changes for the current search query.
+    var onSearchStatusChange: (WorkspaceSearchState.Status) -> Void = { _ in }
+
     /// Off-main evaluator used for regular-expression searches. Tests inject
     /// instant, slow or externally controlled evaluators here.
-    var searchEvaluator: EditorSearchEvaluator = evaluateRegularExpressionOffMain
+    private var hasCustomSearchEvaluator = false
+    var searchEvaluator: EditorSearchEvaluator = { pattern, text, deadline in
+        await evaluateRegularExpressionOffMain(
+            pattern,
+            text,
+            isCaseSensitive: false,
+            deadline: deadline
+        )
+    } {
+        didSet {
+            hasCustomSearchEvaluator = true
+        }
+    }
 
     private let scrollView: EditorScrollView
     private let lineNumberView: LineNumberGutterView
@@ -120,9 +145,11 @@ final class EditorTextContainerView: NSView {
     private struct SearchRequest: Sendable {
         let pattern: String
         let text: String
-        let navigate: Bool
+        let isCaseSensitive: Bool
+        let navigation: EditorSearchNavigation
         let generation: Int
         let deadline: ContinuousClock.Instant
+        let useCustomEvaluator: Bool
         let evaluator: EditorSearchEvaluator
     }
 
@@ -132,6 +159,8 @@ final class EditorTextContainerView: NSView {
     private var searchDeadlineTask: Task<Void, Never>?
     private var pendingSearch: SearchRequest?
     private var searchRequestGeneration = 0
+    private(set) var lastSearchMatches: [NSRange] = []
+    private(set) var activeMatchIndex: Int?
 
     var retainedRegularExpressionRequestCount: Int {
         (searchTask == nil ? 0 : 1) + (pendingSearch == nil ? 0 : 1)
@@ -147,6 +176,11 @@ final class EditorTextContainerView: NSView {
         applyDefaultTypingAttributes(using: editorMonospacedFont())
         updateSeparatorColor()
         lineNumberView.updateColors()
+        if !lastSearchMatches.isEmpty {
+            let appliedRanges = Array(lastSearchMatches.prefix(Self.maximumAppliedMatchCount))
+            let activeAppliedIndex = activeMatchIndex.flatMap { $0 < appliedRanges.count ? $0 : nil }
+            applySearchHighlights(for: appliedRanges, activeIndex: activeAppliedIndex)
+        }
     }
 
     init(
@@ -231,18 +265,58 @@ final class EditorTextContainerView: NSView {
         applyDefaultTypingAttributes(using: editorMonospacedFont())
     }
 
-    func performSearch(for query: String, usesRegularExpression: Bool, navigate: Bool = true) {
-        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedQuery.isEmpty else {
+    func selectedSearchSeed() -> String? {
+        let range = textView.selectedRange()
+        guard range.location != NSNotFound,
+              range.length > 0,
+              range.length <= 200 else {
+            return nil
+        }
+
+        let nsText = textView.string as NSString
+        let clamped = NSIntersectionRange(range, NSRange(location: 0, length: nsText.length))
+        guard clamped.length > 0 else {
+            return nil
+        }
+
+        let selected = nsText.substring(with: clamped)
+        guard !selected.contains(where: \.isNewline) else {
+            return nil
+        }
+        return selected
+    }
+
+    func performSearch(for query: String, usesRegularExpression: Bool, navigate: Bool) {
+        performSearch(
+            for: query,
+            usesRegularExpression: usesRegularExpression,
+            isCaseSensitive: false,
+            navigation: navigate ? .next : .none
+        )
+    }
+
+    func performSearch(
+        for query: String,
+        usesRegularExpression: Bool,
+        isCaseSensitive: Bool = false,
+        navigation: EditorSearchNavigation = .next
+    ) {
+        guard !query.isEmpty else {
             clearSearchHighlights()
+            scheduleTimeoutStatusReset()
             return
         }
 
         let fullText = textView.string
         guard !fullText.isEmpty else {
-            clearSearchHighlights()
+            cancelPendingSearch()
+            clearStoredSearchState()
+            removeSearchHighlightAttributes()
+            onSearchStatusChange(.matches(current: 0, total: 0))
             scheduleTimeoutStatusReset()
-            if navigate { NSSound.beep() }
+            if navigation == .next || navigation == .previous {
+                NSSound.beep()
+            }
             return
         }
 
@@ -250,22 +324,42 @@ final class EditorTextContainerView: NSView {
             // Literal search is a cheap native scan; keep it synchronous.
             cancelPendingSearch()
             finishSearch(
-                with: literalSearchRanges(for: trimmedQuery, in: fullText),
-                navigate: navigate
+                with: literalSearchRanges(
+                    for: query,
+                    in: fullText,
+                    isCaseSensitive: isCaseSensitive
+                ),
+                navigation: navigation
             )
             return
         }
 
-        beginRegularExpressionSearch(pattern: trimmedQuery, text: fullText, navigate: navigate)
+        beginRegularExpressionSearch(
+            pattern: query,
+            text: fullText,
+            isCaseSensitive: isCaseSensitive,
+            navigation: navigation
+        )
     }
 
-    private func beginRegularExpressionSearch(pattern: String, text: String, navigate: Bool) {
+    private func beginRegularExpressionSearch(
+        pattern: String,
+        text: String,
+        isCaseSensitive: Bool,
+        navigation: EditorSearchNavigation
+    ) {
         cancelPendingSearch()
         let generation = searchRequestGeneration
         let deadline = ContinuousClock.now.advanced(by: Self.regularExpressionSearchDeadline)
         pendingSearch = SearchRequest(
-            pattern: pattern, text: text, navigate: navigate,
-            generation: generation, deadline: deadline, evaluator: searchEvaluator
+            pattern: pattern,
+            text: text,
+            isCaseSensitive: isCaseSensitive,
+            navigation: navigation,
+            generation: generation,
+            deadline: deadline,
+            useCustomEvaluator: hasCustomSearchEvaluator,
+            evaluator: searchEvaluator
         )
         searchDeadlineTask = Task { @MainActor [weak self] in
             do {
@@ -275,7 +369,7 @@ final class EditorTextContainerView: NSView {
             }
             guard !Task.isCancelled, let self,
                   self.searchRequestGeneration == generation else { return }
-            self.applySearchOutcome(.timedOut, navigate: false)
+            self.applySearchOutcome(.timedOut, navigation: .none)
         }
         startPendingSearchIfNeeded()
     }
@@ -285,7 +379,16 @@ final class EditorTextContainerView: NSView {
         pendingSearch = nil
         searchTask = Task { @MainActor [weak self] in
             let evaluation = Task.detached(priority: .userInitiated) {
-                await request.evaluator(request.pattern, request.text, request.deadline)
+                if request.useCustomEvaluator {
+                    await request.evaluator(request.pattern, request.text, request.deadline)
+                } else {
+                    await evaluateRegularExpressionOffMain(
+                        request.pattern,
+                        request.text,
+                        isCaseSensitive: request.isCaseSensitive,
+                        deadline: request.deadline
+                    )
+                }
             }
             let outcome = await withTaskCancellationHandler {
                 await evaluation.value
@@ -297,7 +400,7 @@ final class EditorTextContainerView: NSView {
             if !Task.isCancelled, self.searchRequestGeneration == request.generation {
                 self.searchDeadlineTask?.cancel()
                 self.searchDeadlineTask = nil
-                self.applySearchOutcome(outcome, navigate: request.navigate)
+                self.applySearchOutcome(outcome, navigation: request.navigation)
             }
             self.startPendingSearchIfNeeded()
         }
@@ -320,54 +423,80 @@ final class EditorTextContainerView: NSView {
         }
     }
 
-    private func applySearchOutcome(_ outcome: EditorSearchOutcome, navigate: Bool) {
+    private func applySearchOutcome(
+        _ outcome: EditorSearchOutcome,
+        navigation: EditorSearchNavigation
+    ) {
         switch outcome {
         case .timedOut:
             // A pathological pattern is not a missing match: clear stale
             // highlights, skip the beep, and let the search bar report it.
-            clearSearchHighlights()
+            clearStoredSearchState()
+            removeSearchHighlightAttributes()
             onSearchTimeoutChange(true)
+            onSearchStatusChange(.timedOut)
+        case .invalidPattern:
+            clearStoredSearchState()
+            removeSearchHighlightAttributes()
+            onSearchTimeoutChange(false)
+            onSearchStatusChange(.invalidRegularExpression)
         case .matches(let matchRanges):
             onSearchTimeoutChange(false)
-            finishSearch(with: matchRanges, navigate: navigate)
+            finishSearch(with: matchRanges, navigation: navigation)
         case .cancelled:
             break
         }
     }
 
-    private func finishSearch(with matchRanges: [NSRange], navigate: Bool) {
+    private func finishSearch(
+        with matchRanges: [NSRange],
+        navigation: EditorSearchNavigation
+    ) {
         guard !matchRanges.isEmpty else {
-            clearSearchHighlights()
-            if navigate { NSSound.beep() }
+            clearStoredSearchState()
+            removeSearchHighlightAttributes()
+            onSearchStatusChange(.matches(current: 0, total: 0))
+            if navigation == .next || navigation == .previous {
+                NSSound.beep()
+            }
             return
         }
 
-        let appliedRanges = Array(matchRanges.prefix(Self.maximumAppliedMatchCount))
-        applySearchHighlights(for: appliedRanges)
-
-        guard navigate else { return }
-
         let textLength = (textView.string as NSString).length
         let selectedRange = textView.selectedRange()
-        let selectionEnd = selectedRange.location == NSNotFound
-            ? 0
-            : min(NSMaxRange(selectedRange), textLength)
-        let matchRange = NSIntersectionRange(
-            nextMatchRange(from: matchRanges, selectionEnd: selectionEnd),
-            NSRange(location: 0, length: textLength)
+        let matchIndex = targetMatchIndex(
+            in: matchRanges,
+            selectedRange: selectedRange,
+            textLength: textLength,
+            navigation: navigation
         )
 
-        textView.window?.makeFirstResponder(textView)
-        textView.setSelectedRange(matchRange)
-        textView.scrollRangeToVisible(matchRange)
+        lastSearchMatches = matchRanges
+        activeMatchIndex = matchIndex
+
+        let appliedRanges = Array(matchRanges.prefix(Self.maximumAppliedMatchCount))
+        let activeAppliedIndex = matchIndex < appliedRanges.count ? matchIndex : nil
+        applySearchHighlights(for: appliedRanges, activeIndex: activeAppliedIndex)
+
+        if navigation != .none {
+            let matchRange = NSIntersectionRange(
+                matchRanges[matchIndex],
+                NSRange(location: 0, length: textLength)
+            )
+            textView.setSelectedRange(matchRange)
+            textView.scrollRangeToVisible(matchRange)
+        }
+
+        onSearchStatusChange(.matches(current: matchIndex + 1, total: matchRanges.count))
     }
 
     private func literalSearchRanges(
         for query: String,
-        in fullText: String
+        in fullText: String,
+        isCaseSensitive: Bool
     ) -> [NSRange] {
         let nsText = fullText as NSString
-        let searchOptions: NSString.CompareOptions = [.caseInsensitive]
+        let searchOptions: NSString.CompareOptions = isCaseSensitive ? [] : [.caseInsensitive]
         var searchRange = NSRange(location: 0, length: nsText.length)
         var matchRanges: [NSRange] = []
 
@@ -398,18 +527,45 @@ final class EditorTextContainerView: NSView {
         return matchRanges
     }
 
-    private func nextMatchRange(from matchRanges: [NSRange], selectionEnd: Int) -> NSRange {
-        if let nextMatch = matchRanges.first(where: { $0.location >= selectionEnd }) {
-            return nextMatch
-        }
+    private func targetMatchIndex(
+        in matchRanges: [NSRange],
+        selectedRange: NSRange,
+        textLength: Int,
+        navigation: EditorSearchNavigation
+    ) -> Int {
+        let hasSelection = selectedRange.location != NSNotFound
+        let selectionStart = hasSelection ? min(selectedRange.location, textLength) : 0
+        let selectionEnd = hasSelection ? min(NSMaxRange(selectedRange), textLength) : 0
 
-        return matchRanges[0]
+        switch navigation {
+        case .none:
+            if hasSelection,
+               let exact = matchRanges.firstIndex(where: { $0 == selectedRange }) {
+                return exact
+            }
+            return matchRanges.firstIndex(where: { $0.location >= selectionStart }) ?? 0
+        case .nearest:
+            return matchRanges.firstIndex(where: { $0.location >= selectionStart }) ?? 0
+        case .next:
+            return matchRanges.firstIndex(where: { $0.location >= selectionEnd }) ?? 0
+        case .previous:
+            if let preceding = matchRanges.lastIndex(where: { NSMaxRange($0) <= selectionStart }) {
+                return preceding
+            }
+            if let partial = matchRanges.lastIndex(where: { $0.location < selectionStart }) {
+                return partial
+            }
+            return matchRanges.count - 1
+        }
     }
 
-    private func applySearchHighlights(for matchRanges: [NSRange]) {
+    private func applySearchHighlights(for matchRanges: [NSRange], activeIndex: Int?) {
         guard let textStorage = textView.textStorage else {
             return
         }
+
+        let secondaryColor = Self.searchHighlightColor(active: false, for: effectiveAppearance)
+        let activeColor = Self.searchHighlightColor(active: true, for: effectiveAppearance)
 
         // TextKit 2 rendering attributes do not repaint reliably
         // (FB9692714), so store the transient search colors as regular text
@@ -421,7 +577,7 @@ final class EditorTextContainerView: NSView {
             range: NSRange(location: 0, length: textStorage.length)
         )
 
-        for matchRange in matchRanges {
+        for (index, matchRange) in matchRanges.enumerated() {
             let clampedRange = NSIntersectionRange(
                 matchRange,
                 NSRange(location: 0, length: textStorage.length)
@@ -432,7 +588,7 @@ final class EditorTextContainerView: NSView {
 
             textStorage.addAttribute(
                 .backgroundColor,
-                value: Self.searchHighlightColor,
+                value: index == activeIndex ? activeColor : secondaryColor,
                 range: clampedRange
             )
         }
@@ -440,10 +596,30 @@ final class EditorTextContainerView: NSView {
         textView.needsDisplay = true
     }
 
-    func clearSearchHighlights() {
-        // Dismissing the bar, switching tabs or an empty result supersedes any
-        // in-flight regex evaluation; its late ranges must not repaint.
-        cancelPendingSearch()
+    private static func searchHighlightColor(active: Bool, for appearance: NSAppearance) -> NSColor {
+        let match = appearance.bestMatch(from: [
+            .accessibilityHighContrastDarkAqua,
+            .darkAqua,
+            .accessibilityHighContrastAqua,
+            .aqua
+        ])
+        let isDark = match == .darkAqua || match == .accessibilityHighContrastDarkAqua
+        let isHighContrast = match == .accessibilityHighContrastDarkAqua || match == .accessibilityHighContrastAqua
+        let alpha: CGFloat
+        if active {
+            alpha = isDark ? (isHighContrast ? 0.56 : 0.46) : (isHighContrast ? 0.44 : 0.36)
+        } else {
+            alpha = isDark ? (isHighContrast ? 0.28 : 0.22) : (isHighContrast ? 0.22 : 0.16)
+        }
+        return NSColor.controlAccentColor.withAlphaComponent(alpha)
+    }
+
+    private func clearStoredSearchState() {
+        lastSearchMatches = []
+        activeMatchIndex = nil
+    }
+
+    private func removeSearchHighlightAttributes() {
         guard let textStorage = textView.textStorage else {
             return
         }
@@ -457,6 +633,15 @@ final class EditorTextContainerView: NSView {
         textView.needsDisplay = true
     }
 
+    func clearSearchHighlights() {
+        // Dismissing the bar, switching tabs or an empty result supersedes any
+        // in-flight regex evaluation; its late ranges must not repaint.
+        cancelPendingSearch()
+        clearStoredSearchState()
+        removeSearchHighlightAttributes()
+        onSearchStatusChange(.idle)
+    }
+
     /// Re-apply the current search highlights after the buffer changed
     /// (typing, composition commit, external push) without moving the
     /// selection. Edits shift match ranges, so stale temporary attributes
@@ -464,17 +649,18 @@ final class EditorTextContainerView: NSView {
     func reapplySearchHighlightsIfNeeded(
         query: String,
         usesRegularExpression: Bool,
+        isCaseSensitive: Bool = false,
         isPresented: Bool
     ) {
-        guard isPresented,
-              !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard isPresented, !query.isEmpty else {
             return
         }
 
         performSearch(
             for: query,
             usesRegularExpression: usesRegularExpression,
-            navigate: false
+            isCaseSensitive: isCaseSensitive,
+            navigation: .none
         )
     }
 
@@ -484,7 +670,7 @@ final class EditorTextContainerView: NSView {
         textView.isSelectable = true
         textView.isRichText = false
         textView.importsGraphics = false
-        textView.usesFindPanel = true
+        textView.usesFindPanel = false
         textView.allowsUndo = true
         textView.isAutomaticQuoteSubstitutionEnabled = false
         textView.isAutomaticDashSubstitutionEnabled = false

@@ -79,7 +79,33 @@ struct WorkspaceCommands: Commands {
                     .labelStyle(.titleAndIcon)
             }
             .keyboardShortcut("f", modifiers: .command)
-            .disabled(workspaceStore.selectedTabID == nil)
+            .disabled(workspaceStore.selectedTabID == nil || workspaceStore.isSettingsSelected)
+
+            Button {
+                workspaceStore.findNextMatch()
+            } label: {
+                Label("Find Next", systemImage: "chevron.down")
+                    .labelStyle(.titleAndIcon)
+            }
+            .keyboardShortcut("g", modifiers: .command)
+            .disabled(
+                workspaceStore.selectedTabID == nil ||
+                workspaceStore.isSettingsSelected ||
+                !workspaceStore.searchState.canSubmit
+            )
+
+            Button {
+                workspaceStore.findPreviousMatch()
+            } label: {
+                Label("Find Previous", systemImage: "chevron.up")
+                    .labelStyle(.titleAndIcon)
+            }
+            .keyboardShortcut("g", modifiers: [.command, .shift])
+            .disabled(
+                workspaceStore.selectedTabID == nil ||
+                workspaceStore.isSettingsSelected ||
+                !workspaceStore.searchState.canSubmit
+            )
         }
 
         CommandGroup(after: .toolbar) {

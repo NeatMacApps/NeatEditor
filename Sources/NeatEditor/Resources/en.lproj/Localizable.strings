@@ -122,3 +122,14 @@
 "defaultApp.action.done" = "Done";
 "defaultApp.action.setAsDefault" = "Set as Default";
 "defaultApp.feedback.confirmationRequired" = "System confirmation is required to change the default app.";
+
+"settings.section.files" = "Files";
+"Find Next" = "Find Next";
+"Find Previous" = "Find Previous";
+"search.clear" = "Clear Search";
+"search.caseSensitive" = "Match Case";
+"search.regex" = "Regular Expression";
+"search.previous" = "Previous Match";
+"search.next" = "Next Match";
+"search.status.invalidRegex" = "Invalid regex";
+"search.status.invalidRegex.help" = "The regular expression pattern is invalid.";

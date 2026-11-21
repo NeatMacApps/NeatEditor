@@ -15,6 +15,7 @@ final class ZoomableTextView: NSTextView {
     var onDecreaseFontSize: () -> Void = {}
     var onCompositionEnd: () -> Void = {}
     var onOpenFiles: ([URL]) -> Void = { _ in }
+    var onCancelSearch: () -> Bool = { false }
     var tabBehavior: TabBehavior = .spaces2
     var bottomScrollPadding: CGFloat = 0
 
@@ -51,6 +52,13 @@ final class ZoomableTextView: NSTextView {
         }
 
         super.keyDown(with: event)
+    }
+
+    override func cancelOperation(_ sender: Any?) {
+        if !hasMarkedText(), onCancelSearch() {
+            return
+        }
+        super.cancelOperation(sender)
     }
 
     override func menu(for event: NSEvent) -> NSMenu? {

@@ -122,3 +122,14 @@
 "defaultApp.action.done" = "完成";
 "defaultApp.action.setAsDefault" = "设为默认";
 "defaultApp.feedback.confirmationRequired" = "需要在系统弹窗中确认后才能更改默认打开方式。";
+
+"settings.section.files" = "文件";
+"Find Next" = "查找下一个";
+"Find Previous" = "查找上一个";
+"search.clear" = "清除搜索";
+"search.caseSensitive" = "区分大小写";
+"search.regex" = "正则表达式";
+"search.previous" = "上一个匹配";
+"search.next" = "下一个匹配";
+"search.status.invalidRegex" = "正则无效";
+"search.status.invalidRegex.help" = "正则表达式语法无效。";

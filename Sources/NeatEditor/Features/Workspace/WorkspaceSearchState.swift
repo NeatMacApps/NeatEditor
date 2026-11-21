@@ -1,26 +1,46 @@
 import Foundation
 
 struct WorkspaceSearchState: Equatable {
+    enum NavigationDirection: Equatable, Sendable {
+        case next
+        case previous
+    }
+
+    enum Status: Equatable, Sendable {
+        case idle
+        case matches(current: Int, total: Int)
+        case invalidRegularExpression
+        case timedOut
+    }
+
     var isPresented = false
     var query = "" {
         didSet {
             // A new pattern supersedes the previous result, including a
-            // reported regex timeout.
+            // reported regex error or timeout.
             if query != oldValue {
-                markRegexSearchTimedOut(false)
+                if query.isEmpty {
+                    status = .idle
+                } else if status == .timedOut || status == .invalidRegularExpression {
+                    status = .idle
+                }
             }
         }
     }
     var isRegexEnabled = false
+    var isCaseSensitive = false
+    var navigationDirection: NavigationDirection = .next
     var requestID = 0
     var focusRequestID = 0
-    /// Set when the current regular-expression evaluation exceeded the
-    /// editor's deadline; the search bar shows a short status for it.
-    private(set) var isRegexSearchTimedOut = false
+    /// Status reported by the active editor for the current query.
+    private(set) var status: Status = .idle
 
-    mutating func markRegexSearchTimedOut(_ isTimedOut: Bool) {
-        guard isRegexSearchTimedOut != isTimedOut else { return }
-        isRegexSearchTimedOut = isTimedOut
+    var isRegexSearchTimedOut: Bool {
+        status == .timedOut
+    }
+
+    var hasQuery: Bool {
+        !query.isEmpty
     }
 
     var trimmedQuery: String {
@@ -28,51 +48,77 @@ struct WorkspaceSearchState: Equatable {
     }
 
     var canSubmit: Bool {
-        !trimmedQuery.isEmpty
+        hasQuery
     }
 
-    mutating func present() {
+    var hasMatches: Bool {
+        if case .matches(_, let total) = status {
+            return total > 0
+        }
+        return false
+    }
+
+    mutating func updateStatus(_ newStatus: Status) {
+        guard status != newStatus else { return }
+        status = newStatus
+    }
+
+    mutating func markRegexSearchTimedOut(_ isTimedOut: Bool) {
+        if isTimedOut {
+            updateStatus(.timedOut)
+        } else if status == .timedOut {
+            status = .idle
+        }
+    }
+
+    mutating func present(seedQuery: String? = nil) {
         isPresented = true
+        if let seedQuery, !seedQuery.isEmpty {
+            query = seedQuery
+        }
         focusRequestID += 1
     }
 
     mutating func dismiss() {
         isPresented = false
-        markRegexSearchTimedOut(false)
+        status = .idle
     }
 
     mutating func toggleRegex() {
         isRegexEnabled.toggle()
-        markRegexSearchTimedOut(false)
-        guard normalizeQueryIfNeeded() else {
+        if status == .timedOut || status == .invalidRegularExpression {
+            status = .idle
+        }
+    }
+
+    mutating func toggleCaseSensitive() {
+        isCaseSensitive.toggle()
+        if status == .timedOut || status == .invalidRegularExpression {
+            status = .idle
+        }
+    }
+
+    mutating func navigateNext() {
+        guard hasQuery else {
+            present()
             return
         }
+        navigationDirection = .next
+        isPresented = true
+        requestID += 1
+    }
 
+    mutating func navigatePrevious() {
+        guard hasQuery else {
+            present()
+            return
+        }
+        navigationDirection = .previous
         isPresented = true
         requestID += 1
     }
 
     mutating func submit() {
-        guard normalizeQueryIfNeeded() else {
-            present()
-            return
-        }
-
-        isPresented = true
-        requestID += 1
-    }
-
-    @discardableResult
-    private mutating func normalizeQueryIfNeeded() -> Bool {
-        let trimmedQuery = trimmedQuery
-        guard !trimmedQuery.isEmpty else {
-            return false
-        }
-
-        if query != trimmedQuery {
-            query = trimmedQuery
-        }
-
-        return true
+        navigateNext()
     }
 }

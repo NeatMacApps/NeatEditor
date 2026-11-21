@@ -23,6 +23,10 @@ struct EditorTextView: NSViewRepresentable {
     var onRegisterCompositionCheck: (@escaping @MainActor (UUID) -> Bool) -> Void = { _ in }
     var onRegisterExternalChangeHandler: (@escaping @MainActor (UUID, String, UInt64) -> Void) -> Void = { _ in }
     var onSearchTimeoutChange: (_ isTimedOut: Bool) -> Void = { _ in }
+    var onSearchStatusChange: (WorkspaceSearchState.Status) -> Void = { _ in }
+    var onRegisterSelectedSearchSeed: (@escaping @MainActor () -> String?) -> Void = { _ in }
+    var onRegisterFocusEditor: (@escaping @MainActor () -> Void) -> Void = { _ in }
+    var onDismissSearchFromEditor: () -> Bool = { false }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -47,6 +51,8 @@ struct EditorTextView: NSViewRepresentable {
         containerView.textSoftness = textSoftness
         containerView.theme = theme
         containerView.onSearchTimeoutChange = onSearchTimeoutChange
+        containerView.onSearchStatusChange = onSearchStatusChange
+        textView.onCancelSearch = onDismissSearchFromEditor
         containerView.applyEditorTextAttributes()
         textView.onCompositionEnd = {
             [weak containerView, weak coordinator = context.coordinator, weak textView] in
@@ -58,7 +64,7 @@ struct EditorTextView: NSViewRepresentable {
         }
         containerView.applyFontSize(fontSize)
 
-        context.coordinator.registerCommitHandler(for: textView)
+        context.coordinator.registerCommitHandler(for: textView, containerView: containerView)
         context.coordinator.scheduleCharacterCountReport(for: textView)
 
         return containerView
@@ -97,6 +103,8 @@ struct EditorTextView: NSViewRepresentable {
         containerView.textView.tabBehavior = tabBehavior
         containerView.textSoftness = textSoftness
         containerView.onSearchTimeoutChange = onSearchTimeoutChange
+        containerView.onSearchStatusChange = onSearchStatusChange
+        containerView.textView.onCancelSearch = onDismissSearchFromEditor
         containerView.textView.isEditable = isEditable
         containerView.textView.isSelectable = isEditable
 
@@ -118,8 +126,9 @@ struct EditorTextView: NSViewRepresentable {
             containerView.applyEditorTextAttributes()
             coordinator.syncSearchTrackingAfterPush(searchState)
             containerView.reapplySearchHighlightsIfNeeded(
-                query: searchState.trimmedQuery,
+                query: searchState.query,
                 usesRegularExpression: searchState.isRegexEnabled,
+                isCaseSensitive: searchState.isCaseSensitive,
                 isPresented: searchState.isPresented
             )
         }
@@ -133,30 +142,46 @@ struct EditorTextView: NSViewRepresentable {
         // viewDidChangeEffectiveAppearance; repeating it on every SwiftUI
         // redraw was the dominant CPU source during long sessions.
 
-        let query = searchState.trimmedQuery
+        let query = searchState.query
         let isRegex = searchState.isRegexEnabled
+        let isCaseSensitive = searchState.isCaseSensitive
         let isPresented = searchState.isPresented
+        let wasPresented = coordinator.lastSearchWasPresented
 
-        if coordinator.lastSearchWasPresented && !isPresented {
+        if wasPresented && !isPresented {
             containerView.clearSearchHighlights()
         }
 
         coordinator.lastSearchWasPresented = isPresented
 
         if isPresented {
+            let justPresented = !wasPresented
             let requestChanged = coordinator.lastSearchRequestID != searchState.requestID
             let queryChanged = coordinator.lastAppliedSearchQuery != query
             let regexChanged = coordinator.lastAppliedIsRegex != isRegex
+            let caseChanged = coordinator.lastAppliedIsCaseSensitive != isCaseSensitive
 
-            if requestChanged || queryChanged || regexChanged {
+            if requestChanged || justPresented || queryChanged || regexChanged || caseChanged {
                 coordinator.lastSearchRequestID = searchState.requestID
                 coordinator.lastAppliedSearchQuery = query
                 coordinator.lastAppliedIsRegex = isRegex
-                containerView.performSearch(
-                    for: query,
-                    usesRegularExpression: isRegex,
-                    navigate: requestChanged
-                )
+                coordinator.lastAppliedIsCaseSensitive = isCaseSensitive
+
+                if query.isEmpty {
+                    containerView.clearSearchHighlights()
+                } else {
+                    let navigation: EditorSearchNavigation = if requestChanged {
+                        searchState.navigationDirection == .previous ? .previous : .next
+                    } else {
+                        .nearest
+                    }
+                    containerView.performSearch(
+                        for: query,
+                        usesRegularExpression: isRegex,
+                        isCaseSensitive: isCaseSensitive,
+                        navigation: navigation
+                    )
+                }
             }
         }
     }
@@ -169,6 +194,7 @@ struct EditorTextView: NSViewRepresentable {
         var lastSearchRequestID = 0
         var lastAppliedSearchQuery = ""
         var lastAppliedIsRegex = false
+        var lastAppliedIsCaseSensitive = false
         var lastSearchWasPresented = false
         private var pendingCharacterCountReport: Task<Void, Never>?
 
@@ -190,8 +216,9 @@ struct EditorTextView: NSViewRepresentable {
                 containerView.synchronizeLineNumbersToCurrentText()
                 containerView.applyEditorTextAttributes()
                 containerView.reapplySearchHighlightsIfNeeded(
-                    query: parent.searchState.trimmedQuery,
+                    query: parent.searchState.query,
                     usesRegularExpression: parent.searchState.isRegexEnabled,
+                    isCaseSensitive: parent.searchState.isCaseSensitive,
                     isPresented: parent.searchState.isPresented
                 )
             }
@@ -199,7 +226,7 @@ struct EditorTextView: NSViewRepresentable {
             textView.isSelectable = false
         }
 
-        func registerCommitHandler(for textView: ZoomableTextView) {
+        func registerCommitHandler(for textView: ZoomableTextView, containerView: EditorTextContainerView? = nil) {
             parent.onRegisterCompositionCheck { [weak self, weak textView] id in
                 self?.sync.boundTabID == id && (textView?.hasMarkedText() ?? false)
             }
@@ -207,6 +234,13 @@ struct EditorTextView: NSViewRepresentable {
                 guard let self, let textView, self.sync.boundTabID == id,
                       !textView.hasMarkedText() else { return }
                 self.applyExternalText(text, revision: revision, to: textView)
+            }
+            parent.onRegisterSelectedSearchSeed { [weak containerView] in
+                containerView?.selectedSearchSeed()
+            }
+            parent.onRegisterFocusEditor { [weak textView] in
+                guard let textView else { return }
+                textView.window?.makeFirstResponder(textView)
             }
             parent.onRegisterCommitHandler { [weak self, weak textView] id in
                 // While composing, the binding already holds the committed
@@ -269,8 +303,12 @@ struct EditorTextView: NSViewRepresentable {
             sync.notePushedText(text, for: sync.boundTabID ?? parent.tabID, externalRevision: revision)
             container.synchronizeLineNumbersToCurrentText()
             container.applyEditorTextAttributes()
-            container.reapplySearchHighlightsIfNeeded(query: lastAppliedSearchQuery,
-                usesRegularExpression: lastAppliedIsRegex, isPresented: lastSearchWasPresented)
+            container.reapplySearchHighlightsIfNeeded(
+                query: lastAppliedSearchQuery,
+                usesRegularExpression: lastAppliedIsRegex,
+                isCaseSensitive: lastAppliedIsCaseSensitive,
+                isPresented: lastSearchWasPresented
+            )
             scheduleCharacterCountReport(for: textView)
         }
 
@@ -329,6 +367,7 @@ struct EditorTextView: NSViewRepresentable {
                 containerView.reapplySearchHighlightsIfNeeded(
                     query: lastAppliedSearchQuery,
                     usesRegularExpression: lastAppliedIsRegex,
+                    isCaseSensitive: lastAppliedIsCaseSensitive,
                     isPresented: lastSearchWasPresented
                 )
             }
@@ -347,6 +386,7 @@ struct EditorTextView: NSViewRepresentable {
             containerView.reapplySearchHighlightsIfNeeded(
                 query: lastAppliedSearchQuery,
                 usesRegularExpression: lastAppliedIsRegex,
+                isCaseSensitive: lastAppliedIsCaseSensitive,
                 isPresented: lastSearchWasPresented
             )
             containerView.applyEditorTextAttributes()
@@ -371,8 +411,9 @@ struct EditorTextView: NSViewRepresentable {
         /// again; highlights are re-applied without moving the selection.
         func syncSearchTrackingAfterPush(_ searchState: WorkspaceSearchState) {
             lastSearchWasPresented = searchState.isPresented
-            lastAppliedSearchQuery = searchState.trimmedQuery
+            lastAppliedSearchQuery = searchState.query
             lastAppliedIsRegex = searchState.isRegexEnabled
+            lastAppliedIsCaseSensitive = searchState.isCaseSensitive
             lastSearchRequestID = searchState.requestID
         }
     }

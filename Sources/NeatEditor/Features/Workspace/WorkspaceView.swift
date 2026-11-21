@@ -9,7 +9,6 @@ struct WorkspaceView: View {
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(UserDefaultsKey.hasShownCloseTabShortcutHint)
     private var hasShownCloseTabShortcutHint = false
-    @FocusState private var isSearchFieldFocused: Bool
     @State private var isCloseTabShortcutHintVisible = false
     @State private var isWindowPinned = false
     @State private var editorCharacterCount = EditorCharacterCountModel()
@@ -91,9 +90,6 @@ struct WorkspaceView: View {
                 workspaceStore.saveAllDocuments()
             }
         }
-        .onChange(of: workspaceStore.searchState.focusRequestID) { _, _ in
-            isSearchFieldFocused = workspaceStore.searchState.isPresented
-        }
         .onChange(of: workspaceStore.tabs.count) { _, newCount in
             presentCloseTabShortcutHintIfNeeded(for: newCount)
         }
@@ -113,13 +109,11 @@ struct WorkspaceView: View {
     }
 
     private var isSettingsSelected: Bool {
-        workspaceStore.tabs.contains { $0.id == workspaceStore.selectedTabID && $0.isSettings }
+        workspaceStore.isSettingsSelected
     }
 
     private var editorColumn: some View {
         VStack(spacing: 0) {
-
-
             if isCloseTabShortcutHintVisible {
                 CloseTabShortcutHint(theme: workspaceStore.preferences.editorTheme) {
                     dismissCloseTabShortcutHint()
@@ -136,19 +130,17 @@ struct WorkspaceView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(EditorChrome.editorSurface(for: workspaceStore.preferences.editorTheme))
             }
-
-            if workspaceStore.searchState.isPresented {
-                searchBar
-            }
         }
     }
 
     private func editorBody(for tab: EditorTab, selectedTabID: UUID) -> some View {
-        Group {
+        @Bindable var bindableWorkspace = workspaceStore
+
+        return Group {
             if tab.isSettings {
                 SettingsView()
             } else {
-                ZStack(alignment: .bottomTrailing) {
+                ZStack {
                     EditorTextView(
                         tabID: tab.id,
                         text: Self.textBinding(for: tab.id, in: workspaceStore),
@@ -187,8 +179,20 @@ struct WorkspaceView: View {
                         },
                         onRegisterCompositionCheck: { workspaceStore.editorHasMarkedText = $0 },
                         onRegisterExternalChangeHandler: { workspaceStore.applyExternalEditorChanges = $0 },
-                        onSearchTimeoutChange: { isTimedOut in
-                            workspaceStore.searchState.markRegexSearchTimedOut(isTimedOut)
+                        onSearchStatusChange: { status in
+                            guard workspaceStore.searchState.status != status else { return }
+                            Task { @MainActor in
+                                workspaceStore.updateSearchStatus(status)
+                            }
+                        },
+                        onRegisterSelectedSearchSeed: { workspaceStore.editorSelectedSearchSeed = $0 },
+                        onRegisterFocusEditor: { workspaceStore.focusEditor = $0 },
+                        onDismissSearchFromEditor: {
+                            guard workspaceStore.searchState.isPresented else {
+                                return false
+                            }
+                            workspaceStore.dismissSearchBar(restoreEditorFocus: true)
+                            return true
                         }
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -196,89 +200,39 @@ struct WorkspaceView: View {
                     if tab.isContentLoaded,
                        let characters = editorCharacterCount.count(for: tab.id) {
                         EditorCharacterCountView(characters: characters, theme: workspaceStore.preferences.editorTheme)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    }
+
+                    if workspaceStore.searchState.isPresented {
+                        EditorSearchBarView(
+                            searchState: $bindableWorkspace.searchState,
+                            theme: workspaceStore.preferences.editorTheme,
+                            onFindNext: workspaceStore.findNextMatch,
+                            onFindPrevious: workspaceStore.findPreviousMatch,
+                            onToggleCaseSensitive: workspaceStore.toggleCaseSensitiveSearch,
+                            onToggleRegex: workspaceStore.toggleRegexSearch,
+                            onDismiss: {
+                                workspaceStore.dismissSearchBar(restoreEditorFocus: true)
+                            }
+                        )
+                        .padding(.top, 10)
+                        .padding(.trailing, 14)
+                        .padding(.leading, 12)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()
                 .background(EditorChrome.editorSurface(for: workspaceStore.preferences.editorTheme))
+                .onExitCommand {
+                    if workspaceStore.searchState.isPresented {
+                        workspaceStore.dismissSearchBar(restoreEditorFocus: true)
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(EditorChrome.editorSurface(for: workspaceStore.preferences.editorTheme))
-    }
-
-    private var searchBar: some View {
-        @Bindable var bindableWorkspace = workspaceStore
-
-        return HStack(spacing: 12) {
-            TextField("Search", text: $bindableWorkspace.searchState.query)
-                .textFieldStyle(.plain)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color(NSColor.textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-                .focusEffectDisabled()
-                .focused($isSearchFieldFocused)
-                .onSubmit {
-                    workspaceStore.submitSearch()
-                }
-
-            if workspaceStore.searchState.isRegexSearchTimedOut {
-                Text("search.status.regexTimedOut")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .fixedSize()
-            }
-
-            Button {
-                workspaceStore.toggleRegexSearch()
-            } label: {
-                Text(".*")
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(
-                        workspaceStore.searchState.isRegexEnabled ? Color.accentColor : .secondary
-                    )
-                    .frame(minWidth: 28)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .accessibilityLabel(
-                workspaceStore.searchState.isRegexEnabled
-                ? "Disable Regular Expression Search"
-                : "Enable Regular Expression Search"
-            )
-
-            Button("Search") {
-                workspaceStore.submitSearch()
-            }
-            .disabled(isSearchActionDisabled)
-
-            Button {
-                workspaceStore.dismissSearchBar()
-                isSearchFieldFocused = false
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 18, height: 18)
-                    .background(.tertiary.opacity(0.4), in: Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Close Search")
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 6)
-        .background(EditorChrome.tabBarBackground(for: workspaceStore.preferences.editorTheme))
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(EditorChrome.border)
-                .frame(height: EditorChrome.lineWidth)
-        }
-    }
-
-    private var isSearchActionDisabled: Bool {
-        workspaceStore.selectedTabID == nil ||
-        !workspaceStore.searchState.canSubmit
     }
 
     static func textBinding(for id: UUID, in store: WorkspaceStore) -> Binding<String> {
