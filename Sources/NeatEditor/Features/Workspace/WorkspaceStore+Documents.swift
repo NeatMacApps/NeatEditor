@@ -31,6 +31,7 @@ extension WorkspaceStore {
             bookmarkStore.releaseFile(fileURL, removeStoredBookmark: true)
         }
         closedTabs.append(ClosedTabSnapshot(tab: tabs[index], index: index))
+        markdownSourceModeTabIDs.remove(id)
         tabs.remove(at: index)
         if selectedTabID == id {
             selectedTabID = tabs.indices.contains(index) ? tabs[index].id : tabs.last?.id
@@ -43,14 +44,16 @@ extension WorkspaceStore {
 
     func renameDocument(id: UUID, to newTitle: String) {
         guard let index = tabs.firstIndex(where: { $0.id == id }), !tabs[index].isSettings else { return }
-        let originalFileURL = normalizedEditorFontFileURL(for: tabs[index].fileURL)
+        commitEditorChanges?(id)
+        guard let currentIndex = tabs.firstIndex(where: { $0.id == id }) else { return }
+        let originalFileURL = normalizedEditorFontFileURL(for: tabs[currentIndex].fileURL)
         saveGenerations[id, default: 0] += 1
         do {
-            tabs[index] = try persistenceService.rename(tab: tabs[index], to: newTitle)
+            tabs[currentIndex] = try persistenceService.rename(tab: tabs[currentIndex], to: newTitle)
             preferences.moveRememberedEditorFontSize(from: originalFileURL,
-                to: normalizedEditorFontFileURL(for: tabs[index].fileURL))
+                to: normalizedEditorFontFileURL(for: tabs[currentIndex].fileURL))
             if selectedTabID == id {
-                preferences.rememberCurrentEditorFontSize(for: normalizedEditorFontFileURL(for: tabs[index].fileURL))
+                preferences.rememberCurrentEditorFontSize(for: normalizedEditorFontFileURL(for: tabs[currentIndex].fileURL))
             }
             observeDocument(id: id)
             saveState()

@@ -140,67 +140,180 @@ struct WorkspaceView: View {
             if tab.isSettings {
                 SettingsView()
             } else {
-                ZStack {
-                    EditorTextView(
-                        tabID: tab.id,
-                        text: Self.textBinding(for: tab.id, in: workspaceStore),
-                        fontSize: workspaceStore.preferences.editorFontSize,
-                        isEditable: tab.isContentLoaded,
-                        tabBehavior: workspaceStore.preferences.tabBehavior,
-                        textSoftness: workspaceStore.preferences.editorTextSoftness,
-                        searchState: workspaceStore.searchState,
-                        onTextChange: { isComposing in
-                            if isComposing {
-                                workspaceStore.cancelAutoSave(for: selectedTabID)
-                            } else {
-                                workspaceStore.queueAutoSave(for: selectedTabID)
-                            }
-                        },
-                        onCompositionEnd: {
-                            workspaceStore.queueAutoSave(for: selectedTabID)
-                        },
-                        onIncreaseFontSize: {
-                            workspaceStore.increaseEditorFontSize()
-                        },
-                        onDecreaseFontSize: {
-                            workspaceStore.decreaseEditorFontSize()
-                        },
-                        onOpenFiles: { urls in
-                            workspaceStore.openFiles(at: urls, source: .external)
-                        },
-                        onRegisterCommitHandler: { handler in
-                            workspaceStore.commitEditorChanges = handler
-                        },
-                        externalRevision: tab.externalRevision,
-                        theme: workspaceStore.preferences.editorTheme,
-                        onCharacterCountChange: { tabID, text in
-                            guard workspaceStore.selectedTabID == tabID else { return }
-                            editorCharacterCount.update(tabID: tabID, text: text)
-                        },
-                        onRegisterCompositionCheck: { workspaceStore.editorHasMarkedText = $0 },
-                        onRegisterExternalChangeHandler: { workspaceStore.applyExternalEditorChanges = $0 },
-                        onSearchStatusChange: { status in
-                            guard workspaceStore.searchState.status != status else { return }
-                            Task { @MainActor in
-                                workspaceStore.updateSearchStatus(status)
-                            }
-                        },
-                        onRegisterSelectedSearchSeed: { workspaceStore.editorSelectedSearchSeed = $0 },
-                        onRegisterFocusEditor: { workspaceStore.focusEditor = $0 },
-                        onDismissSearchFromEditor: {
-                            guard workspaceStore.searchState.isPresented else {
-                                return false
-                            }
-                            workspaceStore.dismissSearchBar(restoreEditorFocus: true)
-                            return true
-                        }
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                let provider = EditorExtensionRegistry.markdownProvider
+                let isMarkdownTab = tab.isMarkdownDocument && provider != nil
+                let isSourceMode = workspaceStore.markdownSourceModeTabIDs.contains(tab.id)
+                let capability = provider?.capability ?? .readOnlyPreview
+                let useMarkdownSurface = isMarkdownTab && (capability == .fullEditing || !isSourceMode)
 
-                    if tab.isContentLoaded,
-                       let characters = editorCharacterCount.count(for: tab.id) {
-                        EditorCharacterCountView(characters: characters, theme: workspaceStore.preferences.editorTheme)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                ZStack {
+                    if useMarkdownSurface, let provider {
+                        provider.makeEditorView(
+                            configuration: MarkdownSurfaceConfiguration(
+                                tabID: tab.id,
+                                fileURL: tab.fileURL,
+                                title: tab.title,
+                                text: Self.textBinding(for: tab.id, in: workspaceStore),
+                                fontSize: workspaceStore.preferences.editorFontSize,
+                                isContentLoaded: tab.isContentLoaded,
+                                isSourceMode: isSourceMode,
+                                tabBehavior: workspaceStore.preferences.tabBehavior,
+                                textSoftness: workspaceStore.preferences.editorTextSoftness,
+                                searchState: workspaceStore.searchState,
+                                theme: workspaceStore.preferences.editorTheme,
+                                externalRevision: tab.externalRevision,
+                                onTextChange: { isComposing in
+                                    if isComposing {
+                                        workspaceStore.cancelAutoSave(for: selectedTabID)
+                                    } else {
+                                        workspaceStore.queueAutoSave(for: selectedTabID)
+                                    }
+                                },
+                                onCompositionEnd: {
+                                    workspaceStore.queueAutoSave(for: selectedTabID)
+                                },
+                                onIncreaseFontSize: {
+                                    workspaceStore.increaseEditorFontSize()
+                                },
+                                onDecreaseFontSize: {
+                                    workspaceStore.decreaseEditorFontSize()
+                                },
+                                onOpenFiles: { urls in
+                                    workspaceStore.openFiles(at: urls, source: .external)
+                                },
+                                onCharacterCountChange: { tabID, text in
+                                    guard workspaceStore.selectedTabID == tabID else { return }
+                                    editorCharacterCount.update(tabID: tabID, text: text)
+                                },
+                                onSearchTimeoutChange: { _ in },
+                                onSearchStatusChange: { status in
+                                    guard workspaceStore.searchState.status != status else { return }
+                                    Task { @MainActor in
+                                        workspaceStore.updateSearchStatus(status)
+                                    }
+                                },
+                                onDismissSearchFromEditor: {
+                                    guard workspaceStore.searchState.isPresented else {
+                                        return false
+                                    }
+                                    workspaceStore.dismissSearchBar(restoreEditorFocus: true)
+                                    return true
+                                },
+                                onRegisterSurfaceHandlers: { ownerID, commit, hasMarkedText, applyExternal, selectedSearchSeed, focus, performFormat in
+                                    workspaceStore.registerEditorHandlers(
+                                        ownerID: ownerID,
+                                        commit: commit,
+                                        hasMarkedText: hasMarkedText,
+                                        applyExternal: applyExternal,
+                                        selectedSearchSeed: selectedSearchSeed,
+                                        focus: focus,
+                                        performMarkdownFormat: performFormat
+                                    )
+                                },
+                                onUnregisterSurfaceHandlers: { ownerID in
+                                    workspaceStore.unregisterEditorHandlers(ownerID: ownerID)
+                                }
+                            )
+                        )
+                        .id("markdown-surface")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        EditorTextView(
+                            tabID: tab.id,
+                            text: Self.textBinding(for: tab.id, in: workspaceStore),
+                            fontSize: workspaceStore.preferences.editorFontSize,
+                            isEditable: tab.isContentLoaded,
+                            tabBehavior: workspaceStore.preferences.tabBehavior,
+                            textSoftness: workspaceStore.preferences.editorTextSoftness,
+                            searchState: workspaceStore.searchState,
+                            onTextChange: { isComposing in
+                                if isComposing {
+                                    workspaceStore.cancelAutoSave(for: selectedTabID)
+                                } else {
+                                    workspaceStore.queueAutoSave(for: selectedTabID)
+                                }
+                            },
+                            onCompositionEnd: {
+                                workspaceStore.queueAutoSave(for: selectedTabID)
+                            },
+                            onIncreaseFontSize: {
+                                workspaceStore.increaseEditorFontSize()
+                            },
+                            onDecreaseFontSize: {
+                                workspaceStore.decreaseEditorFontSize()
+                            },
+                            onOpenFiles: { urls in
+                                workspaceStore.openFiles(at: urls, source: .external)
+                            },
+                            onRegisterCommitHandler: { handler in
+                                workspaceStore.commitEditorChanges = handler
+                            },
+                            externalRevision: tab.externalRevision,
+                            theme: workspaceStore.preferences.editorTheme,
+                            onCharacterCountChange: { tabID, text in
+                                guard workspaceStore.selectedTabID == tabID else { return }
+                                editorCharacterCount.update(tabID: tabID, text: text)
+                            },
+                            onRegisterCompositionCheck: { workspaceStore.editorHasMarkedText = $0 },
+                            onRegisterExternalChangeHandler: { workspaceStore.applyExternalEditorChanges = $0 },
+                            onSearchStatusChange: { status in
+                                guard workspaceStore.searchState.status != status else { return }
+                                Task { @MainActor in
+                                    workspaceStore.updateSearchStatus(status)
+                                }
+                            },
+                            onRegisterSelectedSearchSeed: { workspaceStore.editorSelectedSearchSeed = $0 },
+                            onRegisterFocusEditor: { workspaceStore.focusEditor = $0 },
+                            onDismissSearchFromEditor: {
+                                guard workspaceStore.searchState.isPresented else {
+                                    return false
+                                }
+                                workspaceStore.dismissSearchBar(restoreEditorFocus: true)
+                                return true
+                            },
+                            onRegisterSurfaceHandlers: { ownerID, commit, hasMarkedText, applyExternal, selectedSearchSeed, focus in
+                                workspaceStore.registerEditorHandlers(
+                                    ownerID: ownerID,
+                                    commit: commit,
+                                    hasMarkedText: hasMarkedText,
+                                    applyExternal: applyExternal,
+                                    selectedSearchSeed: selectedSearchSeed,
+                                    focus: focus
+                                )
+                            },
+                            onUnregisterSurfaceHandlers: { ownerID in
+                                workspaceStore.unregisterEditorHandlers(ownerID: ownerID)
+                            }
+                        )
+                        .id("plain-surface")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+
+                    if isMarkdownTab || (tab.isContentLoaded && editorCharacterCount.count(for: tab.id) != nil) {
+                        HStack(spacing: 8) {
+                            if isMarkdownTab {
+                                EditorMarkdownModeToggleView(
+                                    capability: capability,
+                                    isSourceMode: isSourceMode,
+                                    theme: workspaceStore.preferences.editorTheme,
+                                    onSelectMode: { mode in
+                                        workspaceStore.setMarkdownSourceMode(mode == .source, for: tab.id)
+                                    }
+                                )
+                                .padding(.bottom, EditorCharacterCountLayout.bottomInset)
+                            }
+
+                            if tab.isContentLoaded,
+                               let characters = editorCharacterCount.count(for: tab.id) {
+                                EditorCharacterCountView(
+                                    characters: characters,
+                                    theme: workspaceStore.preferences.editorTheme
+                                )
+                            } else {
+                                Color.clear.frame(width: EditorCharacterCountLayout.trailingInset - 8, height: 1)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                     }
 
                     if workspaceStore.searchState.isPresented {

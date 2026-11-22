@@ -100,6 +100,7 @@ extension WorkspaceStore {
     private func removeDocument(at index: Int, preserveForReopening: Bool) {
         settlePendingAdaptiveFontSample()
         let closedTab = tabs[index]
+        markdownSourceModeTabIDs.remove(closedTab.id)
         autoSaveScheduler.cancel(for: closedTab.id)
         stopObservingDocument(id: closedTab.id)
         if let fileURL = closedTab.fileURL {

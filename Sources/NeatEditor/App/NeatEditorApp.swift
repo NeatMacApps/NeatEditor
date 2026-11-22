@@ -5,6 +5,7 @@ enum NeatEditorEntry {
     static func main() {
         LaunchProfiler.recordEntry()
         MacScrollerPreference.install()
+        EditorExtensionBootstrap.registerIfNeeded()
         NeatEditorApp.main()
     }
 }

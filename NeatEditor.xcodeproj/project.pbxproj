@@ -40,6 +40,7 @@
 		326E8BB9A9E0975530B13BC1 /* EditorTabLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90E210DA60748200EFC436BE /* EditorTabLayout.swift */; };
 		348B695F38A92793385342D0 /* WorkspaceStore+Preferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034DD46D84F8B203A8D6476F /* WorkspaceStore+Preferences.swift */; };
 		34C2AC68775F3BA373AC7357 /* WorkspaceSidebarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C50807406F37393832E921EC /* WorkspaceSidebarTests.swift */; };
+		355493695DD8386CA7D2F190 /* MarkdownSurfaceExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C7AD2121F935053228EA724 /* MarkdownSurfaceExtensionTests.swift */; };
 		3651C643249CE91F2F7AC409 /* EditorNewlineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E664E345AED01D4C6E486EB5 /* EditorNewlineTests.swift */; };
 		36CD9AD28A749F1C6422610E /* EditorTabTopRuleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99578BE1CA3CF5872EE01B50 /* EditorTabTopRuleView.swift */; };
 		388658A1F20D2E4D41068BE2 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = EEC6A22F39D1E5EC9B13E1CB /* Localizable.strings */; };
@@ -83,7 +84,9 @@
 		7357AFFDDD1ECBC9A24A2136 /* DocumentTextMerge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49617A697F3FCB69D04AD6E2 /* DocumentTextMerge.swift */; };
 		7538ECC920EF461816EFFBF7 /* HoverFocusTopmostCheckTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B6594887CEEA1D1B0EF81A6 /* HoverFocusTopmostCheckTests.swift */; };
 		7AE232C0AFD36F387B462486 /* WorkspaceStore+DefaultApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D991469656C333D3D79A3FA /* WorkspaceStore+DefaultApp.swift */; };
+		7C8EE8262351BDB94A7C49F9 /* EditorExtensionBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD7E1B2DC06C9D2D21E4FC44 /* EditorExtensionBootstrap.swift */; };
 		7D62C38E2491269111A34CE1 /* WorkspaceStore+Documents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE02D7D1B8648861CEB95405 /* WorkspaceStore+Documents.swift */; };
+		7F197BD8404BBD1C6BCD8CA2 /* EditorMarkdownModeToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7A0CB0D3E98216BD3CFFDB2 /* EditorMarkdownModeToggleView.swift */; };
 		7FFEA9EF20394E37C849C849 /* AdaptiveFontSizeLearnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9690FEEBE41E3844A96BC731 /* AdaptiveFontSizeLearnerTests.swift */; };
 		818709F57F4B8418DD649E92 /* EditorRegexSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D94BB36B65A3298F5F39F27 /* EditorRegexSearchTests.swift */; };
 		8187EA008D4250B3B6247ABA /* DefaultFileAssociationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23813FD8610B68A4FA903B2E /* DefaultFileAssociationTests.swift */; };
@@ -111,6 +114,7 @@
 		A93D25956A370646629EF51D /* WorkspaceStore+Tabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8E8818FBAFDC00F396FB2C0 /* WorkspaceStore+Tabs.swift */; };
 		AB52501F00EC0F86E18D6C3C /* AutoSaveScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14452BE9113FCDDB6CE97192 /* AutoSaveScheduler.swift */; };
 		AB5D0CA50177E30576DB6CF9 /* DocumentPersistenceService+FileAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A11A800FD9DF1C475FA33D /* DocumentPersistenceService+FileAccess.swift */; };
+		AD8DA19274ADF9E472283307 /* MarkdownSurfaceExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A67A13A2C8B424BBA3D0929 /* MarkdownSurfaceExtension.swift */; };
 		B50DBBF01185997931E9E43B /* DocumentFileObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 233403EE324658D368830137 /* DocumentFileObserver.swift */; };
 		B7189A1AA1675DEB6A48FA2E /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF4FFD7351F34190C76B4C7D /* WorkspaceView.swift */; };
 		B74216283127A52F4F42E6BF /* WorkspaceSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8918469298602DC5C5D7047 /* WorkspaceSearchState.swift */; };
@@ -126,6 +130,8 @@
 		CBC831E0A9F0F53FD36CC2D3 /* LineNumberGutterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CF0D55E27675FFDA411D699 /* LineNumberGutterView.swift */; };
 		CC3E0DC4E4E8300362ECCD67 /* NeatEditorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AE177253A6D16097E143352 /* NeatEditorApp.swift */; };
 		CFDB9930AB4A81902EE5F970 /* MacScrollerPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6743BBA23D3A2A288FDAFA0A /* MacScrollerPreference.swift */; };
+		D21257546E1E4C1CE15584FD /* MarkdownSurfaceExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A67A13A2C8B424BBA3D0929 /* MarkdownSurfaceExtension.swift */; };
+		D43CD5822D0B5459FBA8898A /* EditorMarkdownModeToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7A0CB0D3E98216BD3CFFDB2 /* EditorMarkdownModeToggleView.swift */; };
 		D62538211034D72288350D02 /* MacScrollerPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6743BBA23D3A2A288FDAFA0A /* MacScrollerPreference.swift */; };
 		DB3B4488FB8964DB17261234 /* TabHoverCloseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3A7A3F922331F2EE3DB50F /* TabHoverCloseTests.swift */; };
 		DBF5AF42B92E1D7E015E2880 /* DocumentPersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A960C8B24796C5DB2C6589 /* DocumentPersistenceService.swift */; };
@@ -146,6 +152,7 @@
 		F9F0759B221E03E66297E6D5 /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF4FFD7351F34190C76B4C7D /* WorkspaceView.swift */; };
 		F9FAD9B25C5E7B1C4EE6DB2C /* WorkspaceStore+Search.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08FFD0C3BD5FFC0B4C04B01 /* WorkspaceStore+Search.swift */; };
 		FAD7B752ED21E39DE0E2F2FA /* SecurityScopedBookmarkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17EEED5F29AC7DFC60ED7913 /* SecurityScopedBookmarkStore.swift */; };
+		FD1DFCE2F9F12044986AF6D0 /* EditorExtensionBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD7E1B2DC06C9D2D21E4FC44 /* EditorExtensionBootstrap.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -180,6 +187,7 @@
 		32C74314E17C1CDECDF2EDB4 /* ExternalFileOpenCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalFileOpenCoordinator.swift; sourceTree = "<group>"; };
 		39F05C2872C0FB22FC3DEAE9 /* EditorThemeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorThemeTests.swift; sourceTree = "<group>"; };
 		3C21CDB2A4B0C2A6A6DFAF57 /* WorkspaceToolbarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceToolbarTests.swift; sourceTree = "<group>"; };
+		3C7AD2121F935053228EA724 /* MarkdownSurfaceExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownSurfaceExtensionTests.swift; sourceTree = "<group>"; };
 		3D991469656C333D3D79A3FA /* WorkspaceStore+DefaultApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+DefaultApp.swift"; sourceTree = "<group>"; };
 		3DB9D86BBC9C10E24C2579C1 /* TitleBarTrafficLightAlignmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleBarTrafficLightAlignmentView.swift; sourceTree = "<group>"; };
 		3DC995CE28879B63ADA21A6B /* DocumentConcurrencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentConcurrencyTests.swift; sourceTree = "<group>"; };
@@ -215,6 +223,7 @@
 		9690FEEBE41E3844A96BC731 /* AdaptiveFontSizeLearnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveFontSizeLearnerTests.swift; sourceTree = "<group>"; };
 		98813FD87C11733B55049246 /* EditorTabItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTabItemView.swift; sourceTree = "<group>"; };
 		99578BE1CA3CF5872EE01B50 /* EditorTabTopRuleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTabTopRuleView.swift; sourceTree = "<group>"; };
+		9A67A13A2C8B424BBA3D0929 /* MarkdownSurfaceExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownSurfaceExtension.swift; sourceTree = "<group>"; };
 		9AC3D0698104CA17378999F0 /* WorkspaceSplitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSplitView.swift; sourceTree = "<group>"; };
 		9B3C22F933FC00FD61B5DAF0 /* EditorTextContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextContainerView.swift; sourceTree = "<group>"; };
 		9E4EDF9A6AA28B3E0BB1ED45 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -225,9 +234,11 @@
 		A8E8818FBAFDC00F396FB2C0 /* WorkspaceStore+Tabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Tabs.swift"; sourceTree = "<group>"; };
 		B0218538ACF3AB05F86E39F5 /* DefaultAppRegistrationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultAppRegistrationSheet.swift; sourceTree = "<group>"; };
 		B1229AF71F03BBD6F3F34F9F /* EditorTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTheme.swift; sourceTree = "<group>"; };
+		BD7E1B2DC06C9D2D21E4FC44 /* EditorExtensionBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorExtensionBootstrap.swift; sourceTree = "<group>"; };
 		BF4FFD7351F34190C76B4C7D /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
 		C50807406F37393832E921EC /* WorkspaceSidebarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSidebarTests.swift; sourceTree = "<group>"; };
 		C59982890BA0049E8CC31E4F /* NeatEditor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeatEditor.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C7A0CB0D3E98216BD3CFFDB2 /* EditorMarkdownModeToggleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorMarkdownModeToggleView.swift; sourceTree = "<group>"; };
 		CB3A7A3F922331F2EE3DB50F /* TabHoverCloseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabHoverCloseTests.swift; sourceTree = "<group>"; };
 		CC4981C6B05519CD1877B4D5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CE02D7D1B8648861CEB95405 /* WorkspaceStore+Documents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceStore+Documents.swift"; sourceTree = "<group>"; };
@@ -264,6 +275,7 @@
 				03FB4E6F27D8FCC69430863A /* AdaptiveFontSizeLearner.swift */,
 				B0218538ACF3AB05F86E39F5 /* DefaultAppRegistrationSheet.swift */,
 				D049BE5437111809BD8E49EE /* EditorCharacterCountView.swift */,
+				C7A0CB0D3E98216BD3CFFDB2 /* EditorMarkdownModeToggleView.swift */,
 				EABE9AF33F23832A857B8FF3 /* EditorSearchBarView.swift */,
 				CEE07E7303361F05267B1085 /* EditorTab.swift */,
 				98813FD87C11733B55049246 /* EditorTabItemView.swift */,
@@ -296,6 +308,7 @@
 				BD11E00755412FD8FBA19523 /* Commands */,
 				F4F0D88DC1A7D3B01D9DBBD6 /* AppUpdater.swift */,
 				7C65CC146BF954D8A2C31166 /* DefaultFileAssociationService.swift */,
+				BD7E1B2DC06C9D2D21E4FC44 /* EditorExtensionBootstrap.swift */,
 				32C74314E17C1CDECDF2EDB4 /* ExternalFileOpenCoordinator.swift */,
 				7F940423B3470B32EA92D1D9 /* LaunchProfiler.swift */,
 				6743BBA23D3A2A288FDAFA0A /* MacScrollerPreference.swift */,
@@ -359,6 +372,7 @@
 				5A3812B102B3FA8E24D10FEE /* EditorTextSyncStateTests.swift */,
 				39F05C2872C0FB22FC3DEAE9 /* EditorThemeTests.swift */,
 				6B6594887CEEA1D1B0EF81A6 /* HoverFocusTopmostCheckTests.swift */,
+				3C7AD2121F935053228EA724 /* MarkdownSurfaceExtensionTests.swift */,
 				423DF3776AE31901A1246BE1 /* SecurityScopedBookmarkStoreTests.swift */,
 				CB3A7A3F922331F2EE3DB50F /* TabHoverCloseTests.swift */,
 				0D87EE011CD8C5F66C63D863 /* TopBandNativeDragTests.swift */,
@@ -445,6 +459,7 @@
 			children = (
 				B8324446F9926CC8ECAB9287 /* AppKitBridge */,
 				21D82FF259624A148B41268D /* EditorCharacterCount.swift */,
+				9A67A13A2C8B424BBA3D0929 /* MarkdownSurfaceExtension.swift */,
 			);
 			path = Editor;
 			sourceTree = "<group>";
@@ -628,6 +643,7 @@
 				49CA09DC3AAEE99AB71E569E /* EditorTextSyncStateTests.swift in Sources */,
 				188C50D53BAD542FBC636C89 /* EditorThemeTests.swift in Sources */,
 				7538ECC920EF461816EFFBF7 /* HoverFocusTopmostCheckTests.swift in Sources */,
+				355493695DD8386CA7D2F190 /* MarkdownSurfaceExtensionTests.swift in Sources */,
 				6A6364D24462A1F21EC308E2 /* SecurityScopedBookmarkStoreTests.swift in Sources */,
 				DB3B4488FB8964DB17261234 /* TabHoverCloseTests.swift in Sources */,
 				5855456C8D0DA35249228762 /* TopBandNativeDragTests.swift in Sources */,
@@ -658,6 +674,8 @@
 				6EE8A2AE67E17A04AF894495 /* EditorCharacterCount.swift in Sources */,
 				ED897329FE6AEC90D16696B9 /* EditorCharacterCountView.swift in Sources */,
 				4A7455D8ED46B4FC817A58B3 /* EditorChrome.swift in Sources */,
+				7C8EE8262351BDB94A7C49F9 /* EditorExtensionBootstrap.swift in Sources */,
+				7F197BD8404BBD1C6BCD8CA2 /* EditorMarkdownModeToggleView.swift in Sources */,
 				0A0C6C11839EF1CD4EA83AC3 /* EditorScrollView.swift in Sources */,
 				A484C7937383C5D39CAD9586 /* EditorSearchBarView.swift in Sources */,
 				30257E6B79239E28AD1DFF2A /* EditorTab.swift in Sources */,
@@ -675,6 +693,7 @@
 				F06062D1F0E725C1BEB44E45 /* LaunchProfiler.swift in Sources */,
 				260FB1D768B914BEC7E705CE /* LineNumberGutterView.swift in Sources */,
 				D62538211034D72288350D02 /* MacScrollerPreference.swift in Sources */,
+				D21257546E1E4C1CE15584FD /* MarkdownSurfaceExtension.swift in Sources */,
 				28C0A08E8F3EA4403F48347A /* NeatEditorApp.swift in Sources */,
 				FAD7B752ED21E39DE0E2F2FA /* SecurityScopedBookmarkStore.swift in Sources */,
 				85E7BB7174B4D000CEFDE8A6 /* SettingsView.swift in Sources */,
@@ -718,6 +737,8 @@
 				4759ECC9BDF9E92478538128 /* EditorCharacterCount.swift in Sources */,
 				1AFA554F81FE3792F57EB7D8 /* EditorCharacterCountView.swift in Sources */,
 				5E686B67DD0F2EE48B830CAE /* EditorChrome.swift in Sources */,
+				FD1DFCE2F9F12044986AF6D0 /* EditorExtensionBootstrap.swift in Sources */,
+				D43CD5822D0B5459FBA8898A /* EditorMarkdownModeToggleView.swift in Sources */,
 				B794BD1FB229CCB81CCC0FC6 /* EditorScrollView.swift in Sources */,
 				B9D53AF327C522A780BC6244 /* EditorSearchBarView.swift in Sources */,
 				88C294D79CB99D747A6F74B8 /* EditorTab.swift in Sources */,
@@ -735,6 +756,7 @@
 				66619AC58903D453CE1736D2 /* LaunchProfiler.swift in Sources */,
 				CBC831E0A9F0F53FD36CC2D3 /* LineNumberGutterView.swift in Sources */,
 				CFDB9930AB4A81902EE5F970 /* MacScrollerPreference.swift in Sources */,
+				AD8DA19274ADF9E472283307 /* MarkdownSurfaceExtension.swift in Sources */,
 				CC3E0DC4E4E8300362ECCD67 /* NeatEditorApp.swift in Sources */,
 				B79A1658AD1BC7EFC6E0C776 /* SecurityScopedBookmarkStore.swift in Sources */,
 				C0514C58E53DDA0B9D07E4D3 /* SettingsView.swift in Sources */,

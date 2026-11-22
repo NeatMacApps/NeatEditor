@@ -19,4 +19,12 @@ struct EditorTab: Identifiable, Hashable, Sendable {
         self.isSettings = isSettings
         self.isContentLoaded = isContentLoaded
     }
+
+    var isMarkdownDocument: Bool {
+        guard !isSettings else {
+            return false
+        }
+        let pathExtension = (fileURL?.pathExtension ?? (title as NSString).pathExtension).lowercased()
+        return pathExtension == "md" || pathExtension == "markdown"
+    }
 }

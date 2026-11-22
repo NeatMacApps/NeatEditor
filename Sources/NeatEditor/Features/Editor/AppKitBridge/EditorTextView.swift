@@ -27,6 +27,15 @@ struct EditorTextView: NSViewRepresentable {
     var onRegisterSelectedSearchSeed: (@escaping @MainActor () -> String?) -> Void = { _ in }
     var onRegisterFocusEditor: (@escaping @MainActor () -> Void) -> Void = { _ in }
     var onDismissSearchFromEditor: () -> Bool = { false }
+    var onRegisterSurfaceHandlers: (
+        _ ownerID: UUID,
+        _ commit: @escaping @MainActor (UUID) -> Void,
+        _ hasMarkedText: @escaping @MainActor (UUID) -> Bool,
+        _ applyExternal: @escaping @MainActor (UUID, String, UInt64) -> Void,
+        _ selectedSearchSeed: @escaping @MainActor () -> String?,
+        _ focus: @escaping @MainActor () -> Void
+    ) -> Void = { _, _, _, _, _, _ in }
+    var onUnregisterSurfaceHandlers: (_ ownerID: UUID) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -68,6 +77,10 @@ struct EditorTextView: NSViewRepresentable {
         context.coordinator.scheduleCharacterCountReport(for: textView)
 
         return containerView
+    }
+
+    static func dismantleNSView(_ containerView: EditorTextContainerView, coordinator: Coordinator) {
+        coordinator.parent.onUnregisterSurfaceHandlers(coordinator.handlerOwnerID)
     }
 
     func updateNSView(_ containerView: EditorTextContainerView, context: Context) {
@@ -188,6 +201,7 @@ struct EditorTextView: NSViewRepresentable {
 
     @MainActor
     final class Coordinator: NSObject, NSTextViewDelegate {
+        let handlerOwnerID = UUID()
         var parent: EditorTextView
         var sync = EditorTextSyncState()
         var isSyncingFromSwiftUI = false
@@ -227,22 +241,22 @@ struct EditorTextView: NSViewRepresentable {
         }
 
         func registerCommitHandler(for textView: ZoomableTextView, containerView: EditorTextContainerView? = nil) {
-            parent.onRegisterCompositionCheck { [weak self, weak textView] id in
+            let hasMarkedTextHandler: @MainActor (UUID) -> Bool = { [weak self, weak textView] id in
                 self?.sync.boundTabID == id && (textView?.hasMarkedText() ?? false)
             }
-            parent.onRegisterExternalChangeHandler { [weak self, weak textView] id, text, revision in
+            let externalChangeHandler: @MainActor (UUID, String, UInt64) -> Void = { [weak self, weak textView] id, text, revision in
                 guard let self, let textView, self.sync.boundTabID == id,
                       !textView.hasMarkedText() else { return }
                 self.applyExternalText(text, revision: revision, to: textView)
             }
-            parent.onRegisterSelectedSearchSeed { [weak containerView] in
+            let selectedSearchSeedHandler: @MainActor () -> String? = { [weak containerView] in
                 containerView?.selectedSearchSeed()
             }
-            parent.onRegisterFocusEditor { [weak textView] in
+            let focusHandler: @MainActor () -> Void = { [weak textView] in
                 guard let textView else { return }
                 textView.window?.makeFirstResponder(textView)
             }
-            parent.onRegisterCommitHandler { [weak self, weak textView] id in
+            let commitHandler: @MainActor (UUID) -> Void = { [weak self, weak textView] id in
                 // While composing, the binding already holds the committed
                 // text; forcing a commit here would save raw pinyin and leave
                 // the input method composing a buffer it no longer owns.
@@ -254,6 +268,19 @@ struct EditorTextView: NSViewRepresentable {
                     reportAppKitText(currentText)
                 }
             }
+            parent.onRegisterCompositionCheck(hasMarkedTextHandler)
+            parent.onRegisterExternalChangeHandler(externalChangeHandler)
+            parent.onRegisterSelectedSearchSeed(selectedSearchSeedHandler)
+            parent.onRegisterFocusEditor(focusHandler)
+            parent.onRegisterCommitHandler(commitHandler)
+            parent.onRegisterSurfaceHandlers(
+                handlerOwnerID,
+                commitHandler,
+                hasMarkedTextHandler,
+                externalChangeHandler,
+                selectedSearchSeedHandler,
+                focusHandler
+            )
         }
 
         /// Apply external content immediately on the same actor as edits, not

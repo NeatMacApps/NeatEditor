@@ -53,6 +53,37 @@ final class WorkspaceStore {
         tabs.contains { $0.id == selectedTabID && $0.isSettings }
     }
 
+    var markdownSourceModeTabIDs: Set<UUID> = []
+
+    var selectedTab: EditorTab? {
+        guard let selectedTabID else { return nil }
+        return tabs.first(where: { $0.id == selectedTabID })
+    }
+
+    var isMarkdownSurfaceAvailable: Bool {
+        EditorExtensionRegistry.markdownProvider != nil
+    }
+
+    var markdownCapability: MarkdownEditCapability {
+        EditorExtensionRegistry.markdownProvider?.capability ?? .readOnlyPreview
+    }
+
+    var isSelectedTabMarkdown: Bool {
+        isMarkdownSurfaceAvailable && (selectedTab?.isMarkdownDocument ?? false)
+    }
+
+    var isSelectedTabInSourceMode: Bool {
+        guard let selectedTabID else { return false }
+        return markdownSourceModeTabIDs.contains(selectedTabID)
+    }
+
+    var canPerformMarkdownFormatting: Bool {
+        isSelectedTabMarkdown
+            && !isSettingsSelected
+            && (selectedTab?.isContentLoaded ?? false)
+            && markdownCapability == .fullEditing
+    }
+
     var isRestoringState = false
 
     @ObservationIgnored
@@ -68,6 +99,9 @@ final class WorkspaceStore {
     let bookmarkStore: SecurityScopedBookmarkStore
 
     @ObservationIgnored
+    private var activeEditorHandlerOwner: UUID?
+
+    @ObservationIgnored
     var commitEditorChanges: (@MainActor (UUID) -> Void)?
 
     @ObservationIgnored
@@ -81,6 +115,68 @@ final class WorkspaceStore {
 
     @ObservationIgnored
     var focusEditor: (@MainActor () -> Void)?
+
+    @ObservationIgnored
+    var performMarkdownFormatAction: (@MainActor (MarkdownFormattingAction) -> Void)?
+
+    func registerEditorHandlers(
+        ownerID: UUID,
+        commit: @escaping @MainActor (UUID) -> Void,
+        hasMarkedText: @escaping @MainActor (UUID) -> Bool,
+        applyExternal: @escaping @MainActor (UUID, String, UInt64) -> Void,
+        selectedSearchSeed: @escaping @MainActor () -> String?,
+        focus: @escaping @MainActor () -> Void,
+        performMarkdownFormat: (@MainActor (MarkdownFormattingAction) -> Void)? = nil
+    ) {
+        activeEditorHandlerOwner = ownerID
+        commitEditorChanges = commit
+        editorHasMarkedText = hasMarkedText
+        applyExternalEditorChanges = applyExternal
+        editorSelectedSearchSeed = selectedSearchSeed
+        focusEditor = focus
+        performMarkdownFormatAction = performMarkdownFormat
+    }
+
+    func unregisterEditorHandlers(ownerID: UUID) {
+        guard activeEditorHandlerOwner == ownerID else {
+            return
+        }
+        activeEditorHandlerOwner = nil
+        commitEditorChanges = nil
+        editorHasMarkedText = nil
+        applyExternalEditorChanges = nil
+        editorSelectedSearchSeed = nil
+        focusEditor = nil
+        performMarkdownFormatAction = nil
+    }
+
+    func setMarkdownSourceMode(_ enabled: Bool, for tabID: UUID) {
+        guard isMarkdownSurfaceAvailable,
+              let tab = tabs.first(where: { $0.id == tabID }),
+              tab.isMarkdownDocument else {
+            return
+        }
+        commitEditorChanges?(tabID)
+        if enabled {
+            markdownSourceModeTabIDs.insert(tabID)
+        } else {
+            markdownSourceModeTabIDs.remove(tabID)
+        }
+    }
+
+    func toggleMarkdownSourceMode() {
+        guard let selectedTabID, isSelectedTabMarkdown, !isSettingsSelected else {
+            return
+        }
+        setMarkdownSourceMode(!markdownSourceModeTabIDs.contains(selectedTabID), for: selectedTabID)
+    }
+
+    func performMarkdownFormatting(_ action: MarkdownFormattingAction) {
+        guard canPerformMarkdownFormatting else {
+            return
+        }
+        performMarkdownFormatAction?(action)
+    }
 
     @ObservationIgnored
     var saveGenerations: [UUID: UInt64] = [:]
