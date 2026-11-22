@@ -47,6 +47,9 @@ struct WorkspaceView: View {
         .background {
             WindowPinningView(isWindowPinned: isWindowPinned)
         }
+        .background {
+            WindowTitleSyncView(title: windowTitle)
+        }
         .focusEffectDisabled()
         .alert(
             workspaceStore.documentFailureAlert?.title ?? String(localized: "Save Failed"),
@@ -106,6 +109,12 @@ struct WorkspaceView: View {
             presentCloseTabShortcutHintIfNeeded(for: workspaceStore.tabs.count)
             await workspaceStore.evaluateDefaultAppPromptOnLaunch()
         }
+    }
+
+    /// Window title follows the document that is showing, so Mission Control,
+    /// the Window menu and accessibility clients can tell documents apart.
+    private var windowTitle: String {
+        workspaceStore.selectedTab?.title ?? "NeatEditor"
     }
 
     private var isSettingsSelected: Bool {

@@ -38,6 +38,16 @@ struct WorkspaceSidebarView: View {
             Section {
                 ForEach(workspaceStore.sidebarFiles) { item in
                     WorkspaceSidebarFileRow(title: item.title, preview: item.preview)
+                    // One named element per row: the List row itself stays
+                    // anonymous otherwise, leaving the file name only on a child
+                    // static text that assistive clients cannot select.
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(Text(verbatim: item.title))
+                    .accessibilityValue(Text(verbatim: item.preview))
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction(.default) {
+                        workspaceStore.openSidebarFile(item.fileURL)
+                    }
                     .accessibilityIdentifier("sidebar.row.\(item.title)")
                     .tag(item.fileURL)
                     .id(item.fileURL)
