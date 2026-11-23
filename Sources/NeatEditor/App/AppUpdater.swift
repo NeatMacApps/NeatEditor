@@ -6,16 +6,16 @@ import Sparkle
 /// 文档编辑器的更新入口：Sparkle 拥有全部更新 UI，本类只做状态桥接与安装前存盘。
 ///
 /// - 菜单与设置页观察 `canCheckForUpdates` 等状态，不直接观察 Sparkle 对象。
-/// - 后台发现更新时不抢焦点（温和提醒），只有用户主动检查时才允许弹窗，避免打断输入。
+/// - 定时检查发现更新后交由 Sparkle 标准界面在应用激活或空闲时展示，不拦截回调。
 /// - 覆盖安装前通过 `onWillInstallUpdate` 把所有文档落盘，更新替换应用包不会丢草稿。
 @MainActor
 @Observable
-final class AppUpdater: NSObject, SPUUpdaterDelegate, @preconcurrency SPUStandardUserDriverDelegate {
+final class AppUpdater: NSObject, SPUUpdaterDelegate {
     static let shared = AppUpdater()
 
     private(set) var canCheckForUpdates = false
     private(set) var automaticallyChecksForUpdates = true
-    private(set) var automaticallyDownloadsUpdates = true
+    private(set) var automaticallyDownloadsUpdates = false
     private(set) var allowsAutomaticUpdates = true
 
     /// 安装前收尾（由应用启动时注入，一般为 `workspaceStore.saveAllDocuments()`）。
@@ -25,7 +25,7 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate, @preconcurrency SPUStandar
     private lazy var controller: SPUStandardUpdaterController = SPUStandardUpdaterController(
         startingUpdater: true,
         updaterDelegate: self,
-        userDriverDelegate: self
+        userDriverDelegate: nil
     )
 
     @ObservationIgnored
@@ -103,19 +103,6 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate, @preconcurrency SPUStandar
 
     func updaterWillRelaunchApplication(_ updater: SPUUpdater) {
         onWillInstallUpdate?()
-    }
-
-    // MARK: - SPUStandardUserDriverDelegate（温和提醒）
-
-    var supportsGentleScheduledUpdateReminders: Bool {
-        true
-    }
-
-    func standardUserDriverShouldHandleShowingScheduledUpdate(
-        _ update: SUAppcastItem,
-        andInImmediateFocus immediateFocus: Bool
-    ) -> Bool {
-        immediateFocus
     }
 }
 #endif
