@@ -6,6 +6,29 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## Unreleased
 
+## 1.0.37 - 2026-11-27
+
+### Added
+
+- Add an **Interface Font Size** slider in Settings with five discrete levels (Extra Small, Small, Default, Large, Extra Large) to adjust the text size of the file sidebar, top tab bar, search bar, and workspace chrome independently of the editor text size.
+- Add default file-type registration settings and first-launch prompt for Plain Text and Markdown files.
+
+### Changed
+
+- Overhaul the floating editor search bar and align the Settings layout; refine theme names to Warm Paper and Pure.
+
+### Fixed
+
+- Name and expose sidebar rows for accessibility and keep the window title synced with the active document.
+- Present interactive Sparkle update alerts without swallowing scheduled background checks.
+
+### 简体中文
+
+- 设置页新增「界面字体大小」配置项，提供 5 档离散滑块（极小、较小、默认、较大、极大），用于独立调节侧边栏文件列表、顶部标签栏、搜索栏等界面文字大小，不影响编辑区正文字号。
+- 新增默认打开文件类型设置与引导，支持将纯文本与 Markdown 文件设为默认使用 NeatEditor 打开。
+- 优化悬浮搜索栏与设置页排版，并将主题名称调整为「暖纸」与「纯净」。
+- 修复侧边栏行无障碍名称与交互支持，窗口标题跟随当前文档；修复 Sparkle 更新提示不再吞掉定时检查。
+
 ## 1.0.36 - 2026-11-18
 
 ### Fixed
