@@ -3,6 +3,39 @@
     <channel>
         <title>NeatEditor</title>
         <item>
+            <title>1.0.37</title>
+            <pubDate>Fri, 27 Nov 2026 15:16:28 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatEditor</link>
+            <sparkle:version>38</sparkle:version>
+            <sparkle:shortVersionString>1.0.37</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.37
+
+
+### Added
+
+- Add an **Interface Font Size** slider in Settings with five discrete levels (Extra Small, Small, Default, Large, Extra Large) to adjust the text size of the file sidebar, top tab bar, search bar, and workspace chrome independently of the editor text size.
+- Add default file-type registration settings and first-launch prompt for Plain Text and Markdown files.
+
+### Changed
+
+- Overhaul the floating editor search bar and align the Settings layout; refine theme names to Warm Paper and Pure.
+
+### Fixed
+
+- Name and expose sidebar rows for accessibility and keep the window title synced with the active document.
+- Present interactive Sparkle update alerts without swallowing scheduled background checks.
+
+### 简体中文
+
+- 设置页新增「界面字体大小」配置项，提供 5 档离散滑块（极小、较小、默认、较大、极大），用于独立调节侧边栏文件列表、顶部标签栏、搜索栏等界面文字大小，不影响编辑区正文字号。
+- 新增默认打开文件类型设置与引导，支持将纯文本与 Markdown 文件设为默认使用 NeatEditor 打开。
+- 优化悬浮搜索栏与设置页排版，并将主题名称调整为「暖纸」与「纯净」。
+- 修复侧边栏行无障碍名称与交互支持，窗口标题跟随当前文档；修复 Sparkle 更新提示不再吞掉定时检查。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.37/NeatEditor-1.0.37.zip" length="6001149" type="application/octet-stream" sparkle:edSignature="OIznm0sUFwHNtGKM+Y7kuq0Je8y/oB1Wux4S5nOhi7uTOtUePcM1OI6ZtIqmF5gIbIyeAM2HchfCSkLbzDSnAg=="/>
+        </item>
+        <item>
             <title>1.0.36</title>
             <pubDate>Wed, 18 Nov 2026 14:31:24 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatEditor</link>
@@ -235,26 +268,6 @@
 - 应用图标换成 WriteDown 现用的黄铅笔电光蓝底（owner 决定转给 NeatEditor；WriteDown 后续再换）。
 ]]></description>
             <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.28/NeatEditor-1.0.28.zip" length="5682895" type="application/octet-stream" sparkle:edSignature="y0l6G3anquGgnEpWlHdYXoGzSNzFuuBzyW7TaYIcvHn5bztu1+5E+bQAq+6ZkX8vZlwXLybdrFDXGuIKvK6iAw=="/>
-        </item>
-        <item>
-            <title>1.0.27</title>
-            <pubDate>Tue, 03 Nov 2026 15:33:14 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatEditor</link>
-            <sparkle:version>27</sparkle:version>
-            <sparkle:shortVersionString>1.0.27</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# NeatEditor 1.0.27
-
-
-### Changed
-
-- Clearer app icon at small sizes: the typewriter's roller is now silver so it no longer disappears into the dark background, the sheet is a shorter warm ivory that no longer outshines the typewriter, the whole mark is visually centred, and contrast is slightly higher.
-
-### 简体中文
-
-- 应用图标在小尺寸下更清楚：打字机滚轴改为银色，不再融进深色背景；纸张改为更短的暖象牙色，不再压过打字机本身；整体视觉居中，对比度略有提高。
-]]></description>
-            <enclosure url="https://github.com/NeatMacApps/NeatEditor/releases/download/v1.0.27/NeatEditor-1.0.27.zip" length="5385161" type="application/octet-stream" sparkle:edSignature="3oMgflJQ/c7Rn+2lOOCLp42tEW2Lvz+PRLAceUofmY28ukhJaIN9VWaPSXbs42BzYiUpDSgHzRD1Y9y2SgGwAQ=="/>
         </item>
         <item>
             <title>1.0.14</title>
