@@ -73,11 +73,17 @@ final class EditorTabItemView: NSControl, NSTextFieldDelegate {
         self.descriptor = descriptor
         isSelected = selected
         if strip?.editingTabID != id { titleField.stringValue = descriptor.title }
-        titleField.font = .systemFont(ofSize: EditorTabLayout.titleFontSize)
+        titleField.font = .systemFont(ofSize: (strip?.interfaceFontSize ?? .defaultValue).tabTitleFontSize)
         titleField.textColor = selected ? .labelColor : .secondaryLabelColor
         setAccessibilityLabel(descriptor.title)
         setAccessibilityValue(selected ? 1 : 0)
         toolTip = descriptor.title
+        needsLayout = true
+        needsDisplay = true
+    }
+
+    func updateFontSize(_ fontSize: InterfaceFontSize) {
+        titleField.font = .systemFont(ofSize: fontSize.tabTitleFontSize)
         needsLayout = true
         needsDisplay = true
     }

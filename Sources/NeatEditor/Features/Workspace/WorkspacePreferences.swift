@@ -132,6 +132,7 @@ struct WorkspacePreferences: Codable, Equatable {
         case tabBehavior
         case appLanguage
         case editorTheme
+        case interfaceFontSize
         case editorTextSoftness
         case isSidebarVisible
         case adaptiveEditorFontSizeLearner
@@ -142,6 +143,7 @@ struct WorkspacePreferences: Codable, Equatable {
     var tabBehavior: TabBehavior = .spaces2
     var appLanguage: AppLanguage = .system
     var editorTheme: EditorTheme = .defaultValue
+    var interfaceFontSize: InterfaceFontSize = .defaultValue
     var editorTextSoftness = EditorTextSoftnessConfiguration()
     var isSidebarVisible = true
     var adaptiveEditorFontSizeLearner = AdaptiveFontSizeLearner()
@@ -153,6 +155,7 @@ struct WorkspacePreferences: Codable, Equatable {
         tabBehavior: TabBehavior = .spaces2,
         appLanguage: AppLanguage = .system,
         editorTheme: EditorTheme = .defaultValue,
+        interfaceFontSize: InterfaceFontSize = .defaultValue,
         editorTextSoftness: EditorTextSoftnessConfiguration = EditorTextSoftnessConfiguration(),
         adaptiveEditorFontSizeLearner: AdaptiveFontSizeLearner = AdaptiveFontSizeLearner(),
         isSidebarVisible: Bool = true
@@ -162,6 +165,7 @@ struct WorkspacePreferences: Codable, Equatable {
         self.tabBehavior = tabBehavior
         self.appLanguage = appLanguage
         self.editorTheme = editorTheme
+        self.interfaceFontSize = interfaceFontSize
         self.editorTextSoftness = editorTextSoftness.sanitized()
         self.adaptiveEditorFontSizeLearner = adaptiveEditorFontSizeLearner
         self.isSidebarVisible = isSidebarVisible
@@ -193,6 +197,8 @@ struct WorkspacePreferences: Codable, Equatable {
         ) ?? defaults.appLanguage
         let themeValue = try container.decodeIfPresent(String.self, forKey: .editorTheme)
         editorTheme = themeValue.flatMap(EditorTheme.init(rawValue:)) ?? .defaultValue
+        let interfaceFontSizeValue = try container.decodeIfPresent(String.self, forKey: .interfaceFontSize)
+        interfaceFontSize = interfaceFontSizeValue.flatMap(InterfaceFontSize.init(rawValue:)) ?? .defaultValue
         editorTextSoftness = try container.decodeIfPresent(
             EditorTextSoftnessConfiguration.self,
             forKey: .editorTextSoftness
@@ -216,6 +222,7 @@ struct WorkspacePreferences: Codable, Equatable {
         try container.encode(tabBehavior, forKey: .tabBehavior)
         try container.encode(appLanguage, forKey: .appLanguage)
         try container.encode(editorTheme, forKey: .editorTheme)
+        try container.encode(interfaceFontSize, forKey: .interfaceFontSize)
         try container.encode(editorTextSoftness.sanitized(), forKey: .editorTextSoftness)
         try container.encode(isSidebarVisible, forKey: .isSidebarVisible)
         try container.encode(adaptiveEditorFontSizeLearner, forKey: .adaptiveEditorFontSizeLearner)

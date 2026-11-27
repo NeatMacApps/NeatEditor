@@ -4,10 +4,11 @@ import SwiftUI
 struct EditorCharacterCountView: View {
     let characters: Int
     var theme: EditorTheme = .defaultValue
+    var interfaceFontSize: InterfaceFontSize = .defaultValue
 
     var body: some View {
         Text(String(format: String(localized: "status.characters"), characters.formatted()))
-            .font(.system(size: 11))
+            .font(.system(size: interfaceFontSize.scaledFontSize(from: 11)))
             .monospacedDigit()
             .foregroundStyle(.secondary)
             .lineLimit(1)

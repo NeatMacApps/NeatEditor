@@ -3,9 +3,9 @@ import SwiftUI
 
 struct SettingsView: View {
     #if DIRECT_DISTRIBUTION
-    static let minimumContentHeight: CGFloat = 588
+    static let minimumContentHeight: CGFloat = 636
     #else
-    static let minimumContentHeight: CGFloat = 456
+    static let minimumContentHeight: CGFloat = 504
     #endif
 
     @Environment(WorkspaceStore.self) private var workspaceStore
@@ -64,6 +64,34 @@ struct SettingsView: View {
                     SettingsRowLabel(title: "settings.theme", systemImage: "paintpalette")
                 }
                 .accessibilityIdentifier("settings.theme")
+
+                LabeledContent {
+                    HStack(spacing: 10) {
+                        Slider(
+                            value: interfaceFontSizeBinding,
+                            in: 0...Double(InterfaceFontSize.allCases.count - 1),
+                            step: 1
+                        ) {
+                            Text("settings.interfaceFontSize")
+                        }
+                        .labelsHidden()
+                        .frame(width: 140)
+                        .accessibilityValue(
+                            Text(LocalizedStringKey(workspaceStore.preferences.interfaceFontSize.localizedNameKey))
+                        )
+                        .accessibilityIdentifier("settings.interfaceFontSize.slider")
+
+                        Text(LocalizedStringKey(workspaceStore.preferences.interfaceFontSize.localizedNameKey))
+                            .foregroundStyle(.secondary)
+                            .frame(minWidth: 72, alignment: .trailing)
+                            .accessibilityIdentifier("settings.interfaceFontSize.value")
+                    }
+                } label: {
+                    SettingsRowLabel(
+                        title: "settings.interfaceFontSize",
+                        systemImage: "textformat.size"
+                    )
+                }
 
                 Picker(selection: $workspace.preferences.tabBehavior) {
                     ForEach(TabBehavior.allCases, id: \.self) { behavior in
@@ -138,6 +166,18 @@ struct SettingsView: View {
         .task {
             await workspaceStore.refreshDefaultFileTypeStatuses()
         }
+    }
+
+    private var interfaceFontSizeBinding: Binding<Double> {
+        Binding(
+            get: { Double(workspaceStore.preferences.interfaceFontSize.stepIndex) },
+            set: { newValue in
+                let nextSize = InterfaceFontSize(stepIndex: Int(newValue.rounded()))
+                if workspaceStore.preferences.interfaceFontSize != nextSize {
+                    workspaceStore.preferences.interfaceFontSize = nextSize
+                }
+            }
+        )
     }
 
     private var aboutRow: some View {

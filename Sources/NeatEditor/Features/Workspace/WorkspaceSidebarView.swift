@@ -37,7 +37,11 @@ struct WorkspaceSidebarView: View {
         List(selection: selection) {
             Section {
                 ForEach(workspaceStore.sidebarFiles) { item in
-                    WorkspaceSidebarFileRow(title: item.title, preview: item.preview)
+                    WorkspaceSidebarFileRow(
+                        title: item.title,
+                        preview: item.preview,
+                        interfaceFontSize: workspaceStore.preferences.interfaceFontSize
+                    )
                     // One named element per row: the List row itself stays
                     // anonymous otherwise, leaving the file name only on a child
                     // static text that assistive clients cannot select.
@@ -154,7 +158,8 @@ struct WorkspaceSidebarView: View {
     private var folderHeader: some View {
         WorkspaceSidebarFolderHeader(
             name: workspaceStore.documentsFolderName,
-            path: workspaceStore.documentsFolder.path
+            path: workspaceStore.documentsFolder.path,
+            interfaceFontSize: workspaceStore.preferences.interfaceFontSize
         )
     }
 
@@ -244,9 +249,11 @@ struct WorkspaceSidebarView: View {
 struct WorkspaceSidebarFolderHeader: View {
     let name: String
     let path: String
+    var interfaceFontSize: InterfaceFontSize = .defaultValue
 
     var body: some View {
         Text(verbatim: name)
+            .font(.system(size: interfaceFontSize.sidebarHeaderFontSize, weight: .semibold))
             .lineLimit(1)
             .truncationMode(.middle)
             .help(path)
@@ -257,22 +264,22 @@ struct WorkspaceSidebarFolderHeader: View {
 struct WorkspaceSidebarFileRow: View {
     let title: String
     let preview: String
-    @ScaledMetric(relativeTo: .body) private var titleHeight: CGFloat = 18
-    @ScaledMetric(relativeTo: .caption) private var previewHeight: CGFloat = 28
+    var interfaceFontSize: InterfaceFontSize = .defaultValue
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(verbatim: title)
+                .font(.system(size: interfaceFontSize.sidebarTitleFontSize))
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .frame(height: titleHeight, alignment: .topLeading)
+                .frame(height: interfaceFontSize.sidebarTitleLineHeight, alignment: .topLeading)
 
             Text(verbatim: preview)
-                .font(.caption)
+                .font(.system(size: interfaceFontSize.sidebarPreviewFontSize))
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
                 .truncationMode(.tail)
-                .frame(height: previewHeight, alignment: .topLeading)
+                .frame(height: interfaceFontSize.sidebarPreviewHeight, alignment: .topLeading)
                 .accessibilityHidden(preview.isEmpty)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

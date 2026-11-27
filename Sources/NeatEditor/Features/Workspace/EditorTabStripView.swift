@@ -17,6 +17,14 @@ final class EditorTabStripView: NSView {
             geometryDidChange()
         }
     }
+    var interfaceFontSize: InterfaceFontSize = .defaultValue {
+        didSet {
+            guard interfaceFontSize != oldValue else { return }
+            tabViews.values.forEach { $0.updateFontSize(interfaceFontSize) }
+            needsLayout = true
+            needsDisplay = true
+        }
+    }
     /// Titlebar regions owned by native accessories (sidebar button, pin).
     var contentInsets = NSEdgeInsets() {
         didSet { needsLayout = true }

@@ -4,6 +4,7 @@ import SwiftUI
 struct EditorSearchBarView: View {
     @Binding var searchState: WorkspaceSearchState
     let theme: EditorTheme
+    var interfaceFontSize: InterfaceFontSize = .defaultValue
     let onFindNext: () -> Void
     let onFindPrevious: () -> Void
     let onToggleCaseSensitive: () -> Void
@@ -13,6 +14,14 @@ struct EditorSearchBarView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var focusInputRequestID = 0
 
+    private var searchFieldFontSize: CGFloat {
+        interfaceFontSize.scaledFontSize(from: 12.5)
+    }
+
+    private var inputWellHeight: CGFloat {
+        max(28, ceil(searchFieldFontSize + 13))
+    }
+
     var body: some View {
         HStack(spacing: 4) {
             inputWell
@@ -21,6 +30,7 @@ struct EditorSearchBarView: View {
                 SearchToggleButton(
                     title: "Aa",
                     isMonospaced: false,
+                    fontSize: interfaceFontSize.scaledFontSize(from: 11.5),
                     isOn: searchState.isCaseSensitive,
                     accessibilityLabel: "search.caseSensitive",
                     accessibilityIdentifier: "search.caseSensitive",
@@ -30,6 +40,7 @@ struct EditorSearchBarView: View {
                 SearchToggleButton(
                     title: ".*",
                     isMonospaced: true,
+                    fontSize: interfaceFontSize.scaledFontSize(from: 11.5),
                     isOn: searchState.isRegexEnabled,
                     accessibilityLabel: "search.regex",
                     accessibilityIdentifier: "search.regex",
@@ -69,7 +80,7 @@ struct EditorSearchBarView: View {
             }
         }
         .padding(4)
-        .frame(height: 36)
+        .frame(height: inputWellHeight + 8)
         .frame(maxWidth: 420)
         .background {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -99,6 +110,7 @@ struct EditorSearchBarView: View {
 
             SearchTextField(
                 text: $searchState.query,
+                fontSize: searchFieldFontSize,
                 focusRequestID: searchState.focusRequestID + focusInputRequestID,
                 onFindNext: onFindNext,
                 onFindPrevious: onFindPrevious,
@@ -128,7 +140,7 @@ struct EditorSearchBarView: View {
             }
         }
         .padding(.horizontal, 7)
-        .frame(height: 28)
+        .frame(height: inputWellHeight)
         .background(
             EditorChrome.editorSurface(for: theme),
             in: RoundedRectangle(cornerRadius: 6, style: .continuous)
@@ -141,22 +153,23 @@ struct EditorSearchBarView: View {
 
     @ViewBuilder
     private var statusIndicator: some View {
+        let statusFontSize = interfaceFontSize.scaledFontSize(from: 11)
         switch searchState.status {
         case .idle:
             EmptyView()
         case .matches(let current, let total):
             Text(verbatim: "\(current)/\(total)")
-                .font(.system(size: 11))
+                .font(.system(size: statusFontSize))
                 .monospacedDigit()
                 .foregroundStyle(total == 0 ? Color(nsColor: .systemRed) : .secondary)
         case .invalidRegularExpression:
             Text("search.status.invalidRegex")
-                .font(.system(size: 11))
+                .font(.system(size: statusFontSize))
                 .foregroundStyle(.orange)
                 .help(Text("search.status.invalidRegex.help"))
         case .timedOut:
             Text("search.status.regexTimedOut")
-                .font(.system(size: 11))
+                .font(.system(size: statusFontSize))
                 .foregroundStyle(.orange)
         }
     }
@@ -165,6 +178,7 @@ struct EditorSearchBarView: View {
 private struct SearchToggleButton: View {
     let title: String
     let isMonospaced: Bool
+    let fontSize: CGFloat
     let isOn: Bool
     let accessibilityLabel: LocalizedStringKey
     let accessibilityIdentifier: String
@@ -177,8 +191,8 @@ private struct SearchToggleButton: View {
             Text(verbatim: title)
                 .font(
                     isMonospaced
-                        ? .system(size: 11.5, weight: .medium, design: .monospaced)
-                        : .system(size: 11.5, weight: .medium)
+                        ? .system(size: fontSize, weight: .medium, design: .monospaced)
+                        : .system(size: fontSize, weight: .medium)
                 )
                 .foregroundStyle(isOn ? Color.accentColor : .secondary)
                 .frame(width: 26, height: 26)
@@ -247,6 +261,7 @@ private struct SearchIconButton: View {
 
 private struct SearchTextField: NSViewRepresentable {
     @Binding var text: String
+    let fontSize: CGFloat
     let focusRequestID: Int
     let onFindNext: () -> Void
     let onFindPrevious: () -> Void
@@ -265,7 +280,7 @@ private struct SearchTextField: NSViewRepresentable {
         field.focusRingType = .none
         field.usesSingleLineMode = true
         field.lineBreakMode = .byTruncatingTail
-        field.font = .systemFont(ofSize: 12.5)
+        field.font = .systemFont(ofSize: fontSize)
         field.textColor = .labelColor
         field.placeholderString = String(localized: "Search")
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -277,6 +292,10 @@ private struct SearchTextField: NSViewRepresentable {
 
     func updateNSView(_ field: NSTextField, context: Context) {
         context.coordinator.parent = self
+
+        if field.font?.pointSize != fontSize {
+            field.font = .systemFont(ofSize: fontSize)
+        }
 
         let isComposing = (field.currentEditor() as? NSTextView)?.hasMarkedText() == true
         if !isComposing, field.stringValue != text {

@@ -24,6 +24,12 @@
 
 "Settings" = "Settings";
 "settings.theme" = "Theme";
+"settings.interfaceFontSize" = "Interface Font Size";
+"interfaceFontSize.extraSmall" = "Extra Small";
+"interfaceFontSize.small" = "Small";
+"interfaceFontSize.standard" = "Default";
+"interfaceFontSize.large" = "Large";
+"interfaceFontSize.extraLarge" = "Extra Large";
 "theme.warm" = "Warm Paper";
 "theme.whiteBlack" = "Pure";
 "Editor" = "Editor";

@@ -24,6 +24,12 @@
 
 "Settings" = "设置";
 "settings.theme" = "主题";
+"settings.interfaceFontSize" = "界面字体大小";
+"interfaceFontSize.extraSmall" = "极小";
+"interfaceFontSize.small" = "较小";
+"interfaceFontSize.standard" = "默认";
+"interfaceFontSize.large" = "较大";
+"interfaceFontSize.extraLarge" = "极大";
 "theme.warm" = "暖纸";
 "theme.whiteBlack" = "纯净";
 "Editor" = "编辑器";

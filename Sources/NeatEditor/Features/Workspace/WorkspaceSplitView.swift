@@ -15,6 +15,7 @@ struct WorkspaceSplitView: NSViewControllerRepresentable {
     let onSidebarVisibilityChange: (Bool) -> Void
     let onTogglePin: () -> Void
     var theme: EditorTheme = .defaultValue
+    var interfaceFontSize: InterfaceFontSize = .defaultValue
 
     static let sidebarMinimumWidth: CGFloat = 200
     static let editorMinimumWidth: CGFloat = 240
@@ -72,6 +73,7 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
                                       actions: configuration.tabActions)
         detailController.accessoryViews = [sidebarButton]
         detailController.strip.theme = configuration.theme
+        detailController.strip.interfaceFontSize = configuration.interfaceFontSize
         topBandBackground.theme = configuration.theme
         detailController.tabBand.leadingBackground.theme = configuration.theme
     }
@@ -149,6 +151,9 @@ final class WorkspaceSplitViewController: NSSplitViewController, NSToolbarDelega
             topBandBackground.theme = configuration.theme
             detailController.tabBand.leadingBackground.theme = configuration.theme
             attachedWindow?.backgroundColor = EditorChrome.tabBarBackgroundColor(for: configuration.theme)
+        }
+        if self.configuration.interfaceFontSize != configuration.interfaceFontSize {
+            detailController.strip.interfaceFontSize = configuration.interfaceFontSize
         }
         self.configuration = configuration
         sidebarController.rootView = configuration.sidebar

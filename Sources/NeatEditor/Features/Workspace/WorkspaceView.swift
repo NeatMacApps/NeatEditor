@@ -37,7 +37,8 @@ struct WorkspaceView: View {
                 }
             },
             onTogglePin: { isWindowPinned.toggle() },
-            theme: workspaceStore.preferences.editorTheme
+            theme: workspaceStore.preferences.editorTheme,
+            interfaceFontSize: workspaceStore.preferences.interfaceFontSize
         )
         .ignoresSafeArea(.container, edges: .top)
         // Keep native toolbar controls and hit routing, but let the split view's
@@ -124,7 +125,10 @@ struct WorkspaceView: View {
     private var editorColumn: some View {
         VStack(spacing: 0) {
             if isCloseTabShortcutHintVisible {
-                CloseTabShortcutHint(theme: workspaceStore.preferences.editorTheme) {
+                CloseTabShortcutHint(
+                    theme: workspaceStore.preferences.editorTheme,
+                    interfaceFontSize: workspaceStore.preferences.interfaceFontSize
+                ) {
                     dismissCloseTabShortcutHint()
                 }
                 .transition(.move(edge: .top).combined(with: .opacity))
@@ -316,7 +320,8 @@ struct WorkspaceView: View {
                                let characters = editorCharacterCount.count(for: tab.id) {
                                 EditorCharacterCountView(
                                     characters: characters,
-                                    theme: workspaceStore.preferences.editorTheme
+                                    theme: workspaceStore.preferences.editorTheme,
+                                    interfaceFontSize: workspaceStore.preferences.interfaceFontSize
                                 )
                             } else {
                                 Color.clear.frame(width: EditorCharacterCountLayout.trailingInset - 8, height: 1)
@@ -329,6 +334,7 @@ struct WorkspaceView: View {
                         EditorSearchBarView(
                             searchState: $bindableWorkspace.searchState,
                             theme: workspaceStore.preferences.editorTheme,
+                            interfaceFontSize: workspaceStore.preferences.interfaceFontSize,
                             onFindNext: workspaceStore.findNextMatch,
                             onFindPrevious: workspaceStore.findPreviousMatch,
                             onToggleCaseSensitive: workspaceStore.toggleCaseSensitiveSearch,
@@ -415,16 +421,21 @@ struct WorkspaceView: View {
 
 private struct CloseTabShortcutHint: View {
     let theme: EditorTheme
+    var interfaceFontSize: InterfaceFontSize = .defaultValue
     let onDismiss: () -> Void
+
+    private var fontSize: CGFloat {
+        interfaceFontSize.scaledFontSize(from: 12)
+    }
 
     var body: some View {
         HStack(spacing: 12) {
             Label("Press", systemImage: "keyboard")
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: fontSize, weight: .medium))
                 .foregroundStyle(.secondary)
 
             Text("Use \(Text("\u{2318}W").fontWeight(.semibold)) to close the current tab")
-            .font(.system(size: 12))
+            .font(.system(size: fontSize))
             .foregroundStyle(.primary)
 
             Spacer(minLength: 0)
@@ -433,7 +444,7 @@ private struct CloseTabShortcutHint: View {
                 onDismiss()
             }
             .buttonStyle(.plain)
-            .font(.system(size: 12, weight: .medium))
+            .font(.system(size: fontSize, weight: .medium))
             .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 16)

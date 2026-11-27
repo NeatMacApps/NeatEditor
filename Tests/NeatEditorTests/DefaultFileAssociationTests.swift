@@ -363,7 +363,7 @@ struct DefaultFileAssociationTests {
 
         let fitting = host.fittingSize
         #expect(fitting.height <= SettingsView.minimumContentHeight)
-        #expect(fitting.height < 610)
+        #expect(fitting.height < 630)
     }
 
     @Test("DefaultAppRegistrationSheet lays out cleanly across prompt modes and appearances",
