@@ -23,6 +23,7 @@ struct InterfaceFontSizeTests {
         for pair in zip(levels, levels.dropFirst()) {
             #expect(pair.0.scaleFactor < pair.1.scaleFactor)
             #expect(pair.0.tabTitleFontSize < pair.1.tabTitleFontSize)
+            #expect(pair.0.tabWidth < pair.1.tabWidth)
             #expect(pair.0.sidebarHeaderFontSize < pair.1.sidebarHeaderFontSize)
             #expect(pair.0.sidebarTitleFontSize < pair.1.sidebarTitleFontSize)
             #expect(pair.0.sidebarPreviewFontSize < pair.1.sidebarPreviewFontSize)
@@ -30,6 +31,7 @@ struct InterfaceFontSizeTests {
             #expect(pair.0.sidebarPreviewHeight < pair.1.sidebarPreviewHeight)
         }
         #expect(InterfaceFontSize.standard.tabTitleFontSize == EditorTabLayout.titleFontSize)
+        #expect(InterfaceFontSize.standard.tabWidth == EditorTabLayout.tabWidth)
         #expect(InterfaceFontSize.extraLarge.tabTitleFontSize <= 16)
     }
 
@@ -130,6 +132,8 @@ struct InterfaceFontSizeTests {
             let currentItem = try #require(strip.tabViews[tab.id])
             #expect(currentItem === originalItem)
             #expect(currentItem.titleField.font?.pointSize == level.tabTitleFontSize)
+            #expect(abs(currentItem.tabBounds.width - level.tabWidth) < 0.5)
+            #expect(abs(currentItem.titleField.frame.midY - currentItem.tabBounds.midY) < 0.5)
         }
     }
 

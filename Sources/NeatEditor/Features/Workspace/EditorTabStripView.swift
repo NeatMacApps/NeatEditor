@@ -142,8 +142,8 @@ final class EditorTabStripView: NSView {
         scrollView.frame = CGRect(x: viewportX, y: 0, width: viewportWidth, height: bounds.height + 1)
         scrollView.tile()
         var x = EditorTabLayout.tabsLeadingInset
+        let width = interfaceFontSize.tabWidth
         for tab in tabs {
-            let width = EditorTabLayout.tabWidth
             tabViews[tab.id]?.frame = CGRect(
                 x: x - ConnectedTabGeometry.baselineOutset,
                 y: bounds.height - EditorTabLayout.tabHeight,

@@ -59,6 +59,17 @@ enum InterfaceFontSize: String, Codable, CaseIterable, Hashable, Sendable {
         }
     }
 
+    /// Top tab bar width scaled with interface font size so larger titles stay legible.
+    var tabWidth: CGFloat {
+        switch self {
+        case .extraSmall: 144
+        case .small: 156
+        case .standard: 168
+        case .large: 188
+        case .extraLarge: 208
+        }
+    }
+
     /// Sidebar section folder header point size.
     var sidebarHeaderFontSize: CGFloat {
         switch self {

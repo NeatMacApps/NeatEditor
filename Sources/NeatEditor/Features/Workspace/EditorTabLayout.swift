@@ -36,7 +36,8 @@ enum EditorTabLayout {
     static let contentCenterY: CGFloat = stripHeight / 2
     static let actionHeight: CGFloat = 32
     static let actionSymbolSize: CGFloat = 13
-    static let tabTitleCenterY: CGFloat = tabHeight - contentCenterY
+    /// Vertical midpoint of the tab itself so titles stay optically centered at every font size.
+    static let tabTitleCenterY: CGFloat = tabHeight / 2
     /// Trailing slot after the tabs that holds the New Document button.
     static let newDocumentSlotWidth: CGFloat = 32
     /// Keeps the trailing pin clear of the window's rounded corner.

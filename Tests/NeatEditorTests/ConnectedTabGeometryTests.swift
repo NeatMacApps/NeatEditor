@@ -55,7 +55,7 @@ struct ConnectedTabGeometryTests {
             #expect(gap.lowerBound >= 40)
             #expect(gap.upperBound <= 40 + width - 32)
             #expect(item.titleField.frame.midX == item.tabBounds.midX)
-            #expect(strip.convert(item.titleField.bounds, from: item.titleField).midY == EditorTabLayout.contentCenterY)
+            #expect(item.titleField.frame.midY == item.tabBounds.midY)
             #expect(item.tabBounds.height == EditorTabLayout.tabHeight)
             #expect(strip.convert(item.tabBounds, from: item).minY == 4)
         }
@@ -307,7 +307,7 @@ struct ConnectedTabGeometryTests {
                 #expect(field.frame.width == 144)
                 #expect(field.font?.pointSize == 13)
                 #expect(field.frame.height >= field.intrinsicContentSize.height)
-                #expect(strip.convert(field.bounds, from: field).midY == EditorTabLayout.contentCenterY)
+                #expect(field.frame.midY == item.tabBounds.midY)
                 #expect(field.lineBreakMode == .byTruncatingTail)
                 #expect(field.usesSingleLineMode)
                 #expect(field.stringValue == tab.title)

@@ -96,7 +96,7 @@ struct WorkspaceTitlebarTests {
             #expect(abs(control.convert(control.bounds, to: nil).midY - axis) < 0.5)
         }
         for tab in strip.tabViews.values {
-            #expect(abs(tab.titleField.convert(tab.titleField.bounds, to: nil).midY - axis) < 0.5)
+            #expect(abs(tab.titleField.frame.midY - tab.tabBounds.midY) < 0.5)
         }
     }
 
